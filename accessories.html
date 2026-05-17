@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Zubrika - Premium and trendy wear for all. Shop t-shirts, shirts, pants, and more.">
+    <title>Zubrika</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">ZUBRIKA</a></h1>
+            </div>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="collections.html?category=new">New Arrivals</a></li>
+                    <li><a href="t-shirts.html">T-Shirts</a></li>
+                    <li><a href="shirts.html">Shirts</a></li>
+                    <li><a href="pant.html">Pants</a></li>
+                </ul>
+            </nav>
+            <div class="header-search-container">
+                <i class="fas fa-search header-search-icon"></i>
+                <input type="text" class="header-search-input" placeholder="Search for products..." id="desktop-search-input">
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn search-btn" aria-label="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <a href="orders.html" class="icon-btn" aria-label="Orders" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-user"></i>
+                </a>
+                <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-menu" id="mobile-menu">
+        <button class="close-menu-btn" id="close-menu-btn">&times;</button>
+        <ul class="mobile-nav-links">
+            <li><a href="collections.html?category=new">New Arrivals</a></li>
+            <li><a href="t-shirts.html">T-Shirts</a></li>
+            <li><a href="shirts.html">Shirts</a></li>
+            <li><a href="pant.html">Pants</a></li>
+        </ul>
+    </div>
+
+    <!-- Cartesian Drawer -->
+    <div class="cart-drawer-overlay" id="cart-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h2>YOUR BAG</h2>
+            <button class="close-cart-btn" id="close-cart-btn">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <!-- Items inject via JS -->
+            <div class="empty-cart" id="empty-cart-msg">
+                <i class="fas fa-box-open"></i>
+                <p>Your bag is empty.</p>
+                <button class="btn btn-primary" id="shop-now-btn">Shop Now</button>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cart-total-price">₹0</span>
+            </div>
+            <button class="btn btn-primary checkout-btn">CHECKOUT</button>
+        </div>
+    </div>
+
+    <main>
+        <!-- Products Section -->
+        <section class="products-section" id="products">
+            <div class="section-header">
+                <h2>TRENDING</h2>
+            </div>
+            
+            <div class="shop-layout">
+                <!-- Sidebar Filters -->
+                <aside class="shop-sidebar">
+                    <div class="filter-group">
+                        <h3>SORT BY</h3>
+                        <select id="sort-select" class="brutal-select">
+                            <option value="featured">Featured</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Top Rated</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <h3>CATEGORIES</h3>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="tshirts">
+                            <span class="checkmark"></span>
+                            T-Shirts
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="shirts">
+                            <span class="checkmark"></span>
+                            Shirts
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="pants">
+                            <span class="checkmark"></span>
+                            Pants
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="outerwear">
+                            <span class="checkmark"></span>
+                            Outerwear
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <h3>PRICE</h3>
+                        <label class="custom-radio">
+                            <input type="radio" name="price" value="all" checked>
+                            <span class="radiomark"></span>
+                            All Prices
+                        </label>
+                        <label class="custom-radio">
+                            <input type="radio" name="price" value="under-1000">
+                            <span class="radiomark"></span>
+                            Under ₹1000
+                        </label>
+                        <label class="custom-radio">
+                            <input type="radio" name="price" value="1000-2000">
+                            <span class="radiomark"></span>
+                            ₹1000 - ₹2000
+                        </label>
+                        <label class="custom-radio">
+                            <input type="radio" name="price" value="over-2000">
+                            <span class="radiomark"></span>
+                            Over ₹2000
+                        </label>
+                    </div>
+                </aside>
+                
+                <div class="shop-main">
+                    <button class="btn btn-primary mobile-filter-btn" id="mobile-filter-btn">
+                        <i class="fas fa-filter"></i> FILTERS
+                    </button>
+                    
+                    <div class="products-grid" id="product-list">
+                        <!-- Products dynamically inserted via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="newsletter">
+            <div class="newsletter-content">
+                <h2>JOIN THE CULTURE</h2>
+                <p>Get exclusive access to new drops and sales.</p>
+                <form class="newsletter-form" onsubmit="event.preventDefault();">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">SUBSCRIBE</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>ZUBRIKA</h3>
+                <p>Redefining streetwear with bold statements and uncompromised quality.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>SHOP</h4>
+                <ul>
+                    <li><a href="t-shirts.html">T-Shirts</a></li>
+                    <li><a href="shirts.html">Shirts</a></li>
+                    <li><a href="pant.html">Pants</a></li>
+                    <li><a href="collections.html?category=new">New Arrivals</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>HELP</h4>
+                <ul>
+                    <li><a href="#">Track Order</a></li>
+                    <li><a href="#">Returns & Exchanges</a></li>
+                    <li><a href="#">Shipping Info</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>LEGAL</h4>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Zubrika. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Product Quick View Modal -->
+    <div class="modal-overlay" id="pdp-overlay"></div>
+    <div class="pdp-modal" id="pdp-modal">
+        <button class="close-modal-btn" id="close-pdp-btn">&times;</button>
+        <div class="pdp-content" id="pdp-content">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="checkout-modal" id="checkout-modal">
+        <button class="close-modal-btn" id="close-checkout-btn">&times;</button>
+        <div class="checkout-content">
+            <div class="checkout-header">
+                <h2>SECURE CHECKOUT</h2>
+            </div>
+            <div class="checkout-grid">
+                <!-- Form Side -->
+                <div class="checkout-form-section">
+                    <form id="checkout-form" onsubmit="event.preventDefault(); completeCheckout();">
+                        <div class="form-group">
+                            <h3 class="form-title">1. CONTACT INFO</h3>
+                            <input type="email" class="brutal-input" placeholder="Email Address" required>
+                            <input type="text" class="brutal-input" placeholder="Phone Number" required>
+                        </div>
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary-color); margin-bottom: 20px; padding-bottom: 10px;">
+                                <h3 class="form-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">2. SHIPPING ADDRESS</h3>
+                                <button type="button" id="gps-locate-btn" style="background: var(--accent-blue); color: #111; border: 2px solid var(--primary-color); font-weight: 800; font-family: var(--font-body); cursor: pointer; font-size: 0.8rem; padding: 8px 12px; box-shadow: 2px 2px 0px 0px var(--shadow-color);">
+                                    <i class="fas fa-map-marker-alt"></i> Auto-Locate
+                                </button>
+                            </div>
+                            <input type="text" class="brutal-input" placeholder="Full Name" required>
+                            <input type="text" class="brutal-input" id="checkout-street" placeholder="Street Address" required>
+                            <div class="input-row">
+                                <input type="text" class="brutal-input" id="checkout-city" placeholder="City" required>
+                                <input type="text" class="brutal-input" id="checkout-state" placeholder="State" required>
+                                <input type="text" class="brutal-input" id="checkout-pin" placeholder="PIN Code (6 digits)" maxlength="6" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <h3 class="form-title">3. PAYMENT METHOD</h3>
+                            <label class="custom-radio checkout-radio">
+                                <input type="radio" name="payment" value="upi" checked>
+                                <span class="radiomark"></span>
+                                UPI / QR Code
+                            </label>
+                            <label class="custom-radio checkout-radio">
+                                <input type="radio" name="payment" value="card">
+                                <span class="radiomark"></span>
+                                Credit / Debit Card
+                            </label>
+                            <label class="custom-radio checkout-radio">
+                                <input type="radio" name="payment" value="cod">
+                                <span class="radiomark"></span>
+                                Cash on Delivery
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary place-order-btn">PLACE ORDER</button>
+                    </form>
+                </div>
+                <!-- Summary Side -->
+                <div class="checkout-summary-section">
+                    <h3 class="form-title" style="color: #111;">ORDER SUMMARY</h3>
+                    <div id="checkout-items" class="checkout-items-list">
+                        <!-- Items injected dynamically -->
+                    </div>
+                    <div class="checkout-totals">
+                        <div class="total-row">
+                            <span>Subtotal</span>
+                            <span id="checkout-subtotal">₹0</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Shipping</span>
+                            <span>₹100</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>Total</span>
+                            <span id="checkout-grandtotal">₹0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div class="success-modal" id="success-modal">
+        <div class="success-content">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>ORDER PLACED!</h2>
+            <p>Your order <span id="order-id" style="font-weight: 800;"></span> has been confirmed.</p>
+            <p style="margin-bottom: 20px;">We've sent a confirmation email with tracking details.</p>
+            <button class="btn btn-primary" onclick="closeSuccessModal()">RETURN TO SHOP</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
