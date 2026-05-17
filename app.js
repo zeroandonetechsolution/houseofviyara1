@@ -3,7 +3,7 @@ const products = [
     {
         id: 1,
         title: "Azure Noir - Premium Men's Fragrance",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 2499,
         originalPrice: 3499,
         discount: 28,
@@ -16,7 +16,7 @@ const products = [
     {
         id: 2,
         title: "Cloud Walker - Ultra Soft Plush Slippers",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 899,
         originalPrice: 1299,
         discount: 30,
@@ -29,7 +29,7 @@ const products = [
     {
         id: 3,
         title: "Velvet Rose - Intense Floral Perfume",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 1899,
         originalPrice: 2599,
         discount: 27,
@@ -42,7 +42,7 @@ const products = [
     {
         id: 4,
         title: "Urban Slide - Streetwear Rubber Slippers",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 1299,
         originalPrice: 1999,
         discount: 35,
@@ -55,7 +55,7 @@ const products = [
     {
         id: 5,
         title: "Oud Wood - Deep Woody Fragrance",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 3299,
         originalPrice: 4499,
         discount: 26,
@@ -68,7 +68,7 @@ const products = [
     {
         id: 6,
         title: "Lounge Master - Premium Leather Slides",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 1699,
         originalPrice: 2299,
         discount: 26,
@@ -81,7 +81,7 @@ const products = [
     {
         id: 7,
         title: "Citrus Burst - Fresh Eau De Parfum",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 1499,
         originalPrice: 1999,
         discount: 25,
@@ -94,7 +94,7 @@ const products = [
     {
         id: 8,
         title: "Cozy Toes - Fur Lined Winter Slippers",
-        brand: "LUMINA",
+        brand: "Life Style",
         price: 999,
         originalPrice: 1499,
         discount: 33,
@@ -107,7 +107,7 @@ const products = [
 ];
 
 // State
-let cart = JSON.parse(localStorage.getItem('zubrikaCart')) || [];
+let cart = JSON.parse(localStorage.getItem('lifestyleCart')) || [];
 let selectedSize = 'L'; // Default size for modal
 const API_URL = 'http://localhost:3000';
 let socket;
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Theme Setup
 function initTheme() {
-    let currentTheme = localStorage.getItem('zubrikaTheme') || 'light';
+    let currentTheme = localStorage.getItem('lifestyleTheme') || 'light';
     if (currentTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         themeIcon.classList.replace('fa-moon', 'fa-sun');
@@ -376,7 +376,7 @@ function updateCartUI() {
 }
 
 function saveCart() {
-    localStorage.setItem('zubrikaCart', JSON.stringify(cart));
+    localStorage.setItem('lifestyleCart', JSON.stringify(cart));
 }
 
 function animateCartIcon() {
@@ -439,7 +439,7 @@ function openPDP(productId) {
             
             <p class="pdp-desc">
                 Uncompromising comfort meets street-ready style. Crafted with premium thick cotton blend. 
-                Features a relaxed drop-shoulder fit tailored for urban environments. Authentic Zubrika tag.
+                Features a relaxed drop-shoulder fit tailored for urban environments. Authentic Life Style tag.
             </p>
             
             <button class="btn btn-primary pdp-add-to-cart" onclick="addToCart(${product.id}, selectedSize, true)">
@@ -552,7 +552,7 @@ function setupEventListeners() {
         currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
         document.documentElement.setAttribute('data-theme', currentTheme);
-        localStorage.setItem('zubrikaTheme', currentTheme);
+        localStorage.setItem('lifestyleTheme', currentTheme);
         
         if (currentTheme === 'dark') {
             themeIcon.classList.replace('fa-moon', 'fa-sun');
@@ -839,7 +839,7 @@ function renderCheckoutSummary() {
 }
 
 async function completeCheckout() {
-    const orderId = 'LUM-' + Math.floor(Math.random() * 1000000);
+    const orderId = 'LS-' + Math.floor(Math.random() * 1000000);
     orderIdEl.textContent = orderId;
     
     const customerName = document.getElementById('checkout-name').value || 'Guest Customer';
@@ -887,7 +887,7 @@ function renderOrders(searchQuery = '') {
     const ordersContainer = document.getElementById('orders-list');
     if (!ordersContainer) return; // Ensure we only run on orders.html
 
-    let orders = JSON.parse(localStorage.getItem('zubrikaOrders')) || [];
+    let orders = JSON.parse(localStorage.getItem('lifestyleOrders')) || [];
     
     if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -958,7 +958,7 @@ function closeSuccessModal() {
 
 
 function openTracking(orderId) {
-    const orders = JSON.parse(localStorage.getItem('zubrikaOrders')) || [];
+    const orders = JSON.parse(localStorage.getItem('lifestyleOrders')) || [];
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
