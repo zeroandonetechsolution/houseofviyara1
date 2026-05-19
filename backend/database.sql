@@ -14,9 +14,12 @@ CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT,
     price NUMERIC,
+    original_price NUMERIC,
     image_url TEXT,
     description TEXT,
     category TEXT,
+    brand TEXT DEFAULT 'Life Style',
+    is_new BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

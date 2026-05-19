@@ -1,110 +1,4 @@
-// Product Data
-const products = [
-    {
-        id: 1,
-        title: "Azure Noir - Premium Men's Fragrance",
-        brand: "Life Style",
-        price: 2499,
-        originalPrice: 3499,
-        discount: 28,
-        rating: 4.9,
-        reviews: 210,
-        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80",
-        isNew: true,
-        category: "perfumes"
-    },
-    {
-        id: 2,
-        title: "Cloud Walker - Ultra Soft Plush Slippers",
-        brand: "Life Style",
-        price: 899,
-        originalPrice: 1299,
-        discount: 30,
-        rating: 4.8,
-        reviews: 156,
-        image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&q=80",
-        isNew: true,
-        category: "slippers"
-    },
-    {
-        id: 3,
-        title: "Velvet Rose - Intense Floral Perfume",
-        brand: "Life Style",
-        price: 1899,
-        originalPrice: 2599,
-        discount: 27,
-        rating: 4.7,
-        reviews: 89,
-        image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&q=80",
-        isNew: false,
-        category: "perfumes"
-    },
-    {
-        id: 4,
-        title: "Urban Slide - Streetwear Rubber Slippers",
-        brand: "Life Style",
-        price: 1299,
-        originalPrice: 1999,
-        discount: 35,
-        rating: 4.6,
-        reviews: 342,
-        image: "https://images.unsplash.com/photo-1603487788363-278185277a44?w=600&q=80",
-        isNew: true,
-        category: "slippers"
-    },
-    {
-        id: 5,
-        title: "Oud Wood - Deep Woody Fragrance",
-        brand: "Life Style",
-        price: 3299,
-        originalPrice: 4499,
-        discount: 26,
-        rating: 5.0,
-        reviews: 67,
-        image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80",
-        isNew: false,
-        category: "perfumes"
-    },
-    {
-        id: 6,
-        title: "Lounge Master - Premium Leather Slides",
-        brand: "Life Style",
-        price: 1699,
-        originalPrice: 2299,
-        discount: 26,
-        rating: 4.5,
-        reviews: 112,
-        image: "https://images.unsplash.com/photo-1591561582301-709971568405?w=600&q=80",
-        isNew: false,
-        category: "slippers"
-    },
-    {
-        id: 7,
-        title: "Citrus Burst - Fresh Eau De Parfum",
-        brand: "Life Style",
-        price: 1499,
-        originalPrice: 1999,
-        discount: 25,
-        rating: 4.8,
-        reviews: 430,
-        image: "https://images.unsplash.com/photo-1557170334-a9632e77c6e4?w=600&q=80",
-        isNew: true,
-        category: "perfumes"
-    },
-    {
-        id: 8,
-        title: "Cozy Toes - Fur Lined Winter Slippers",
-        brand: "Life Style",
-        price: 999,
-        originalPrice: 1499,
-        discount: 33,
-        rating: 4.9,
-        reviews: 530,
-        image: "https://images.unsplash.com/photo-1610413336685-397b760c87d4?w=600&q=80",
-        isNew: false,
-        category: "slippers"
-    }
-];
+let products = [];
 
 // State
 let cart = JSON.parse(localStorage.getItem('lifestyleCart')) || [];
@@ -172,8 +66,31 @@ const successModal = document.getElementById('success-modal');
 const orderIdEl = document.getElementById('order-id');
 
 // Initialization
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
+
+    try {
+        const res = await fetch(`${API_URL}/api/products`);
+        if(res.ok) {
+            const dbProducts = await res.json();
+            // Map db product fields to app state
+            products = dbProducts.map(dp => ({
+                id: dp.id,
+                title: dp.name,
+                brand: dp.brand || 'Life Style',
+                price: dp.price,
+                originalPrice: dp.original_price,
+                discount: dp.original_price ? Math.round(((dp.original_price - dp.price) / dp.original_price) * 100) : 0,
+                rating: 5.0, // default placeholder rating
+                reviews: 100, // default placeholder reviews
+                image: dp.image_url,
+                isNew: dp.is_new,
+                category: dp.category
+            }));
+        }
+    } catch(err) {
+        console.error("Failed to fetch products", err);
+    }
     
     // Check URL parameters and Pathname for category
     const urlParams = new URLSearchParams(window.location.search);

@@ -145,9 +145,9 @@ app.post('/api/admin/update-order', async (req, res) => {
 // ----- PRODUCT ROUTES (Cloudinary Image Upload) -----
 app.post('/api/products', upload.single('image'), async (req, res) => {
     try {
-        const { name, price, description, category } = req.body;
-        // 'req.file.path' will contain the Cloudinary URL
-        const imageUrl = req.file ? req.file.path : null;
+        const { name, price, originalPrice, description, category, imageUrl, brand, isNew } = req.body;
+        // 'req.file.path' will contain the Cloudinary URL if uploaded
+        const finalImageUrl = req.file ? req.file.path : (imageUrl || '');
 
         const { data, error } = await supabase
             .from('products')
@@ -155,15 +155,45 @@ app.post('/api/products', upload.single('image'), async (req, res) => {
                 {
                     name,
                     price,
+                    original_price: originalPrice || null,
                     description,
                     category,
-                    image_url: imageUrl
+                    image_url: finalImageUrl,
+                    brand: brand || 'Life Style',
+                    is_new: isNew === 'true' || isNew === true
                 }
             ])
             .select();
 
         if (error) throw error;
         res.status(201).json({ success: true, product: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update product price
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const { price, originalPrice, name, description, category, brand, isNew } = req.body;
+        
+        let updates = {};
+        if (price !== undefined) updates.price = price;
+        if (originalPrice !== undefined) updates.original_price = originalPrice;
+        if (name !== undefined) updates.name = name;
+        if (description !== undefined) updates.description = description;
+        if (category !== undefined) updates.category = category;
+        if (brand !== undefined) updates.brand = brand;
+        if (isNew !== undefined) updates.is_new = isNew === 'true' || isNew === true;
+
+        const { data, error } = await supabase
+            .from('products')
+            .update(updates)
+            .eq('id', req.params.id)
+            .select();
+
+        if (error) throw error;
+        res.json({ success: true, product: data[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

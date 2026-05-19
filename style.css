@@ -22,17 +22,17 @@
 }
 
 [data-theme="dark"] {
-    --primary-color: #00ffff; /* Neon Cyan */
-    --secondary-color: #050505;
-    --accent-red: #ff0055;
-    --accent-yellow: #ccff00;
-    --accent-blue: #00e5ff;
-    --accent-pink: #f700ff;
-    --accent-orange: #ff5500;
+    --primary-color: #ffffff;
+    --secondary-color: #121212;
+    --accent-red: #ff3c38;
+    --accent-yellow: #ffde59;
+    --accent-blue: #5ce1e6;
+    --accent-pink: #cb6ce6;
+    --accent-orange: #ff914d;
     
-    --bg-color: #0d0d0d;
+    --bg-color: #0c0c0c;
     --text-color: #ffffff;
-    --shadow-color: #00ffff;
+    --shadow-color: #ffffff;
 }
 
 [data-theme="dark"] .product-card,
@@ -1954,4 +1954,16 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.8rem;
     font-weight: 600;
     opacity: 0.6;
+}
+
+/* Brutalist Admin Icon */
+.brutal-admin-icon {
+    display: inline-block;
+    position: relative;
+    color: var(--primary-color) !important;
+    transition: transform 0.2s;
+}
+
+.brutal-admin-icon:hover {
+    transform: scale(1.1) rotate(-5deg);
 }
