@@ -3,7 +3,7 @@ let products = [];
 // State
 let cart = JSON.parse(localStorage.getItem('lifestyleCart')) || [];
 let selectedSize = 'L'; // Default size for modal
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://life-style-production.up.railway.app';
 let socket;
 
 // Initialize Socket.io

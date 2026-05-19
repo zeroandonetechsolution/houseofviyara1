@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://life-style-production.up.railway.app/api';
 
 // Tab Switching
 function switchTab(tabId) {

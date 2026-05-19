@@ -13,7 +13,7 @@ if (!fs.existsSync(publicDir)) {
 const appJsPath = path.join(rootDir, 'app.js');
 let appJsContent = fs.readFileSync(appJsPath, 'utf8');
 
-const apiUrl = process.env.API_URL || 'http://localhost:3000';
+const apiUrl = process.env.API_URL || 'https://life-style-production.up.railway.app';
 appJsContent = appJsContent.replace(
     /const API_URL = '.*?';/, 
     `const API_URL = '${apiUrl}';`
