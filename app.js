@@ -1,16 +1,246 @@
-let products = [];
+// Product Data
+const products = [
+    {
+        id: 1,
+        title: "Azure Noir - Premium Men's Fragrance",
+        brand: "LUMINA",
+        price: 2499,
+        originalPrice: 3499,
+        discount: 28,
+        rating: 4.9,
+        reviews: 210,
+        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80",
+        isNew: true,
+        category: "perfumes"
+    },
+    {
+        id: 2,
+        title: "Cloud Walker - Ultra Soft Plush Slippers",
+        brand: "LUMINA",
+        price: 899,
+        originalPrice: 1299,
+        discount: 30,
+        rating: 4.8,
+        reviews: 156,
+        image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&q=80",
+        isNew: true,
+        category: "slippers"
+    },
+    {
+        id: 3,
+        title: "Velvet Rose - Intense Floral Perfume",
+        brand: "LUMINA",
+        price: 1899,
+        originalPrice: 2599,
+        discount: 27,
+        rating: 4.7,
+        reviews: 89,
+        image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&q=80",
+        isNew: false,
+        category: "perfumes"
+    },
+    {
+        id: 4,
+        title: "Urban Slide - Streetwear Rubber Slippers",
+        brand: "LUMINA",
+        price: 1299,
+        originalPrice: 1999,
+        discount: 35,
+        rating: 4.6,
+        reviews: 342,
+        image: "https://images.unsplash.com/photo-1603487788363-278185277a44?w=600&q=80",
+        isNew: true,
+        category: "slippers"
+    },
+    {
+        id: 5,
+        title: "Oud Wood - Deep Woody Fragrance",
+        brand: "LUMINA",
+        price: 3299,
+        originalPrice: 4499,
+        discount: 26,
+        rating: 5.0,
+        reviews: 67,
+        image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80",
+        isNew: false,
+        category: "perfumes"
+    },
+    {
+        id: 6,
+        title: "Lounge Master - Premium Leather Slides",
+        brand: "LUMINA",
+        price: 1699,
+        originalPrice: 2299,
+        discount: 26,
+        rating: 4.5,
+        reviews: 112,
+        image: "https://images.unsplash.com/photo-1591561582301-709971568405?w=600&q=80",
+        isNew: false,
+        category: "slippers"
+    },
+    {
+        id: 7,
+        title: "Citrus Burst - Fresh Eau De Parfum",
+        brand: "LUMINA",
+        price: 1499,
+        originalPrice: 1999,
+        discount: 25,
+        rating: 4.8,
+        reviews: 430,
+        image: "https://images.unsplash.com/photo-1557170334-a9632e77c6e4?w=600&q=80",
+        isNew: true,
+        category: "perfumes"
+    },
+    {
+        id: 8,
+        title: "Cozy Toes - Fur Lined Winter Slippers",
+        brand: "LUMINA",
+        price: 999,
+        originalPrice: 1499,
+        discount: 33,
+        rating: 4.9,
+        reviews: 530,
+        image: "https://images.unsplash.com/photo-1610413336685-397b760c87d4?w=600&q=80",
+        isNew: false,
+        category: "slippers"
+    }
+];
 
 // State
-let cart = JSON.parse(localStorage.getItem('lifestyleCart')) || [];
+let cart = JSON.parse(localStorage.getItem('zubrikaCart')) || [];
 let selectedSize = 'L'; // Default size for modal
-const API_URL = 'https://life-style-production.up.railway.app';
+const API_URL = 'http://localhost:3000';
 let socket;
+let currentUser = JSON.parse(localStorage.getItem('luminaUser')) || null;
+
+// DOM Elements for Auth
+const authModal = document.getElementById('auth-modal');
+const authOverlay = document.getElementById('auth-overlay');
+const openAuthBtn = document.getElementById('open-auth-btn');
+const closeAuthBtn = document.getElementById('close-auth-btn');
+const sendOtpBtn = document.getElementById('send-otp-btn');
+const verifyOtpBtn = document.getElementById('verify-otp-btn');
+const otpRequestStep = document.getElementById('otp-request-step');
+const otpVerifyStep = document.getElementById('otp-verify-step');
 
 // Initialize Socket.io
 if (typeof io !== 'undefined') {
     socket = io(API_URL);
     socket.on('order-status-update', (data) => {
         updateTrackingUI(data.status);
+    });
+}
+
+// Initialize Google Login
+window.onload = function () {
+    if (typeof google !== 'undefined') {
+        google.accounts.id.initialize({
+            client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Replace with real ID
+            callback: handleGoogleLogin
+        });
+        google.accounts.id.renderButton(
+            document.getElementById("google-login-btn"),
+            { theme: "outline", size: "large", width: "100%" }
+        );
+    }
+}
+
+async function handleGoogleLogin(response) {
+    try {
+        const res = await fetch(`${API_URL}/api/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: response.credential })
+        });
+        const data = await res.json();
+        if (data.success) {
+            loginUser(data);
+        }
+    } catch (err) {
+        console.error('Google login error:', err);
+    }
+}
+
+function loginUser(data) {
+    currentUser = data.user;
+    localStorage.setItem('luminaUser', JSON.stringify(data.user));
+    localStorage.setItem('luminaToken', data.token);
+    closeAuth();
+    updateAuthUI();
+}
+
+function updateAuthUI() {
+    if (currentUser) {
+        openAuthBtn.innerHTML = `<i class="fas fa-user-check"></i>`;
+        openAuthBtn.title = `Logged in as ${currentUser.name || currentUser.email || currentUser.phone}`;
+    } else {
+        openAuthBtn.innerHTML = `<i class="fas fa-user-circle"></i>`;
+    }
+}
+
+// Auth Handlers
+function openAuth() {
+    authModal.classList.add('active');
+    authOverlay.classList.add('active');
+}
+
+function closeAuth() {
+    authModal.classList.remove('active');
+    authOverlay.classList.remove('active');
+    otpRequestStep.style.display = 'block';
+    otpVerifyStep.style.display = 'none';
+}
+
+if (openAuthBtn) openAuthBtn.addEventListener('click', openAuth);
+if (closeAuthBtn) closeAuthBtn.addEventListener('click', closeAuth);
+if (authOverlay) authOverlay.addEventListener('click', closeAuth);
+
+if (sendOtpBtn) {
+    sendOtpBtn.addEventListener('click', async () => {
+        const target = document.getElementById('auth-target').value;
+        if (!target) return alert('Please enter email or phone');
+        
+        try {
+            const isEmail = target.includes('@');
+            const res = await fetch(`${API_URL}/api/auth/otp/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isEmail ? { email: target } : { phone: target })
+            });
+            if (res.ok) {
+                otpRequestStep.style.display = 'none';
+                otpVerifyStep.style.display = 'block';
+            }
+        } catch (err) {
+            alert('Failed to send OTP');
+        }
+    });
+}
+
+if (verifyOtpBtn) {
+    verifyOtpBtn.addEventListener('click', async () => {
+        const target = document.getElementById('auth-target').value;
+        const otp = document.getElementById('auth-otp').value;
+        
+        try {
+            const isEmail = target.includes('@');
+            const res = await fetch(`${API_URL}/api/auth/otp/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    [isEmail ? 'email' : 'phone']: target,
+                    otp
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                loginUser(data);
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            alert('OTP verification failed');
+        }
     });
 }
 
@@ -66,31 +296,9 @@ const successModal = document.getElementById('success-modal');
 const orderIdEl = document.getElementById('order-id');
 
 // Initialization
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-
-    try {
-        const res = await fetch(`${API_URL}/api/products`);
-        if(res.ok) {
-            const dbProducts = await res.json();
-            // Map db product fields to app state
-            products = dbProducts.map(dp => ({
-                id: dp.id,
-                title: dp.name,
-                brand: dp.brand || 'Life Style',
-                price: dp.price,
-                originalPrice: dp.original_price,
-                discount: dp.original_price ? Math.round(((dp.original_price - dp.price) / dp.original_price) * 100) : 0,
-                rating: 5.0, // default placeholder rating
-                reviews: 100, // default placeholder reviews
-                image: dp.image_url,
-                isNew: dp.is_new,
-                category: dp.category
-            }));
-        }
-    } catch(err) {
-        console.error("Failed to fetch products", err);
-    }
+    updateAuthUI();
     
     // Check URL parameters and Pathname for category
     const urlParams = new URLSearchParams(window.location.search);
@@ -133,7 +341,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Theme Setup
 function initTheme() {
-    let currentTheme = localStorage.getItem('lifestyleTheme') || 'light';
+    let currentTheme = localStorage.getItem('zubrikaTheme') || 'light';
     if (currentTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         themeIcon.classList.replace('fa-moon', 'fa-sun');
@@ -293,7 +501,7 @@ function updateCartUI() {
 }
 
 function saveCart() {
-    localStorage.setItem('lifestyleCart', JSON.stringify(cart));
+    localStorage.setItem('zubrikaCart', JSON.stringify(cart));
 }
 
 function animateCartIcon() {
@@ -356,7 +564,7 @@ function openPDP(productId) {
             
             <p class="pdp-desc">
                 Uncompromising comfort meets street-ready style. Crafted with premium thick cotton blend. 
-                Features a relaxed drop-shoulder fit tailored for urban environments. Authentic Life Style tag.
+                Features a relaxed drop-shoulder fit tailored for urban environments. Authentic Zubrika tag.
             </p>
             
             <button class="btn btn-primary pdp-add-to-cart" onclick="addToCart(${product.id}, selectedSize, true)">
@@ -469,7 +677,7 @@ function setupEventListeners() {
         currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
         document.documentElement.setAttribute('data-theme', currentTheme);
-        localStorage.setItem('lifestyleTheme', currentTheme);
+        localStorage.setItem('zubrikaTheme', currentTheme);
         
         if (currentTheme === 'dark') {
             themeIcon.classList.replace('fa-moon', 'fa-sun');
@@ -693,7 +901,7 @@ function showTrackingResults(order) {
     trackFormCard.style.display = 'none';
     trackingResults.classList.add('active');
     
-    document.getElementById('res-order-id').textContent = `ORDER #${order.orderId || order.id}`;
+    document.getElementById('res-order-id').textContent = `ORDER #${order.id}`;
     document.getElementById('res-order-date').textContent = `Placed on ${new Date(order.created_at).toLocaleDateString()}`;
     
     updateTrackingUI(order.status);
@@ -756,47 +964,80 @@ function renderCheckoutSummary() {
 }
 
 async function completeCheckout() {
-    const orderId = 'LS-' + Math.floor(Math.random() * 1000000);
-    orderIdEl.textContent = orderId;
-    
-    const customerName = document.getElementById('checkout-name').value || 'Guest Customer';
-    const customerEmail = document.getElementById('checkout-email').value || 'guest@example.com';
+    if (!currentUser) {
+        alert('Please login to place an order.');
+        openAuth();
+        return;
+    }
+
+    const customerName = document.getElementById('checkout-name').value || currentUser.name || 'Guest Customer';
+    const customerEmail = document.getElementById('checkout-email').value || currentUser.email || 'guest@example.com';
     
     let subtotal = 0;
     cart.forEach(item => subtotal += (item.price * item.quantity));
-    const total = subtotal + 100;
-
-    const newOrder = {
-        id: orderId,
-        customer_name: customerName,
-        email: customerEmail,
-        total: total,
-        items: [...cart]
-    };
+    const total = subtotal + 100; // Including shipping
 
     try {
-        const response = await fetch(`${API_URL}/api/orders`, {
+        // 1. Create Razorpay Order on backend
+        const orderRes = await fetch(`${API_URL}/api/payments/create-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newOrder)
+            body: JSON.stringify({ amount: total, receipt: `receipt_${Date.now()}` })
         });
+        const rzpOrder = await orderRes.json();
 
-        if (response.ok) {
-            cart = [];
-            saveCart();
-            updateCartUI();
-            
-            checkoutModal.classList.remove('active');
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            
-            successModal.classList.add('active');
-        } else {
-            alert('Failed to place order. Please try again.');
-        }
+        // 2. Open Razorpay Checkout
+        const options = {
+            key: "YOUR_RAZORPAY_KEY_ID", // Replace with real key
+            amount: rzpOrder.amount,
+            currency: rzpOrder.currency,
+            name: "LUMINA",
+            description: "Luxury Fragrances & Slippers",
+            order_id: rzpOrder.id,
+            handler: async function (response) {
+                // 3. Verify Payment on backend
+                const verifyRes = await fetch(`${API_URL}/api/payments/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        order_details: {
+                            id: 'LUM-' + Math.floor(Math.random() * 1000000),
+                            customer_name: customerName,
+                            email: customerEmail,
+                            total: total,
+                            items: [...cart]
+                        }
+                    })
+                });
+
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                    orderIdEl.textContent = verifyData.id || 'ORDER_PLACED';
+                    cart = [];
+                    saveCart();
+                    updateCartUI();
+                    checkoutModal.classList.remove('active');
+                    successModal.classList.add('active');
+                } else {
+                    alert('Payment verification failed!');
+                }
+            },
+            prefill: {
+                name: customerName,
+                email: customerEmail,
+            },
+            theme: { color: "#ffde59" }
+        };
+
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+
     } catch (err) {
         console.error('Checkout error:', err);
-        alert('Backend server not reachable. Ensure it is running.');
+        alert('Payment initialization failed. Is the server running?');
     }
 }
 
@@ -804,7 +1045,7 @@ function renderOrders(searchQuery = '') {
     const ordersContainer = document.getElementById('orders-list');
     if (!ordersContainer) return; // Ensure we only run on orders.html
 
-    let orders = JSON.parse(localStorage.getItem('lifestyleOrders')) || [];
+    let orders = JSON.parse(localStorage.getItem('zubrikaOrders')) || [];
     
     if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -875,7 +1116,7 @@ function closeSuccessModal() {
 
 
 function openTracking(orderId) {
-    const orders = JSON.parse(localStorage.getItem('lifestyleOrders')) || [];
+    const orders = JSON.parse(localStorage.getItem('zubrikaOrders')) || [];
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 

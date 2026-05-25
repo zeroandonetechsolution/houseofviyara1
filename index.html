@@ -10,12 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <header class="header">
         <div class="header-container">
             <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none;">Life Style</a></h1>
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">LUMINA</a></h1>
             </div>
             <nav class="nav">
                 <ul class="nav-links">
@@ -33,11 +35,14 @@
                 <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
+                <button class="icon-btn search-btn" aria-label="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
                 <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
                     <i class="fas fa-truck"></i>
-                </a>
-                <a href="admin.html" class="icon-btn" aria-label="Admin Dashboard" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
-                    <i class="fas fa-user brutal-admin-icon"></i>
                 </a>
                 <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
                     <i class="fas fa-shopping-bag"></i>
@@ -49,6 +54,37 @@
             </div>
         </div>
     </header>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-overlay"></div>
+    <div class="auth-modal" id="auth-modal">
+        <button class="close-modal-btn" id="close-auth-btn">&times;</button>
+        <div class="auth-content">
+            <h2>WELCOME BACK</h2>
+            <p>Login to LUMINA for a personalized experience.</p>
+            
+            <div id="google-login-btn" style="margin: 20px 0;"></div>
+            
+            <div class="auth-divider"><span>OR USE OTP</span></div>
+            
+            <div id="otp-request-step">
+                <div class="form-group">
+                    <label>Email or Phone</label>
+                    <input type="text" class="brutal-input" id="auth-target" placeholder="you@example.com or +91...">
+                </div>
+                <button class="btn btn-primary" id="send-otp-btn" style="width: 100%; margin-top: 15px;">SEND OTP</button>
+            </div>
+            
+            <div id="otp-verify-step" style="display: none;">
+                <div class="form-group">
+                    <label>Enter 6-Digit OTP</label>
+                    <input type="text" class="brutal-input" id="auth-otp" placeholder="123456" maxlength="6">
+                </div>
+                <button class="btn btn-primary" id="verify-otp-btn" style="width: 100%; margin-top: 15px;">VERIFY & LOGIN</button>
+                <button class="btn-text" id="resend-otp-btn" style="margin-top: 10px;">Didn't get it? Resend</button>
+            </div>
+        </div>
+    </div>
 
     <div class="mobile-menu" id="mobile-menu">
         <button class="close-menu-btn" id="close-menu-btn">&times;</button>
