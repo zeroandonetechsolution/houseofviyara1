@@ -1,115 +1,44 @@
 // Product Data
-const products = [
-    {
-        id: 1,
-        title: "Azure Noir - Premium Men's Fragrance",
-        brand: "LUMINA",
-        price: 2499,
-        originalPrice: 3499,
-        discount: 28,
-        rating: 4.9,
-        reviews: 210,
-        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80",
-        isNew: true,
-        category: "perfumes"
-    },
-    {
-        id: 2,
-        title: "Cloud Walker - Ultra Soft Plush Slippers",
-        brand: "LUMINA",
-        price: 899,
-        originalPrice: 1299,
-        discount: 30,
-        rating: 4.8,
-        reviews: 156,
-        image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&q=80",
-        isNew: true,
-        category: "slippers"
-    },
-    {
-        id: 3,
-        title: "Velvet Rose - Intense Floral Perfume",
-        brand: "LUMINA",
-        price: 1899,
-        originalPrice: 2599,
-        discount: 27,
-        rating: 4.7,
-        reviews: 89,
-        image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&q=80",
-        isNew: false,
-        category: "perfumes"
-    },
-    {
-        id: 4,
-        title: "Urban Slide - Streetwear Rubber Slippers",
-        brand: "LUMINA",
-        price: 1299,
-        originalPrice: 1999,
-        discount: 35,
-        rating: 4.6,
-        reviews: 342,
-        image: "https://images.unsplash.com/photo-1603487788363-278185277a44?w=600&q=80",
-        isNew: true,
-        category: "slippers"
-    },
-    {
-        id: 5,
-        title: "Oud Wood - Deep Woody Fragrance",
-        brand: "LUMINA",
-        price: 3299,
-        originalPrice: 4499,
-        discount: 26,
-        rating: 5.0,
-        reviews: 67,
-        image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80",
-        isNew: false,
-        category: "perfumes"
-    },
-    {
-        id: 6,
-        title: "Lounge Master - Premium Leather Slides",
-        brand: "LUMINA",
-        price: 1699,
-        originalPrice: 2299,
-        discount: 26,
-        rating: 4.5,
-        reviews: 112,
-        image: "https://images.unsplash.com/photo-1591561582301-709971568405?w=600&q=80",
-        isNew: false,
-        category: "slippers"
-    },
-    {
-        id: 7,
-        title: "Citrus Burst - Fresh Eau De Parfum",
-        brand: "LUMINA",
-        price: 1499,
-        originalPrice: 1999,
-        discount: 25,
-        rating: 4.8,
-        reviews: 430,
-        image: "https://images.unsplash.com/photo-1557170334-a9632e77c6e4?w=600&q=80",
-        isNew: true,
-        category: "perfumes"
-    },
-    {
-        id: 8,
-        title: "Cozy Toes - Fur Lined Winter Slippers",
-        brand: "LUMINA",
-        price: 999,
-        originalPrice: 1499,
-        discount: 33,
-        rating: 4.9,
-        reviews: 530,
-        image: "https://images.unsplash.com/photo-1610413336685-397b760c87d4?w=600&q=80",
-        isNew: false,
-        category: "slippers"
+let products = []; // Now fetched from backend
+
+async function fetchProductsFromBackend() {
+    try {
+        const response = await fetch(`${API_URL}/api/products`);
+        if (response.ok) {
+            products = await response.json();
+            // Adapt backend field names to frontend if needed
+            products = products.map(p => ({
+                id: p.id,
+                title: p.name,
+                brand: p.brand || 'LUMINA',
+                price: p.price,
+                originalPrice: p.original_price,
+                discount: p.original_price ? Math.round(((p.original_price - p.price) / p.original_price) * 100) : 0,
+                rating: 4.8, // Mock rating if not in DB
+                reviews: 120, // Mock reviews if not in DB
+                image: p.image_url.startsWith('/') ? `${API_URL}${p.image_url}` : p.image_url,
+                isNew: p.is_new === 1,
+                category: p.category
+            }));
+            
+            if (document.getElementById('product-list')) {
+                applyFilters();
+            }
+        }
+    } catch (err) {
+        console.error('Failed to fetch products:', err);
     }
-];
+}
 
 // State
 let cart = JSON.parse(localStorage.getItem('zubrikaCart')) || [];
 let selectedSize = 'L'; // Default size for modal
-const API_URL = 'http://localhost:3000';
+
+// Dynamic API URL: Use production backend if on live site, else localhost
+const API_URL = window.location.hostname === 'life-style-gamma.vercel.app' 
+    ? 'https://life-style-production.up.railway.app' // Replace with your actual deployed backend URL
+    : 'http://localhost:3000';
+
 let socket;
 let currentUser = JSON.parse(localStorage.getItem('luminaUser')) || null;
 
@@ -135,7 +64,7 @@ if (typeof io !== 'undefined') {
 window.onload = function () {
     if (typeof google !== 'undefined') {
         google.accounts.id.initialize({
-            client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Replace with real ID
+            client_id: "572682440348-vfaaljc997ee9q3175i3rj3155lvs13t.apps.googleusercontent.com",
             callback: handleGoogleLogin
         });
         google.accounts.id.renderButton(
@@ -328,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('product-list')) {
-        applyFilters();
+        fetchProductsFromBackend();
     }
     
     if (document.getElementById('orders-list')) {
@@ -988,7 +917,7 @@ async function completeCheckout() {
 
         // 2. Open Razorpay Checkout
         const options = {
-            key: "YOUR_RAZORPAY_KEY_ID", // Replace with real key
+            key: "rzp_test_your_key_here", // This should match RAZORPAY_KEY_ID in backend .env
             amount: rzpOrder.amount,
             currency: rzpOrder.currency,
             name: "LUMINA",
@@ -996,6 +925,7 @@ async function completeCheckout() {
             order_id: rzpOrder.id,
             handler: async function (response) {
                 // 3. Verify Payment on backend
+                const newOrderId = 'LUM-' + Math.floor(100000 + Math.random() * 900000);
                 const verifyRes = await fetch(`${API_URL}/api/payments/verify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1004,7 +934,7 @@ async function completeCheckout() {
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_signature: response.razorpay_signature,
                         order_details: {
-                            id: 'LUM-' + Math.floor(Math.random() * 1000000),
+                            id: newOrderId,
                             customer_name: customerName,
                             email: customerEmail,
                             total: total,
@@ -1015,7 +945,19 @@ async function completeCheckout() {
 
                 const verifyData = await verifyRes.json();
                 if (verifyData.success) {
-                    orderIdEl.textContent = verifyData.id || 'ORDER_PLACED';
+                    orderIdEl.textContent = newOrderId;
+                    
+                    // Add to local history too
+                    const localOrders = JSON.parse(localStorage.getItem('zubrikaOrders')) || [];
+                    localOrders.unshift({
+                        id: newOrderId,
+                        date: new Date().toISOString(),
+                        total: total,
+                        items: [...cart],
+                        status: 'Processing'
+                    });
+                    localStorage.setItem('zubrikaOrders', JSON.stringify(localOrders));
+
                     cart = [];
                     saveCart();
                     updateCartUI();

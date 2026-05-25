@@ -1,17 +1,96 @@
-const API_URL = 'https://life-style-production.up.railway.app/api';
+const API_URL = window.location.hostname === 'life-style-gamma.vercel.app' 
+    ? 'https://life-style-production.up.railway.app/api' 
+    : 'http://localhost:3000/api';
 
 // Tab Switching
 function switchTab(tabId) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
 
+    // Hide all tabs
+    document.getElementById('products-tab').style.display = 'none';
+    document.getElementById('add-product-tab').style.display = 'none';
+    document.getElementById('orders-tab').style.display = 'none';
+
     if (tabId === 'products') {
         document.getElementById('products-tab').style.display = 'block';
-        document.getElementById('add-product-tab').style.display = 'none';
         fetchProducts();
+    } else if (tabId === 'orders') {
+        document.getElementById('orders-tab').style.display = 'block';
+        fetchOrders();
     } else {
-        document.getElementById('products-tab').style.display = 'none';
         document.getElementById('add-product-tab').style.display = 'block';
+    }
+}
+
+// Fetch Orders
+async function fetchOrders() {
+    const tbody = document.getElementById('orders-tbody');
+    try {
+        const response = await fetch(`${API_URL.replace('/api', '')}/api/orders/all`); // Assuming we add an all orders endpoint
+        // If the endpoint doesn't exist yet, we'll handle the error or mock it
+        if (!response.ok) {
+            // Fallback for demo if endpoint not yet added to server.js
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Order API not fully configured. Showing mock data...</td></tr>';
+            return;
+        }
+        
+        const orders = await response.json();
+        renderOrdersTable(orders);
+    } catch (error) {
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">Error loading orders.</td></tr>`;
+    }
+}
+
+function renderOrdersTable(orders) {
+    const tbody = document.getElementById('orders-tbody');
+    if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No orders found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = orders.map(o => `
+        <tr>
+            <td style="font-weight: 800;">${o.id}</td>
+            <td>
+                <div style="font-weight: 600;">${o.customer_name}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${o.email}</div>
+            </td>
+            <td style="font-weight: 800;">₹${o.total}</td>
+            <td>
+                <select onchange="updateOrderStatus('${o.id}', this.value)" class="status-select ${o.status.toLowerCase()}">
+                    <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                    <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                    <option value="Out for Delivery" ${o.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                    <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                </select>
+            </td>
+            <td>${new Date(o.created_at).toLocaleDateString()}</td>
+            <td>
+                <button class="action-btn" onclick="viewOrderDetails('${o.id}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        const response = await fetch(`${API_URL.replace('/api', '')}/api/admin/update-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: orderId, status: newStatus })
+        });
+        
+        if (response.ok) {
+            showToast(`Order ${orderId} updated to ${newStatus}`);
+        } else {
+            throw new Error('Failed to update status');
+        }
+    } catch (error) {
+        showToast(error.message, true);
     }
 }
 

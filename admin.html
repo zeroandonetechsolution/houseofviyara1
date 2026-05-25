@@ -448,6 +448,9 @@
         <a href="#products" class="nav-item active" onclick="switchTab('products')">
             <i class="fas fa-box"></i> Products
         </a>
+        <a href="#orders" class="nav-item" onclick="switchTab('orders')">
+            <i class="fas fa-shopping-cart"></i> Orders
+        </a>
         <a href="#add-product" class="nav-item" onclick="switchTab('add-product')">
             <i class="fas fa-plus-circle"></i> Add New Product
         </a>
@@ -488,6 +491,37 @@
                         </thead>
                         <tbody id="products-tbody">
                             <tr><td colspan="7" style="text-align: center;">Loading products...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Tab -->
+        <div id="orders-tab" style="display: none;">
+            <div class="header">
+                <h1>Live Orders</h1>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Order Management</span>
+                    <input type="text" id="search-orders" placeholder="Search by ID or customer..." style="width: 250px; padding: 0.5rem 1rem;">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                            <tr><td colspan="6" style="text-align: center;">Loading orders...</td></tr>
                         </tbody>
                     </table>
                 </div>

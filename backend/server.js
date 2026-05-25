@@ -11,9 +11,28 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
+
+// Configure Multer for File Uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, 'uploads');
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage });
+
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
@@ -63,6 +82,19 @@ async function initDb() {
             items TEXT,
             payment_status TEXT DEFAULT 'Pending',
             razorpay_order_id TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            brand TEXT,
+            price REAL NOT NULL,
+            original_price REAL,
+            category TEXT,
+            image_url TEXT,
+            description TEXT,
+            is_new BOOLEAN DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
@@ -190,7 +222,58 @@ app.post('/api/payments/verify', async (req, res) => {
     }
 });
 
+// --- Product Routes ---
+app.get('/api/products', async (req, res) => {
+    try {
+        const products = await db.all('SELECT * FROM products ORDER BY created_at DESC');
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/products', upload.single('image'), async (req, res) => {
+    try {
+        let { name, brand, price, originalPrice, category, imageUrl, description, isNew } = req.body;
+        
+        // If a file was uploaded, use its path as the image URL
+        if (req.file) {
+            imageUrl = `/uploads/${req.file.filename}`;
+        }
+
+        const result = await db.run(
+            'INSERT INTO products (name, brand, price, original_price, category, image_url, description, is_new) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, brand, price, originalPrice, category, imageUrl, description, isNew === 'true' || isNew === true ? 1 : 0]
+        );
+        res.status(201).json({ id: result.lastID, name, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+    const { name, price, originalPrice, description } = req.body;
+    try {
+        await db.run(
+            'UPDATE products SET name = ?, price = ?, original_price = ?, description = ? WHERE id = ?',
+            [name, price, originalPrice, description, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- Existing API Routes ---
+app.get('/api/orders/all', async (req, res) => {
+    try {
+        const orders = await db.all('SELECT * FROM orders ORDER BY created_at DESC');
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/orders/:id', async (req, res) => {
     try {
         const order = await db.get('SELECT * FROM orders WHERE id = ?', req.params.id);
