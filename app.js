@@ -292,7 +292,7 @@ function saveCart() {
 
 function updateCartBadge() {
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-    const badges = document.querySelectorAll('.cart-count, #cart-badge');
+    const badges = document.querySelectorAll('.cart-count, #cart-badge, #mobile-cart-badge');
     badges.forEach(badge => {
         if (badge) {
             badge.innerText = totalItems;
@@ -393,17 +393,39 @@ function showSuccessModal(orderId) {
 }
 
 // --- UI Helpers ---
-function openCart() {
+window.openCart = function() {
     document.getElementById('cart-drawer').classList.add('active');
     document.getElementById('cart-overlay').classList.add('active');
     document.body.style.overflow = 'hidden';
     renderCartItems();
 }
 
-function closeCart() {
+window.closeCart = function() {
     document.getElementById('cart-drawer').classList.remove('active');
     document.getElementById('cart-overlay').classList.remove('active');
     document.body.style.overflow = '';
+}
+
+window.toggleCart = function() {
+    const drawer = document.getElementById('cart-drawer');
+    if (drawer.classList.contains('active')) {
+        closeCart();
+    } else {
+        openCart();
+    }
+}
+
+window.toggleMenu = function() {
+    const menu = document.getElementById('mobile-menu');
+    if (menu) {
+        menu.classList.toggle('active');
+        // Prevent body scroll when menu is open
+        if (menu.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
 }
 
 function setupEventListeners() {
