@@ -21,15 +21,14 @@
             </div>
             <nav class="nav">
                 <ul class="nav-links">
-                    <li><a href="collections.html?category=new">New Arrivals</a></li>
                     <li><a href="perfumes.html">Perfumes</a></li>
                     <li><a href="slippers.html">Slippers</a></li>
-                    <li><a href="collections.html">Full Collection</a></li>
+                    <li><a href="accessories.html">Accessories</a></li>
                 </ul>
             </nav>
             <div class="header-search-container">
                 <i class="fas fa-search header-search-icon"></i>
-                <input type="text" class="header-search-input" placeholder="Search for products..." id="desktop-search-input">
+                <input type="text" class="header-search-input" placeholder="SEARCH..." id="desktop-search-input">
             </div>
             <div class="header-actions">
                 <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
@@ -40,9 +39,6 @@
                 </button>
                 <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
                     <i class="fas fa-truck"></i>
-                </a>
-                <a href="admin.html" class="icon-btn" aria-label="Admin Dashboard" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
-                    <i class="fas fa-user brutal-admin-icon"></i>
                 </a>
                 <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
                     <i class="fas fa-shopping-bag"></i>
@@ -58,7 +54,7 @@
     <!-- Auth Modal -->
     <div class="modal-overlay" id="auth-overlay"></div>
     <div class="auth-modal" id="auth-modal">
-        <button class="close-modal-btn" id="close-auth-btn">&times;</button>
+        <button class="close-modal-btn" id="close-auth-btn"><i class="fas fa-times"></i></button>
         <div class="auth-content">
             <h2>WELCOME BACK</h2>
             <p>Login to Life Style for a personalized experience.</p>
@@ -103,7 +99,7 @@
     <div class="cart-drawer" id="cart-drawer">
         <div class="cart-header">
             <h2>YOUR BAG</h2>
-            <button class="close-cart-btn" id="close-cart-btn">&times;</button>
+            <button class="close-cart-btn" id="close-cart-btn"><i class="fas fa-times"></i></button>
         </div>
         <div class="cart-items" id="cart-items-container">
             <div class="empty-cart" id="empty-cart-msg">
@@ -189,7 +185,7 @@
                 <ul>
                     <li><a href="perfumes.html">Perfumes</a></li>
                     <li><a href="slippers.html">Slippers</a></li>
-                    <li><a href="collections.html?category=new">New Arrivals</a></li>
+                    <li><a href="collections.html">New Arrivals</a></li>
                     <li><a href="collections.html">Full Collection</a></li>
                 </ul>
             </div>
@@ -197,7 +193,7 @@
                 <h4>HELP</h4>
                 <ul>
                     <li><a href="orders.html">Track Order</a></li>
-                    <li><a href="#">Returns & Exchanges</a></li>
+                    <li><a href="return-policy.html">Returns & Exchanges</a></li>
                     <li><a href="#">Shipping Info</a></li>
                     <li><a href="#">Contact Us</a></li>
                 </ul>
@@ -205,26 +201,28 @@
             <div class="footer-links">
                 <h4>LEGAL</h4>
                 <ul>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Service</a></li>
+                    <li><a href="data-safety.html">Data Safety</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
             <p>&copy; 2026 Life Style. All Rights Reserved.</p>
+            <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
         </div>
     </footer>
 
     <!-- Product Quick View Modal -->
     <div class="modal-overlay" id="pdp-overlay"></div>
     <div class="pdp-modal" id="pdp-modal">
-        <button class="close-modal-btn" id="close-pdp-btn">&times;</button>
+        <button class="close-modal-btn" id="close-pdp-btn"><i class="fas fa-times"></i></button>
         <div class="pdp-content" id="pdp-content"></div>
     </div>
 
     <!-- Checkout Modal -->
     <div class="checkout-modal" id="checkout-modal">
-        <button class="close-modal-btn" id="close-checkout-btn">&times;</button>
+        <button class="close-modal-btn" id="close-checkout-btn"><i class="fas fa-times"></i></button>
         <div class="checkout-content">
             <h2 style="margin-bottom: 20px; font-size: 2rem;">CHECKOUT</h2>
             
@@ -257,15 +255,20 @@
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label style="display: block; font-weight: 800; margin-bottom: 5px;">PIN CODE</label>
-                                <input type="text" id="checkout-pin" class="brutal-input" placeholder="400001" style="width: 100%; border: 3px solid #000; padding: 10px;">
-                            </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div class="form-group">
                                 <label style="display: block; font-weight: 800; margin-bottom: 5px;">CITY</label>
                                 <input type="text" id="checkout-city" class="brutal-input" placeholder="Mumbai" style="width: 100%; border: 3px solid #000; padding: 10px;">
                             </div>
+                            <div class="form-group">
+                                <label style="display: block; font-weight: 800; margin-bottom: 5px;">STATE</label>
+                                <input type="text" id="checkout-state" class="brutal-input" placeholder="Maharashtra" style="width: 100%; border: 3px solid #000; padding: 10px;">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; margin-bottom: 5px;">PIN CODE</label>
+                            <input type="text" id="checkout-pin" class="brutal-input" placeholder="400001" style="width: 100%; border: 3px solid #000; padding: 10px;">
                         </div>
                         
                         <div class="form-group" style="margin-top: 15px;">
@@ -327,6 +330,7 @@
         </div>
     </div>
 
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

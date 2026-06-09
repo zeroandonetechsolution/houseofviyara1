@@ -1,7 +1,28 @@
 // Global State
 let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
-const API_URL = window.location.origin;
+
+// Determine API URL: Use current hostname but port 3001 if not already on it
+const API_URL = window.location.port === '3001' ? '' : `${window.location.protocol}//${window.location.hostname}:3001`;
+
+// Client-side cache for products
+const productCache = new Map();
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+// Fetch with timeout helper
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 8000 } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(resource, { ...options, signal: controller.signal });
+        return response;
+    } finally {
+        clearTimeout(id);
+    }
+}
+
+let searchTimeout;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,7 +31,87 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartBadge();
     renderProducts();
     setupEventListeners();
+    setupSearch();
+    checkPaymentStatus();
+    registerServiceWorker();
 });
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Error:', err));
+    }
+}
+
+// Hide Preloader on Window Load (Minimum 5.5 seconds)
+const pageStartTime = Date.now();
+window.addEventListener('load', () => {
+    const preloader = document.getElementById('preloader');
+    if (preloader) {
+        const elapsed = Date.now() - pageStartTime;
+        const remaining = Math.max(0, 5500 - elapsed);
+        
+        setTimeout(() => {
+            preloader.classList.add('fade-out');
+        }, remaining);
+    }
+});
+
+function showPreloader() {
+    const preloader = document.getElementById('preloader');
+    if (preloader) preloader.classList.remove('fade-out');
+}
+
+function hidePreloader() {
+    const preloader = document.getElementById('preloader');
+    if (preloader) preloader.classList.add('fade-out');
+}
+
+// --- Payment Status Check ---
+function checkPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('payment');
+    const txnid = urlParams.get('txnid');
+
+    if (status === 'success') {
+        // Find order ID from backend using txnid
+        fetch(`${API_URL}/api/admin/orders`)
+            .then(res => res.json())
+            .then(orders => {
+                const order = orders.find(o => o.txnid === txnid);
+                if (order) {
+                    showSuccessModal(order.id);
+                    cart = [];
+                    saveCart();
+                    updateCartBadge();
+                }
+            });
+        
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (status === 'failed') {
+        alert('Payment was cancelled or failed.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+// --- Search Implementation ---
+function setupSearch() {
+    const desktopSearch = document.getElementById('desktop-search-input');
+    const mobileSearch = document.getElementById('mobile-search-input');
+
+    const handleSearch = (e) => {
+        clearTimeout(searchTimeout);
+        const term = e.target.value.trim();
+        searchTimeout = setTimeout(() => {
+            renderProducts(window.category || '', term);
+        }, 500);
+    };
+
+    if (desktopSearch) desktopSearch.addEventListener('input', handleSearch);
+    if (mobileSearch) mobileSearch.addEventListener('input', handleSearch);
+}
 
 // --- Theme Management ---
 function initTheme() {
@@ -36,19 +137,33 @@ function toggleTheme() {
 // --- Authentication ---
 function initAuth() {
     if (user) {
-        document.getElementById('open-auth-btn').innerHTML = `<i class="fas fa-user"></i>`;
+        const authBtn = document.getElementById('open-auth-btn');
+        if (authBtn) {
+            authBtn.innerHTML = `<i class="fas fa-user"></i>`;
+        }
     }
 
-    // Google Sign-In
+    // Google Sign-In Initialization
     if (window.google) {
         google.accounts.id.initialize({
             client_id: "572682440348-vfaaljc997ee9q3175i3rj3155lvs13t.apps.googleusercontent.com",
             callback: handleGoogleResponse
         });
-        google.accounts.id.renderButton(
-            document.getElementById("google-login-btn"),
-            { theme: "outline", size: "large", width: "100%" }
-        );
+        
+        // One Tap prompt
+        google.accounts.id.prompt();
+
+        // Handle Custom Google Button Click
+        const customGoogleBtn = document.getElementById('google-auth-btn');
+        if (customGoogleBtn) {
+            customGoogleBtn.onclick = () => {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        console.log('Google prompt not displayed.');
+                    }
+                });
+            };
+        }
     }
 }
 
@@ -67,54 +182,25 @@ async function handleGoogleResponse(response) {
     }
 }
 
-// OTP Auth
-const sendOtpBtn = document.getElementById('send-otp-btn');
-if (sendOtpBtn) {
-    sendOtpBtn.onclick = async () => {
-        const email = document.getElementById('auth-target').value;
-        if (!email) return alert('Please enter email');
-        
-        const res = await fetch(`${API_URL}/api/auth/send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        if (res.ok) {
-            document.getElementById('otp-request-step').style.display = 'none';
-            document.getElementById('otp-verify-step').style.display = 'block';
-        }
-    };
-}
-
-const verifyOtpBtn = document.getElementById('verify-otp-btn');
-if (verifyOtpBtn) {
-    verifyOtpBtn.onclick = async () => {
-        const email = document.getElementById('auth-target').value;
-        const otp = document.getElementById('auth-otp').value;
-        
-        const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, otp })
-        });
-        const data = await res.json();
-        if (data.token) {
-            localStorage.setItem('lifestyle_token', data.token);
-            localStorage.setItem('lifestyle_user', JSON.stringify(data.user));
-            user = data.user;
-            location.reload();
-        } else {
-            alert(data.error);
-        }
-    };
+// Logout logic
+function logoutUser() {
+    localStorage.removeItem('lifestyle_user');
+    user = null;
+    location.reload();
 }
 
 // --- Product Management ---
-async function renderProducts() {
+// Check if current device is mobile
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+async function renderProducts(searchTerm = '') {
     const productList = document.getElementById('product-list');
     if (!productList) return;
 
-    // Determine category from page URL or window variable or query param
+    productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-weight: 800;">LOADING LUXURY COLLECTION...</div>`;
+
     let category = window.category || '';
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get('category');
@@ -127,34 +213,63 @@ async function renderProducts() {
         if (window.location.pathname.includes('accessories')) category = 'accessories';
     }
 
-    const res = await fetch(`${API_URL}/api/products${category ? `?category=${category}` : ''}`);
-    let products = await res.json();
+    try {
+        let cacheKey = `${category}-${searchTerm}`;
+        let products;
 
-    // Limit to 4 products for trending section on home page
-    if (productList.id === 'trending') {
-        products = products.slice(0, 4);
-    }
+        if (productCache.has(cacheKey) && (Date.now() - productCache.get(cacheKey).timestamp < CACHE_EXPIRY)) {
+            products = productCache.get(cacheKey).data;
+        } else {
+            const params = new URLSearchParams();
+            if (category) params.append('category', category);
+            if (searchTerm) params.append('search', searchTerm);
+            
+            const url = `${API_URL}/api/products${params.toString() ? '?' + params.toString() : ''}`;
 
-    if (products.length === 0) {
-        productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; font-weight: 800;">NO PRODUCTS FOUND IN THIS CATEGORY.</div>`;
-        return;
-    }
+            const res = await fetchWithTimeout(url, { cache: 'default' });
+            if (!res.ok) throw new Error('Failed to fetch products');
+            
+            products = await res.json();
+            productCache.set(cacheKey, { data: products, timestamp: Date.now() });
+        }
 
-    productList.innerHTML = products.map(p => `
-        <div class="product-card">
-            <div class="product-img">
-                <img src="${p.image_url}" alt="${p.name}">
-                <button class="add-to-cart-overlay" onclick="addToCart(${p.id}, '${p.name}', ${p.price}, '${p.image_url}')">
-                    <i class="fas fa-plus"></i> ADD TO BAG
-                </button>
+        if (productList.closest('#trending')) {
+            products = products.slice(0, 4);
+        }
+
+        if (products.length === 0) {
+            productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; font-weight: 800;">NO PRODUCTS FOUND.</div>`;
+            return;
+        }
+
+        productList.innerHTML = products.map(p => {
+            // Optimize image size by requesting smaller thumbnails from Unsplash
+            const optimizedImg = p.image_url.includes('unsplash.com') 
+                ? p.image_url.replace(/w=\d+/, 'w=400').replace(/q=\d+/, 'q=60')
+                : p.image_url;
+
+            return `
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="${optimizedImg}" alt="${p.name}" loading="lazy" width="400" height="400">
+                    <button class="add-to-cart-overlay" onclick="addToCart(${p.id}, '${p.name}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                        <i class="fas fa-plus"></i> ADD TO BAG
+                    </button>
+                </div>
+                <div class="product-info">
+                    <h3>${p.name}</h3>
+                    <p>${p.description}</p>
+                    <div class="product-price">
+                        <span class="current-price">₹${p.offer_price || p.price}</span>
+                        ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
+                    </div>
+                </div>
             </div>
-            <div class="product-info">
-                <h3>${p.name}</h3>
-                <p>${p.description}</p>
-                <div class="product-price">₹${p.price}</div>
-            </div>
-        </div>
-    `).join('');
+        `}).join('');
+    } catch (error) {
+        console.error('Render Error:', error);
+        productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--accent-pink); font-weight: 800;">ERROR CONNECTING TO SERVER.</div>`;
+    }
 }
 
 // --- Cart Logic ---
@@ -176,10 +291,14 @@ function saveCart() {
 }
 
 function updateCartBadge() {
-    const badge = document.getElementById('cart-badge');
-    if (badge) {
-        badge.innerText = cart.reduce((acc, item) => acc + item.quantity, 0);
-    }
+    const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+    const badges = document.querySelectorAll('.cart-count, #cart-badge');
+    badges.forEach(badge => {
+        if (badge) {
+            badge.innerText = totalItems;
+            badge.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
+    });
 }
 
 function renderCartItems() {
@@ -189,7 +308,7 @@ function renderCartItems() {
 
     if (cart.length === 0) {
         container.innerHTML = `<div class="empty-cart"><i class="fas fa-box-open"></i><p>Your bag is empty.</p></div>`;
-        totalPrice.innerText = '₹0';
+        if (totalPrice) totalPrice.innerText = '₹0';
         return;
     }
 
@@ -200,17 +319,17 @@ function renderCartItems() {
                 <h4>${item.name}</h4>
                 <p>₹${item.price} x ${item.quantity}</p>
                 <div class="cart-item-qty">
-                    <button onclick="changeQty(${index}, -1)">-</button>
+                    <button onclick="changeQty(${index}, -1)"><i class="fas fa-minus"></i></button>
                     <span>${item.quantity}</span>
-                    <button onclick="changeQty(${index}, 1)">+</button>
+                    <button onclick="changeQty(${index}, 1)"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-            <button class="remove-item" onclick="removeItem(${index})">&times;</button>
+            <button class="remove-item" onclick="removeItem(${index})"><i class="fas fa-times"></i></button>
         </div>
     `).join('');
 
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    totalPrice.innerText = `₹${total}`;
+    if (totalPrice) totalPrice.innerText = `₹${total}`;
 }
 
 function changeQty(index, delta) {
@@ -228,88 +347,47 @@ function removeItem(index) {
     renderCartItems();
 }
 
-// --- Checkout & PayU ---
+// --- Checkout Logic ---
 async function completeCheckout() {
     if (!user) {
+        document.getElementById('cart-drawer').classList.remove('active');
+        document.getElementById('cart-overlay').classList.remove('active');
         document.getElementById('auth-modal').classList.add('active');
         document.getElementById('auth-overlay').classList.add('active');
+        alert('Please login to complete your order.');
         return;
     }
 
-    const name = document.getElementById('checkout-name').value;
-    const email = document.getElementById('checkout-email').value;
-    const phone = document.getElementById('checkout-phone').value;
-    const street = document.getElementById('checkout-street').value;
-    const city = document.getElementById('checkout-city').value;
-    const state = document.getElementById('checkout-state').value;
-    const pin = document.getElementById('checkout-pin').value;
-
-    if (!name || !email || !phone || !street) return alert('Please fill all details');
-
-    const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100; // +100 shipping
+    const name = user.email.split('@')[0];
+    const email = user.email;
+    const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
     const txnid = 'TXN' + Date.now();
-    const productinfo = cart.map(i => i.name).join(', ');
 
-    // 1. Get PayU Hash
-    const hashRes = await fetch(`${API_URL}/api/payments/payu-hash`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txnid, amount, productinfo, firstname: name, email })
-    });
-    const { hash } = await hashRes.json();
-
-    // 2. Save Order as Pending
-    const orderRes = await fetch(`${API_URL}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            user_id: user.id,
-            items: cart,
-            total_amount: amount,
-            shipping_address: { street, city, state, pin },
-            txnid
-        })
-    });
-    const { orderId } = await orderRes.json();
-
-    // 3. Launch PayU Bolt
-    if (window.bolt) {
-        bolt.launch({
-            key: 'vz4Z7h',
-            txnid: txnid,
-            hash: hash,
-            amount: amount,
-            firstname: name,
-            email: email,
-            phone: phone,
-            productinfo: productinfo,
-            surl: `${API_URL}/api/payments/verify`,
-            furl: `${API_URL}/api/payments/verify`
-        }, {
-            responseHandler: async function(boltResponse) {
-                const verifyRes = await fetch(`${API_URL}/api/payments/verify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(boltResponse.response)
-                });
-                const verifyData = await verifyRes.json();
-                if (verifyData.success) {
-                    showSuccessModal(orderId);
-                    cart = [];
-                    saveCart();
-                } else {
-                    alert('Payment Failed');
-                }
-            },
-            catchException: function(err) {
-                alert('Payment error occurred');
-            }
+    try {
+        const orderRes = await fetch(`${API_URL}/api/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: user.id,
+                items: cart,
+                total_amount: amount,
+                shipping_address: { street: 'Default Street', city: 'Default City', state: 'Default State', pin: '000000' },
+                txnid
+            })
         });
+        
+        if (!orderRes.ok) throw new Error('Order creation failed');
+
+        const orderData = await orderRes.json();
+        window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&orderId=${orderData.orderId}`;
+
+    } catch (error) {
+        console.error('Checkout Error:', error);
+        alert('Checkout failed.');
     }
 }
 
 function showSuccessModal(orderId) {
-    document.getElementById('checkout-modal').classList.remove('active');
     document.getElementById('success-modal').classList.add('active');
     document.getElementById('order-id').innerText = orderId;
 }
@@ -318,7 +396,7 @@ function showSuccessModal(orderId) {
 function openCart() {
     document.getElementById('cart-drawer').classList.add('active');
     document.getElementById('cart-overlay').classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent scroll
+    document.body.style.overflow = 'hidden';
     renderCartItems();
 }
 
@@ -330,89 +408,125 @@ function closeCart() {
 
 function setupEventListeners() {
     // Mobile Menu
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
     const closeMenuBtn = document.getElementById('close-menu-btn');
 
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.onclick = () => mobileMenu.classList.add('active');
-        if (closeMenuBtn) closeMenuBtn.onclick = () => mobileMenu.classList.remove('active');
-    }
+    if (menuBtn) menuBtn.onclick = () => menu.classList.add('active');
+    if (closeMenuBtn) closeMenuBtn.onclick = () => menu.classList.remove('active');
 
-    // Theme toggle
+    // Auth Modal
+    const authBtn = document.getElementById('open-auth-btn');
+    const authModal = document.getElementById('auth-modal');
+    const authOverlay = document.getElementById('auth-overlay');
+    const closeAuthBtn = document.getElementById('close-auth-btn');
+
+    if (authBtn) authBtn.onclick = () => {
+        authModal.classList.add('active');
+        authOverlay.classList.add('active');
+    };
+    if (closeAuthBtn) closeAuthBtn.onclick = () => {
+        authModal.classList.remove('active');
+        authOverlay.classList.remove('active');
+    };
+
+    // Settings Modal
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+
+    if (closeSettingsBtn) closeSettingsBtn.onclick = () => {
+        settingsModal.classList.remove('active');
+        settingsOverlay.classList.remove('active');
+    };
+
+    // Theme Toggle
     const themeBtn = document.getElementById('theme-toggle-btn');
     if (themeBtn) themeBtn.onclick = toggleTheme;
 
-    // Cart toggle
-    const openCartBtn = document.getElementById('open-cart-btn');
-    if (openCartBtn) openCartBtn.onclick = openCart;
-
+    // Cart Drawer
+    const cartBtn = document.getElementById('open-cart-btn');
     const closeCartBtn = document.getElementById('close-cart-btn');
-    if (closeCartBtn) closeCartBtn.onclick = closeCart;
-
     const cartOverlay = document.getElementById('cart-overlay');
+
+    if (cartBtn) cartBtn.onclick = openCart;
+    if (closeCartBtn) closeCartBtn.onclick = closeCart;
     if (cartOverlay) cartOverlay.onclick = closeCart;
 
-    // Auth modal
-    const openAuthBtn = document.getElementById('open-auth-btn');
-    if (openAuthBtn) {
-        openAuthBtn.onclick = () => {
-            document.getElementById('auth-modal').classList.add('active');
-            document.getElementById('auth-overlay').classList.add('active');
-        };
-    }
-
-    const closeAuthBtn = document.getElementById('close-auth-btn');
-    if (closeAuthBtn) {
-        closeAuthBtn.onclick = () => {
-            document.getElementById('auth-modal').classList.remove('active');
-            document.getElementById('auth-overlay').classList.remove('active');
-        };
-    }
-
-    // Checkout modal
+    // Checkout
     const checkoutBtn = document.querySelector('.checkout-btn');
-    if (checkoutBtn) {
-        checkoutBtn.onclick = () => {
-            if (cart.length === 0) return alert('Your bag is empty!');
-            closeCart();
-            document.getElementById('checkout-modal').classList.add('active');
-            document.getElementById('auth-overlay').classList.add('active');
-            
-            // Prep checkout items
-            const container = document.getElementById('checkout-items');
-            container.innerHTML = cart.map(item => `
-                <div class="checkout-item" style="display: flex; gap: 15px; margin-bottom: 15px; padding: 15px; border: 3px solid #000; background: #fff;">
-                    <img src="${item.image}" style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #000;">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 900; font-size: 1.1rem; text-transform: uppercase;">${item.name}</div>
-                        <div style="font-weight: 700; color: #666;">₹${item.price} x ${item.quantity}</div>
-                    </div>
-                    <div style="font-weight: 900; font-size: 1.1rem;">₹${item.price * item.quantity}</div>
-                </div>
-            `).join('');
-            
-            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-            document.getElementById('checkout-subtotal').innerText = `₹${subtotal}`;
-            document.getElementById('checkout-grandtotal').innerText = `₹${subtotal + 100}`;
-        };
+    if (checkoutBtn) checkoutBtn.onclick = completeCheckout;
+}
+
+// --- Settings Implementation ---
+function openSettings(type) {
+    const modal = document.getElementById('settings-modal');
+    const overlay = document.getElementById('settings-overlay');
+    const title = document.getElementById('settings-title');
+    const content = document.getElementById('settings-content');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenu) mobileMenu.classList.remove('active');
+
+    let html = '';
+    let headerText = '';
+
+    switch(type) {
+        case 'plus':
+            headerText = 'Life Style Plus';
+            html = `<div style="text-align:center; padding: 20px;"><i class="fas fa-crown" style="font-size: 4rem; color: var(--accent-yellow); margin-bottom: 20px;"></i><h3>GOLD MEMBER</h3><p>Exclusive benefits active.</p></div>`;
+            break;
+        case 'devices':
+            headerText = 'Manage Devices';
+            html = `<div class="settings-row"><div><h4>This Device</h4><p>Active Now</p></div><span style="color: var(--accent-green);">ACTIVE</span></div>`;
+            break;
+        case 'profile':
+            headerText = 'Edit Profile';
+            html = `<div class="form-group"><label>Full Name</label><input type="text" class="brutal-input" value="${user ? user.email.split('@')[0].toUpperCase() : 'GUEST'}"></div><button class="btn btn-primary" style="width:100%" onclick="alert('Profile Updated!')">SAVE</button>`;
+            break;
+        case 'cards':
+            headerText = 'Saved Cards';
+            html = `<div class="settings-row" style="background:#000; color:#fff; padding:15px; border:3px solid #000;"><h4>VISA •••• 4242</h4></div>`;
+            break;
+        case 'addresses':
+            headerText = 'Saved Addresses';
+            html = `<div class="settings-row" style="border:3px solid #000; padding:15px;"><h4>Home</h4><p>123 Luxury Lane, Beverly Hills</p></div>`;
+            break;
+        case 'language':
+            headerText = 'Language';
+            html = `<div class="custom-radio"><input type="radio" checked> <label>English (UK)</label></div>`;
+            break;
+        case 'notifications':
+            headerText = 'Notifications';
+            html = `<div class="settings-row"><div><h4>Order Updates</h4></div><label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label></div>`;
+            break;
+        case 'reviews':
+            headerText = 'My Reviews';
+            html = `<div style="text-align:center; padding:20px;"><p>No reviews yet.</p></div>`;
+            break;
+        case 'qa':
+            headerText = 'Questions & Answers';
+            html = `<div style="text-align:center; padding:20px;"><p>No questions yet.</p></div>`;
+            break;
+        case 'policies':
+            headerText = 'Policies';
+            html = `<div style="font-size:0.9rem;"><h4>Privacy Policy</h4><p>Your data is safe.</p></div>`;
+            break;
+        case 'faqs':
+            headerText = 'FAQs';
+            html = `<div style="font-size:0.9rem;"><h4>How to return?</h4><p>Contact support within 30 days.</p></div>`;
+            break;
     }
 
-    const closeCheckoutBtn = document.getElementById('close-checkout-btn');
-    const authOverlay = document.getElementById('auth-overlay');
-    
-    if (closeCheckoutBtn) {
-        closeCheckoutBtn.onclick = () => {
-            document.getElementById('checkout-modal').classList.remove('active');
-            document.getElementById('auth-overlay').classList.remove('active');
-        };
-    }
+    if (title) title.innerText = headerText.toUpperCase();
+    if (content) content.innerHTML = html;
+    if (modal) modal.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+}
 
-    if (authOverlay) {
-        authOverlay.onclick = () => {
-            document.getElementById('auth-modal').classList.remove('active');
-            document.getElementById('checkout-modal').classList.remove('active');
-            authOverlay.classList.remove('active');
-        };
-    }
+function closeSettings() {
+    const modal = document.getElementById('settings-modal');
+    const overlay = document.getElementById('settings-overlay');
+    if (modal) modal.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
 }

@@ -17,7 +17,7 @@ function walkAndReplace(dir) {
             const ext = path.extname(filePath);
             if (['.html', '.js', '.css', '.json'].includes(ext)) {
                 let content = fs.readFileSync(filePath, 'utf8');
-                let newContent = content.replace(/Zubrika/g, 'Life Style');
+                let newContent = content.replace(/Life Style/g, 'Life Style');
                 if (content !== newContent) {
                     fs.writeFileSync(filePath, newContent, 'utf8');
                     console.log(`Updated: ${filePath}`);
@@ -27,6 +27,6 @@ function walkAndReplace(dir) {
     });
 }
 
-console.log('Starting brand replacement...');
+console.log('Starting brand replacement in demo...');
 walkAndReplace(directoryPath);
-console.log('Brand replacement completed.');
+console.log('Brand replacement in demo completed.');
