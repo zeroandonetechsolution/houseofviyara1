@@ -2,8 +2,18 @@
 let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 
-// Determine API URL: Use current hostname but port 3001 if not already on it
-const API_URL = window.location.port === '3001' ? '' : `${window.location.protocol}//${window.location.hostname}:3001`;
+// Determine API URL: Use port 3000 for localhost, otherwise current origin
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) 
+    ? `${window.location.protocol}//${window.location.hostname}:3000` 
+    : window.location.origin;
+
+// Mock Data Fallback (to ensure UI works even if server is slow/down)
+const MOCK_PRODUCTS = [
+    { id: 1, name: "Premium Oud", description: "Deep, mysterious woody scent.", price: 4500, offer_price: 3999, category: "perfumes", image_url: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=60" },
+    { id: 2, name: "Royal Saffron", description: "Spicy and floral luxury.", price: 3200, offer_price: 2800, category: "perfumes", image_url: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&q=60" },
+    { id: 3, name: "Velvet Slippers", description: "Pure comfort for your feet.", price: 1800, offer_price: 1500, category: "slippers", image_url: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&q=60" },
+    { id: 4, name: "Classic Accessories", description: "Complete your look.", price: 999, offer_price: 799, category: "accessories", image_url: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=400&q=60" }
+];
 
 // Client-side cache for products
 const productCache = new Map();
@@ -11,7 +21,7 @@ const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 // Fetch with timeout helper
 async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 8000 } = options;
+    const { timeout = 5000 } = options;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -42,30 +52,6 @@ function registerServiceWorker() {
             .then(reg => console.log('SW Registered'))
             .catch(err => console.log('SW Error:', err));
     }
-}
-
-// Hide Preloader on Window Load (Minimum 5.5 seconds)
-const pageStartTime = Date.now();
-window.addEventListener('load', () => {
-    const preloader = document.getElementById('preloader');
-    if (preloader) {
-        const elapsed = Date.now() - pageStartTime;
-        const remaining = Math.max(0, 5500 - elapsed);
-        
-        setTimeout(() => {
-            preloader.classList.add('fade-out');
-        }, remaining);
-    }
-});
-
-function showPreloader() {
-    const preloader = document.getElementById('preloader');
-    if (preloader) preloader.classList.remove('fade-out');
-}
-
-function hidePreloader() {
-    const preloader = document.getElementById('preloader');
-    if (preloader) preloader.classList.add('fade-out');
 }
 
 // --- Payment Status Check ---
@@ -199,8 +185,6 @@ async function renderProducts(searchTerm = '') {
     const productList = document.getElementById('product-list');
     if (!productList) return;
 
-    productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-weight: 800;">LOADING LUXURY COLLECTION...</div>`;
-
     let category = window.category || '';
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get('category');
@@ -213,6 +197,11 @@ async function renderProducts(searchTerm = '') {
         if (window.location.pathname.includes('accessories')) category = 'accessories';
     }
 
+    // Step 1: Render Mock Data IMMEDIATELY for instant loading
+    const initialProducts = MOCK_PRODUCTS.filter(p => !category || p.category === category);
+    renderToDOM(initialProducts, productList, category);
+
+    // Step 2: Try to fetch real products in the background
     try {
         let cacheKey = `${category}-${searchTerm}`;
         let products;
@@ -226,50 +215,53 @@ async function renderProducts(searchTerm = '') {
             
             const url = `${API_URL}/api/products${params.toString() ? '?' + params.toString() : ''}`;
 
-            const res = await fetchWithTimeout(url, { cache: 'default' });
-            if (!res.ok) throw new Error('Failed to fetch products');
+            const res = await fetchWithTimeout(url, { timeout: 3000 }); // Faster timeout
+            if (!res.ok) throw new Error('Failed to fetch');
             
             products = await res.json();
             productCache.set(cacheKey, { data: products, timestamp: Date.now() });
         }
 
-        if (productList.closest('#trending')) {
-            products = products.slice(0, 4);
+        if (products && products.length > 0) {
+            if (productList.closest('#trending')) {
+                products = products.slice(0, 4);
+            }
+            renderToDOM(products, productList, category);
         }
+    } catch (error) {
+        console.warn('Background fetch failed, keeping mock data:', error);
+    }
+}
 
-        if (products.length === 0) {
-            productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; font-weight: 800;">NO PRODUCTS FOUND.</div>`;
-            return;
-        }
+function renderToDOM(products, container, category) {
+    if (!products || products.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; font-weight: 800;">NO PRODUCTS FOUND.</div>`;
+        return;
+    }
 
-        productList.innerHTML = products.map(p => {
-            // Optimize image size by requesting smaller thumbnails from Unsplash
-            const optimizedImg = p.image_url.includes('unsplash.com') 
-                ? p.image_url.replace(/w=\d+/, 'w=400').replace(/q=\d+/, 'q=60')
-                : p.image_url;
+    container.innerHTML = products.map(p => {
+        const optimizedImg = p.image_url.includes('unsplash.com') 
+            ? p.image_url.replace(/w=\d+/, 'w=400').replace(/q=\d+/, 'q=60')
+            : p.image_url;
 
-            return `
-            <div class="product-card">
-                <div class="product-img">
-                    <img src="${optimizedImg}" alt="${p.name}" loading="lazy" width="400" height="400">
-                    <button class="add-to-cart-overlay" onclick="addToCart(${p.id}, '${p.name}', ${p.offer_price || p.price}, '${optimizedImg}')">
-                        <i class="fas fa-plus"></i> ADD TO BAG
-                    </button>
-                </div>
-                <div class="product-info">
-                    <h3>${p.name}</h3>
-                    <p>${p.description}</p>
-                    <div class="product-price">
-                        <span class="current-price">₹${p.offer_price || p.price}</span>
-                        ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
-                    </div>
+        return `
+        <div class="product-card">
+            <div class="product-img">
+                <img src="${optimizedImg}" alt="${p.name}" loading="lazy" width="400" height="400">
+                <button class="add-to-cart-overlay" onclick="addToCart(${p.id}, '${p.name}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                    <i class="fas fa-plus"></i> ADD TO BAG
+                </button>
+            </div>
+            <div class="product-info">
+                <h3>${p.name}</h3>
+                <p>${p.description}</p>
+                <div class="product-price">
+                    <span class="current-price">₹${p.offer_price || p.price}</span>
+                    ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
                 </div>
             </div>
-        `}).join('');
-    } catch (error) {
-        console.error('Render Error:', error);
-        productList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--accent-pink); font-weight: 800;">ERROR CONNECTING TO SERVER.</div>`;
-    }
+        </div>
+    `}).join('');
 }
 
 // --- Cart Logic ---

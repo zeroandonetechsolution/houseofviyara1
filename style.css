@@ -371,7 +371,7 @@ h1, h2, h3, h4 {
     width: 0%;
     height: 100%;
     background: var(--accent-blue);
-    animation: loaderFill 5.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: loaderFill 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .loader-text {
