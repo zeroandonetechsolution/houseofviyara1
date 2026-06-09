@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Life Style - Premium Fragrances. Explore our collection of captivating scents.">
-    <title>Life Style | Premium Perfumes</title>
+    <meta name="description" content="Life Style - Premium Luxury Perfumes. Discover your signature scent.">
+    <title>Life Style | Luxury Perfumes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script id="bolt" src="https://sboxcheckout-static.citruspay.com/bolt/run/bolt.min.js" bolt-color="e34524" bolt-logo="https://life-style-gamma.vercel.app/logo.png"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <header class="header">
@@ -27,38 +29,25 @@
             </nav>
             <div class="header-search-container">
                 <i class="fas fa-search header-search-icon"></i>
-                <input type="text" class="header-search-input" placeholder="Search for products..." id="desktop-search-input">
+                <input type="text" class="header-search-input" placeholder="Search for perfumes..." id="desktop-search-input">
             </div>
             <div class="header-actions">
                 <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
-                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order">
                     <i class="fas fa-truck"></i>
-                </a>
-                <a href="admin.html" class="icon-btn" aria-label="Admin Dashboard" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
-                    <i class="fas fa-user brutal-admin-icon"></i>
                 </a>
                 <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="cart-badge" id="cart-badge">0</span>
                 </button>
-                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
-                    <i class="fas fa-bars"></i>
-                </button>
             </div>
         </div>
     </header>
-
-    <div class="mobile-menu" id="mobile-menu">
-        <button class="close-menu-btn" id="close-menu-btn">&times;</button>
-        <ul class="mobile-nav-links">
-            <li><a href="collections.html?category=new">New Arrivals</a></li>
-            <li><a href="perfumes.html">Perfumes</a></li>
-            <li><a href="slippers.html">Slippers</a></li>
-            <li><a href="collections.html">Full Collection</a></li>
-        </ul>
-    </div>
 
     <!-- Cartesian Drawer -->
     <div class="cart-drawer-overlay" id="cart-overlay"></div>
@@ -67,13 +56,7 @@
             <h2>YOUR BAG</h2>
             <button class="close-cart-btn" id="close-cart-btn">&times;</button>
         </div>
-        <div class="cart-items" id="cart-items-container">
-            <div class="empty-cart" id="empty-cart-msg">
-                <i class="fas fa-box-open"></i>
-                <p>Your bag is empty.</p>
-                <button class="btn btn-primary" id="shop-now-btn">Shop Now</button>
-            </div>
-        </div>
+        <div class="cart-items" id="cart-items-container"></div>
         <div class="cart-footer">
             <div class="cart-total">
                 <span>Total</span>
@@ -84,44 +67,30 @@
     </div>
 
     <main>
-        <section class="products-section" id="products">
+        <section class="products-section">
             <div class="section-header">
-                <h2>PREMIUM PERFUMES</h2>
+                <h2>LUXURY PERFUMES</h2>
+                <div class="sort-wrapper">
+                    <select id="sort-select" class="brutal-select">
+                        <option value="featured">Featured</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                    </select>
+                </div>
             </div>
             
             <div class="shop-layout">
                 <aside class="shop-sidebar">
                     <div class="filter-group">
-                        <h3>SORT BY</h3>
-                        <select id="sort-select" class="brutal-select">
-                            <option value="featured">Featured</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
-                            <option value="rating">Top Rated</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <h3>PRICE</h3>
+                        <h3>PRICE RANGE</h3>
                         <label class="custom-radio">
-                            <input type="radio" name="price" value="all" checked>
-                            <span class="radiomark"></span>
-                            All Prices
+                            <input type="radio" name="price" value="all" checked> All Prices
                         </label>
                         <label class="custom-radio">
-                            <input type="radio" name="price" value="under-2000">
-                            <span class="radiomark"></span>
-                            Under ₹2000
+                            <input type="radio" name="price" value="under-3000"> Under ₹3000
                         </label>
                         <label class="custom-radio">
-                            <input type="radio" name="price" value="2000-5000">
-                            <span class="radiomark"></span>
-                            ₹2000 - ₹5000
-                        </label>
-                        <label class="custom-radio">
-                            <input type="radio" name="price" value="over-5000">
-                            <span class="radiomark"></span>
-                            Over ₹5000
+                            <input type="radio" name="price" value="3000-6000"> ₹3000 - ₹6000
                         </label>
                     </div>
                 </aside>
@@ -140,35 +109,20 @@
             <div class="footer-brand">
                 <h3>Life Style</h3>
                 <p>Redefining luxury with curated scents and uncompromised comfort.</p>
-                <div class="social-icons">
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                </div>
             </div>
             <div class="footer-links">
                 <h4>SHOP</h4>
                 <ul>
                     <li><a href="perfumes.html">Perfumes</a></li>
                     <li><a href="slippers.html">Slippers</a></li>
-                    <li><a href="collections.html?category=new">New Arrivals</a></li>
-                    <li><a href="collections.html">Full Collection</a></li>
+                    <li><a href="collections.html">New Arrivals</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>HELP</h4>
                 <ul>
-                    <li><a href="#">Track Order</a></li>
-                    <li><a href="#">Returns & Exchanges</a></li>
+                    <li><a href="orders.html">Track Order</a></li>
                     <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Contact Us</a></li>
-                </ul>
-            </div>
-            <div class="footer-links">
-                <h4>LEGAL</h4>
-                <ul>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Terms of Service</a></li>
                 </ul>
             </div>
         </div>
@@ -177,24 +131,10 @@
         </div>
     </footer>
 
-    <!-- Product Quick View Modal -->
-    <div class="modal-overlay" id="pdp-overlay"></div>
-    <div class="pdp-modal" id="pdp-modal">
-        <button class="close-modal-btn" id="close-pdp-btn">&times;</button>
-        <div class="pdp-content" id="pdp-content"></div>
-    </div>
-
-    <!-- Checkout Modal -->
-    <div class="checkout-modal" id="checkout-modal">
-        <button class="close-modal-btn" id="close-checkout-btn">&times;</button>
-        <div class="checkout-content"></div>
-    </div>
+    <!-- Modals are handled in index.html or globally via app.js injection if needed -->
+    <!-- For simplicity, we keep them here or use app.js to handle common UI -->
     
-    <!-- Success Modal -->
-    <div class="success-modal" id="success-modal">
-        <div class="success-content"></div>
-    </div>
-
     <script src="app.js"></script>
+    <script>window.category = 'perfumes';</script>
 </body>
 </html>
