@@ -100,7 +100,7 @@ function updateActiveNav(id) {
 function showLogin() {
     document.body.innerHTML = `
         <div class="admin-login-container" style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #f4f4f4;">
-            <div class="card" style="width: 400px; padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
+            <div class="card" style="width: 400px; max-width: 90%; padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
                 <h2 style="margin-bottom: 20px; font-size: 2rem; font-weight: 900;">ADMIN LOGIN</h2>
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: 800; margin-bottom: 5px;">USERNAME</label>
