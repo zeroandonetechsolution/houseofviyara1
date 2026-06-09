@@ -1443,7 +1443,8 @@ input:checked + .slider:before { transform: translateX(26px); }
     }
 
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 2rem;
+        word-wrap: break-word;
     }
 
     .hero p {
@@ -1467,6 +1468,8 @@ input:checked + .slider:before { transform: translateX(26px); }
         font-size: 1.8rem;
         padding: 8px 20px;
         box-shadow: 6px 6px 0px #000;
+        max-width: 90vw;
+        text-align: center;
     }
 
     .loader-bar-container {

@@ -1,1 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Life Style | Secure Payment</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 40px;
+            background: #fff;
+            border: 6px solid #000;
+            box-shadow: 15px 15px 0px #000;
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 4px solid #000;
+            padding-bottom: 20px;
+        }
+        .payment-header h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .order-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border: 3px solid #000;
+            margin-bottom: 30px;
+        }
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .method-card {
+            border: 3px solid #000;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 800;
+            background: #fff;
+        }
+        .method-card:hover {
+            background: var(--accent-yellow);
+            transform: translate(-3px, -3px);
+            box-shadow: 5px 5px 0px #000;
+        }
+        .method-card.active {
+            background: var(--accent-blue);
+            box-shadow: 5px 5px 0px #000;
+            transform: translate(-3px, -3px);
+        }
+        .method-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .pay-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5rem;
+            background: #00FF94;
+            color: #000;
+            border: 4px solid #000;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 8px 8px 0px #000;
+            transition: all 0.1s;
+        }
+        .pay-btn:active {
+            box-shadow: 0px 0px 0px #000;
+            transform: translate(8px, 8px);
+        }
+        .processing-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 10px solid #000;
+            border-top: 10px solid var(--accent-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body style="background: #f4f4f4;">
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1>PAYMENT GATEWAY</h1>
+            <p style="font-weight: 800; color: #666;">SECURE TRANSACTION</p>
+        </div>
+
+        <div class="order-info">
+            <div class="order-row">
+                <span>ORDER ID:</span>
+                <span id="display-txnid">TXNXXXXXXXX</span>
+            </div>
+            <div class="order-row" style="font-size: 1.5rem; color: #FF007A; margin-top: 10px; border-top: 2px solid #000; padding-top: 10px;">
+                <span>AMOUNT TO PAY:</span>
+                <span id="display-amount">₹0.00</span>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 20px; font-weight: 900;">SELECT PAYMENT METHOD</h3>
+        <div class="payment-methods">
+            <div class="method-card active" onclick="selectMethod(this)">
+                <i class="fas fa-credit-card"></i>
+                CARD
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fab fa-google-pay"></i>
+                UPI / G-PAY
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fas fa-university"></i>
+                NET BANKING
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fas fa-wallet"></i>
+                WALLETS
+            </div>
+        </div>
+
+        <button class="pay-btn" onclick="processPayment()">PAY NOW</button>
+        
+        <p style="text-align: center; margin-top: 30px; font-weight: 700; font-size: 0.8rem; color: #999;">
+            <i class="fas fa-lock"></i> SSL ENCRYPTED | POWERED BY PAYU BOLT (DEMO MODE)
+        </p>
+    </div>
+
+    <div class="processing-overlay" id="processing">
+        <div class="spinner"></div>
+        <h2 style="font-weight: 900; font-size: 2rem;">PROCESSING PAYMENT...</h2>
+        <p style="font-weight: 700;">Please do not refresh the page or click back.</p>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const txnid = urlParams.get('txnid');
+        const amount = urlParams.get('amount');
+        const email = urlParams.get('email');
+        const name = urlParams.get('name');
+        const orderId = urlParams.get('orderId');
+        const API_URL = window.location.port === '3001' ? '' : 'http://localhost:3001';
+
+        document.getElementById('display-txnid').innerText = txnid;
+        document.getElementById('display-amount').innerText = `₹${amount}`;
+
+        function selectMethod(el) {
+            document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        async function processPayment() {
+            document.getElementById('processing').style.display = 'flex';
+            
+            try {
+                // 1. Create Razorpay Order
+                const orderRes = await fetch(`${API_URL}/api/payments/razorpay-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amount, receipt: txnid })
+                });
+                const rzpOrder = await orderRes.json();
+
+                const options = {
+                    "key": "rzp_test_SyARSSUgJS6JWc", // Enter the Key ID generated from the Dashboard
+                    "amount": rzpOrder.amount,
+                    "currency": "INR",
+                    "name": "Life Style Luxury",
+                    "description": "Luxury Goods Transaction",
+                    "image": "https://life-style-gamma.vercel.app/logo.png",
+                    "order_id": rzpOrder.id,
+                    "handler": async function (response) {
+                        // 2. Verify Payment
+                        const verifyRes = await fetch(`${API_URL}/api/payments/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                txnid: txnid
+                            })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.success) {
+                            window.location.href = `index.html?payment=success&txnid=${txnid}`;
+                        } else {
+                            alert('Verification Failed');
+                        }
+                    },
+                    "prefill": {
+                        "name": name,
+                        "email": email,
+                        "contact": ""
+                    },
+                    "theme": {
+                        "color": "#FFD100"
+                    },
+                    "modal": {
+                        "ondismiss": function() {
+                            document.getElementById('processing').style.display = 'none';
+                        }
+                    }
+                };
+                const rzp1 = new Razorpay(options);
+                rzp1.open();
+                
+            } catch (error) {
+                console.error('Payment Error:', error);
+                alert('Payment Error. Please check if server is running.');
+                document.getElementById('processing').style.display = 'none';
+            }
+        }
+    </script>
+</body>
 </html>
+
