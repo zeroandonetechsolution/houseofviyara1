@@ -10,12 +10,29 @@ let currentSection = 'dashboard';
 
 // ── Fetch helper ──
 async function apiFetch(endpoint, options = {}) {
+    const headers = options.body instanceof FormData
+        ? { ...(options.headers || {}) }
+        : { 'Content-Type': 'application/json', ...(options.headers || {}) };
+
     const res = await fetch(API_URL + endpoint, {
         ...options,
-        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+        headers
     });
     if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
     return res.json();
+}
+
+async function uploadAdminImage(fileInput, urlInput) {
+    if (!fileInput || !fileInput.files.length) throw new Error('No file selected');
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    const data = await apiFetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData
+    });
+    if (!data.url) throw new Error('Upload failed');
+    urlInput.value = data.url;
+    return data.url;
 }
 
 // ═══════════════════════════════════════
@@ -427,6 +444,11 @@ function productFormHTML(p = {}) {
         </div>
       </div>
       <div class="aform-group">
+        <label>Upload Image</label>
+        <input class="aform-input" id="pf-img-file" type="file" accept="image/*">
+        <small class="admin-form-hint">Choose a local file to upload and populate the Image URL automatically.</small>
+      </div>
+      <div class="aform-group">
         <label>Image URL *</label>
         <input class="aform-input" id="pf-img" value="${p.image_url || ''}" placeholder="https://images.unsplash.com/...">
       </div>
@@ -445,6 +467,21 @@ function productFormHTML(p = {}) {
       </div>
     </div>
     <script>
+      document.getElementById('pf-img-file').addEventListener('change', async function(){
+        const fileInput = this;
+        const urlInput = document.getElementById('pf-img');
+        const wrap = document.getElementById('pf-img-preview-wrap');
+        const img = document.getElementById('pf-img-preview');
+        if (!fileInput.files.length) return;
+        try {
+          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
+          wrap.style.display = 'block';
+          img.src = uploadedUrl;
+          img.style.display = 'block';
+        } catch (err) {
+          showToast('Upload failed: ' + err.message, 'error');
+        }
+      });
       document.getElementById('pf-img').addEventListener('input', function(){
         const w = document.getElementById('pf-img-preview-wrap');
         const img = document.getElementById('pf-img-preview');
@@ -713,6 +750,10 @@ function bannerFormHTML(b = {}) {
     <h3>${b.id ? 'Edit Banner' : 'Add New Banner'}</h3>
     <div class="admin-form">
       <div class="aform-group">
+        <label>Upload Image</label>
+        <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
+      </div>
+      <div class="aform-group">
         <label>Image URL *</label>
         <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
       </div>
@@ -761,6 +802,75 @@ function updateBannerPreview(url) {
     const img = document.getElementById('bf-preview');
     if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = 'block'; }
     else { wrap.style.display = 'none'; }
+}
+
+function bannerFormHTML(b = {}) {
+    return `
+    <h3>${b.id ? 'Edit Banner' : 'Add New Banner'}</h3>
+    <div class="admin-form">
+      <div class="aform-group">
+        <label>Upload Image</label>
+        <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
+      </div>
+      <div class="aform-group">
+        <label>Image URL *</label>
+        <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
+      </div>
+      <div id="bf-preview-wrap" style="display:${b.image_url ? 'block' : 'none'}">
+        <img id="bf-preview" src="${b.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'">
+      </div>
+      <div class="aform-row">
+        <div class="aform-group">
+          <label>Title</label>
+          <input class="aform-input" id="bf-title" value="${b.title || ''}" placeholder="e.g. New Arrivals">
+        </div>
+        <div class="aform-group">
+          <label>Display Order</label>
+          <input class="aform-input" id="bf-order" type="number" value="${b.display_order || 0}" placeholder="1">
+        </div>
+      </div>
+      <div class="aform-group">
+        <label>Subtitle</label>
+        <input class="aform-input" id="bf-sub" value="${b.subtitle || ''}" placeholder="e.g. Discover the latest collection">
+      </div>
+      <div class="aform-row">
+        <div class="aform-group">
+          <label>Button Text</label>
+          <input class="aform-input" id="bf-cta-text" value="${b.cta_text || 'Shop Now'}" placeholder="Shop Now">
+        </div>
+        <div class="aform-group">
+          <label>Button Link</label>
+          <input class="aform-input" id="bf-cta-link" value="${b.cta_link || 'collections.html'}" placeholder="collections.html">
+        </div>
+      </div>
+      <div class="aform-check">
+        <input type="checkbox" id="bf-active" ${b.id === undefined || b.is_active ? 'checked' : ''}>
+        <label for="bf-active">Active (show on homepage)</label>
+      </div>
+      <div class="aform-actions">
+        <button class="admin-btn admin-btn-primary" onclick="${b.id ? `handleEditBanner(${b.id})` : 'handleAddBanner()'}">
+          <i class="fas fa-save"></i> ${b.id ? 'Update Banner' : 'Add Banner'}
+        </button>
+        <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+    <script>
+      document.getElementById('bf-img-file').addEventListener('change', async function(){
+        const fileInput = this;
+        const urlInput = document.getElementById('bf-img');
+        const wrap = document.getElementById('bf-preview-wrap');
+        const img = document.getElementById('bf-preview');
+        if (!fileInput.files.length) return;
+        try {
+          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
+          wrap.style.display = 'block';
+          img.src = uploadedUrl;
+          img.style.display = 'block';
+        } catch (err) {
+          showToast('Upload failed: ' + err.message, 'error');
+        }
+      });
+    <\/script>`;
 }
 
 function openAddBanner() { openModal(bannerFormHTML()); }

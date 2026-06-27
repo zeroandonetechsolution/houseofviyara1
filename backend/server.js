@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const crypto = require('crypto');
@@ -49,6 +50,20 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const upload = multer({
+    storage: multer.diskStorage({
+        destination: UPLOAD_DIR,
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+            const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+            cb(null, `img-${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+        }
+    })
+});
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 // Simple request logger
 app.use((req, res, next) => {
@@ -380,6 +395,12 @@ app.get('/api/categories', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
+});
+
+app.post('/api/admin/upload-image', upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ url });
 });
 
 // ─────────────────────────────────────────────
