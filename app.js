@@ -3,99 +3,39 @@ let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
 let wishlist = JSON.parse(localStorage.getItem('lifestyle_wishlist')) || [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 
-// Determine API URL: Use port 3000 for localhost, otherwise current origin
-const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) 
-    ? `${window.location.protocol}//${window.location.hostname}:3000` 
-    : window.location.origin;
+// Determine API URL: use explicit override if set, use localhost/192.168.* during local testing, otherwise use current origin for deployed domain
+const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : window.location.origin);
 
 // Mock Data Fallback (to ensure UI works even if server is slow/down)
-const MOCK_PRODUCTS = [
-    { 
-        id: 1, 
-        name: "Banarasi Silk Saree", 
-        description: "Elegant gold zari border with premium silk fabric.", 
-        price: 4500, 
-        offer_price: 3999, 
-        category: "saree", 
-        image_url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=60",
-        rating: 4.8,
-        reviews_count: 124,
-        gallery: ["https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80"],
-        video_url: "",
-        full_details: "A classic Banarasi Silk Saree features complex gold thread work and traditional patterns. Elegant and timeless.",
-        reviews: [
-            { user: "Sarah L.", rating: 5, date: "May 10, 2026", comment: "Absolutely stunning! The silk is very soft and premium." }
-        ]
-    },
-    { 
-        id: 2, 
-        name: "Chikankari Cotton Kurti", 
-        description: "Handcrafted Lucknowi chikankari embroidery on soft cotton.", 
-        price: 1800, 
-        offer_price: 1499, 
-        category: "kurtis", 
-        image_url: "https://images.unsplash.com/photo-1608748010899-18f300247112?w=400&q=60",
-        rating: 4.7,
-        reviews_count: 89,
-        gallery: ["https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80"],
-        video_url: "",
-        full_details: "Intricate hand-embroidered chikankari designs on premium breathable cotton. Ideal for hot days.",
-        reviews: [
-            { user: "Priya M.", rating: 5, date: "June 1, 2026", comment: "Very beautiful handwork." }
-        ]
-    },
-    { 
-        id: 3, 
-        name: "Velvet Lehenga Choli", 
-        description: "Heavy embroidered velvet lehenga set for bridal wear.", 
-        price: 8900, 
-        offer_price: 7999, 
-        category: "ethnic", 
-        image_url: "https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=400&q=60",
-        rating: 4.9,
-        reviews_count: 45,
-        gallery: ["https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80"],
-        video_url: "",
-        full_details: "Luxurious velvet fabric with heavy golden embroidery, matching choli, and net dupatta.",
-        reviews: [
-            { user: "Neha S.", rating: 5, date: "June 12, 2026", comment: "Wore it for my reception, received so many compliments!" }
-        ]
-    },
-    { 
-        id: 4, 
-        name: "Satin Evening Gown", 
-        description: "Sleek and luxurious satin gown with cowl neck.", 
-        price: 7500, 
-        offer_price: 6800, 
-        category: "party", 
-        image_url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=60",
-        rating: 4.6,
-        reviews_count: 72,
-        gallery: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80"],
-        video_url: "",
-        full_details: "Premium heavy satin gown featuring a beautiful drape, cowl neckline, and side slit.",
-        reviews: [
-            { user: "Aisha T.", rating: 4, date: "May 25, 2026", comment: "Beautiful drape and luxurious satin." }
-        ]
-    },
-    { 
-        id: 5, 
-        name: "Linen Summer Dress", 
-        description: "Lightweight breathable linen dress for sunny days.", 
-        price: 2200, 
-        offer_price: 1899, 
-        category: "casual", 
-        image_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=60",
-        rating: 4.5,
-        reviews_count: 56,
-        gallery: ["https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80"],
-        video_url: "",
-        full_details: "A loose-fitting casual dress made from 100% organic linen. Kept light and breathable.",
-        reviews: [
-            { user: "Dia R.", rating: 5, date: "June 20, 2026", comment: "So comfortable and breezy." }
-        ]
+// Use local `assets/1.jpeg` .. `assets/22.jpeg` so the site showcases the packaged images
+const MOCK_PRODUCTS = (function(){
+    const cats = ['saree','kurtis','ethnic','party','casual'];
+    const products = [];
+    for (let i = 1; i <= 22; i++) {
+        const id = i;
+        const img = `assets/${i}.jpeg`;
+        const category = cats[(i-1) % cats.length];
+        products.push({
+            id,
+            name: `Product ${i}`,
+            description: `Showcase product ${i} — high quality image from local assets.`,
+            price: Math.round(800 + Math.random() * 5000),
+            offer_price: null,
+            category,
+            image_url: img,
+            rating: (4 + Math.round(Math.random()*10)/10),
+            reviews_count: Math.floor(Math.random()*200),
+            gallery: [img],
+            video_url: "",
+            full_details: `Full details for product ${i}.`,
+            reviews: [] ,
+            is_trending: 1
+        });
     }
-];
+    return products;
+})();
 
 // Client-side cache for products
 const productCache = new Map();

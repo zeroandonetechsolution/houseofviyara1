@@ -38,6 +38,11 @@
         <div class="admin-pre-text">ADMIN PORTAL</div>
     </div>
     <div id="admin-root"></div>
+    <script>
+        if (!window.API_URL && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            window.API_URL = 'http://127.0.0.1:3000';
+        }
+    </script>
     <script src="admin.js?v=2"></script>
 </body>
 </html>

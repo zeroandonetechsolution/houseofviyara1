@@ -2,7 +2,9 @@
 // HOUSE OF VIYARA — ADMIN PANEL
 // ═══════════════════════════════════════════════════════════════
 
-const API_URL = window.location.port === '3000' ? '' : `${window.location.protocol}//${window.location.hostname}:3000`;
+const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : window.location.origin);
 let adminToken = localStorage.getItem('hov_admin_token') || null;
 let currentSection = 'dashboard';
 
@@ -357,7 +359,7 @@ function renderProductGrid(products) {
             <button class="admin-btn admin-btn-sm ${p.is_trending ? 'admin-btn-fire active-fire' : 'admin-btn-outline-fire'}" onclick="toggleTrending(${p.id}, ${p.is_trending ? 0 : 1})">
               <i class="fas fa-fire"></i> ${p.is_trending ? 'Trending' : 'Set Trending'}
             </button>
-            <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteProduct(${p.id}, '${p.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+            <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteProduct(${p.id}, ${JSON.stringify(p.name)})'><i class="fas fa-trash"></i></button>
           </div>
         </div>
       </div>`).join('');
@@ -554,7 +556,7 @@ async function renderCategories() {
                     <td>
                       <div class="table-actions">
                         <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditCategory(${cat.id})"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteCategory(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+                        <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteCategory(${cat.id}, ${JSON.stringify(cat.name)})'><i class="fas fa-trash"></i></button>
                       </div>
                     </td>
                   </tr>`).join('')}
@@ -696,7 +698,7 @@ async function renderBanners() {
                   <button class="admin-btn admin-btn-sm ${b.is_active ? 'admin-btn-warning' : 'admin-btn-success'}" onclick="toggleBannerActive(${b.id}, ${b.is_active ? 0 : 1})">
                     <i class="fas fa-${b.is_active ? 'eye-slash' : 'eye'}"></i> ${b.is_active ? 'Hide' : 'Show'}
                   </button>
-                  <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteBanner(${b.id}, '${(b.title || 'Banner').replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+                  <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteBanner(${b.id}, ${JSON.stringify(b.title || 'Banner')})'><i class="fas fa-trash"></i></button>
                 </div>
               </div>`).join('')}
           </div>
