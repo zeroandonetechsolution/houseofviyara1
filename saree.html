@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <meta name="description" content="Life Style - Premium Luxury Perfumes. Discover your signature scent.">
-    <title>Life Style | Luxury Perfumes</title>
+    <meta name="description" content="House Of Viyara - Premium Sarees. Discover your style.">
+    <title>House Of Viyara | Saree</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -12,30 +12,38 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FFD100">
-    <script id="bolt" src="https://sboxcheckout-static.citruspay.com/bolt/run/bolt.min.js" bolt-color="e34524" bolt-logo="https://life-style-gamma.vercel.app/logo.png" defer></script>
+    <script id="bolt" src="https://sboxcheckout-static.citruspay.com/bolt/run/bolt.min.js" bolt-color="e34524" bolt-logo="https://house-of-viyara-gamma.vercel.app/logo.png" defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 </head>
 <body>
-    <!-- Preloader -->
-    <div id="preloader">
-        <div class="loader-logo">LIFE STYLE</div>
-        <div class="loader-bar-container">
-            <div class="loader-bar"></div>
+    <div id="preloader" aria-live="polite" aria-busy="true">
+        <div class="loader-scene">
+            <div class="loader-orbit"><span></span><span></span><span></span></div>
+            <div class="loader-logo">HOUSE OF VIYARA</div>
         </div>
-        <div class="loader-text">Loading Luxury...</div>
+        <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
+        <div class="loader-percent" id="loader-percent">0%</div>
+        <div class="loader-text" id="loader-text">Loading luxury...</div>
     </div>
+    <div id="page-transition" aria-hidden="true">
+        <div class="page-transition-logo">LIFE STYLE</div>
+        <div class="page-transition-text">Loading page...</div>
+    </div>
+    <script src="loader.js"></script>
 
     <header class="header">
         <div class="header-container">
             <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none;">Life Style</a></h1>
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">House Of Viyara</a></h1>
             </div>
             <nav class="nav">
                 <ul class="nav-links">
-                    <li><a href="perfumes.html">Perfumes</a></li>
-                    <li><a href="slippers.html">Slippers</a></li>
-                    <li><a href="accessories.html">Accessories</a></li>
+                    <li><a href="saree.html" class="active">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
                 </ul>
             </nav>
             <div class="header-search-container">
@@ -43,19 +51,61 @@
                 <input type="text" class="header-search-input" placeholder="SEARCH..." id="desktop-search-input">
             </div>
             <div class="header-actions">
-                <button class="icon-btn" id="theme-toggle" title="Toggle Theme"><i class="fas fa-moon"></i></button>
-                <button class="icon-btn" id="auth-btn" title="Account"><i class="fas fa-user-circle"></i></button>
-                <button class="icon-btn" id="track-order-btn" title="Track Order"><i class="fas fa-truck"></i></button>
-                <button class="icon-btn" id="cart-btn" title="Shopping Bag">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span class="cart-badge">0</span>
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
                 </button>
-                <button class="icon-btn" id="mobile-menu-btn"><i class="fas fa-bars"></i></button>
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <a href="wishlist.html" class="icon-btn wishlist-btn" aria-label="Wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span class="cart-badge" id="wishlist-badge">0</span>
+                </a>
+                <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-overlay"></div>
+    <div class="auth-modal" id="auth-modal">
+        <button class="close-modal-btn" id="close-auth-btn"><i class="fas fa-times"></i></button>
+        <div class="auth-content">
+            <h2>WELCOME BACK</h2>
+            <p>Login to House Of Viyara for a personalized experience.</p>
+            <div id="google-login-btn" style="margin: 20px 0; min-height: 40px;"></div>
+            
+            <div style="text-align: center; margin-top: -10px; margin-bottom: 20px;">
+                <a href="admin.html" class="admin-access-link" style="font-size: 0.8rem; font-weight: 800; text-decoration: underline; color: var(--primary-color); opacity: 0.7; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-user-shield"></i> ADMIN PORTAL
+                </a>
+            </div>
+            
+            <div class="auth-divider"><span>OR USE OTP</span></div>
+            <div id="otp-request-step">
+                <div class="form-group">
+                    <label>Email or Phone</label>
+                    <input type="text" class="brutal-input" id="auth-target" placeholder="you@example.com or +91...">
+                </div>
+                <button class="btn btn-primary" id="send-otp-btn" style="width: 100%; margin-top: 15px;">SEND OTP</button>
+            </div>
+            <div id="otp-verify-step" style="display: none;">
+                <div class="form-group">
+                    <label>Enter 6-Digit OTP</label>
+                    <input type="text" class="brutal-input" id="auth-otp" placeholder="123456" maxlength="6">
+                </div>
+                <button class="btn btn-primary" id="verify-otp-btn" style="width: 100%; margin-top: 15px;">VERIFY & LOGIN</button>
+            </div>
+        </div>
+    </div>
 
     <div class="mobile-menu" id="mobile-menu">
         <button class="close-menu-btn" id="close-menu-btn"><i class="fas fa-times"></i></button>
@@ -66,52 +116,30 @@
             </div>
         </div>
         <ul class="mobile-nav-links">
+            <div class="section-title">Quick Actions</div>
+            <li><a href="javascript:void(0)" onclick="toggleTheme(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-moon"></i> Toggle Theme <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="document.getElementById('auth-modal').classList.add('active'); document.getElementById('auth-overlay').classList.add('active'); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-user-circle"></i> Login / Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="orders.html"><i class="fas fa-truck"></i> Track Order <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="wishlist.html"><i class="fas fa-heart"></i> Wishlist <span class="cart-badge" id="mobile-wishlist-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openCart(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-shopping-bag"></i> Your Bag <span class="cart-badge" id="mobile-cart-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
             <div class="section-title">Categories</div>
-            <li><a href="perfumes.html"><i class="fas fa-flask"></i> Perfumes</a></li>
-            <li><a href="slippers.html"><i class="fas fa-shoe-prints"></i> Slippers</a></li>
-            <li><a href="accessories.html"><i class="fas fa-gem"></i> Accessories</a></li>
+            <li><a href="saree.html"><i class="fas fa-female"></i> Saree</a></li>
+            <li><a href="kurtis.html"><i class="fas fa-female"></i> Kurtis</a></li>
+            <li><a href="ethnic.html"><i class="fas fa-female"></i> Ethnic Wear</a></li>
+            <li><a href="party.html"><i class="fas fa-glass-cheers"></i> Party Wear</a></li>
+            <li><a href="casual.html"><i class="fas fa-tshirt"></i> Casual Wear</a></li>
             
             <div class="section-title">Account Settings</div>
-            <li><a href="#"><i class="fas fa-crown" style="color: #FFD100;"></i> Life Style Plus <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-mobile-alt" style="color: #000;"></i> Manage Devices <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-user-edit" style="color: #000;"></i> Edit Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-credit-card" style="color: #000;"></i> Saved Cards & Gift Cards <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-map-marker-alt" style="color: #000;"></i> Saved Addresses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-language" style="color: #000;"></i> Language <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-bell" style="color: #000;"></i> Notifications <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('plus')"><i class="fas fa-crown" style="color: #FFD100;"></i> House Of Viyara Plus <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('devices')"><i class="fas fa-mobile-alt" style="color: #000;"></i> Manage Devices <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('profile')"><i class="fas fa-user-edit" style="color: #000;"></i> Edit Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
             
-            <div class="section-title">My Activity</div>
-            <li><a href="#"><i class="fas fa-pen-nib" style="color: #000;"></i> My Reviews <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-question-circle" style="color: #000;"></i> Q&A <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-
             <div class="section-title">Support</div>
-            <li><a href="#"><i class="fas fa-file-contract" style="color: #000;"></i> Policies & Licenses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
-            <li><a href="#"><i class="fas fa-info-circle" style="color: #000;"></i> FAQs <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('policies')"><i class="fas fa-file-contract" style="color: #000;"></i> Policies & Licenses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('faqs')"><i class="fas fa-info-circle" style="color: #000;"></i> FAQs <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
         </ul>
         <div class="logout-btn-container">
             <button class="logout-btn" onclick="logoutUser()">Log Out</button>
-        </div>
-    </div>
-
-    <!-- Auth Drawer -->
-    <div class="cart-drawer-overlay" id="auth-overlay"></div>
-    <div class="cart-drawer" id="auth-drawer">
-        <div class="cart-header">
-            <h2>ACCOUNT</h2>
-            <button class="close-cart-btn" id="close-auth-btn">&times;</button>
-        </div>
-        <div class="cart-body" style="padding: 20px; text-align: center;">
-            <h2>Welcome Back</h2>
-            <p>Login to Life Style for a personalized experience.</p>
-            
-            <button class="btn google-auth-btn" id="google-auth-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                CONTINUE WITH GOOGLE
-            </button>
-            
-            <div class="admin-link-container" style="margin-top: 20px;">
-                <a href="admin.html" class="admin-link" style="color: var(--accent-yellow); font-weight: 800; text-decoration: none;">ADMIN PORTAL</a>
-            </div>
         </div>
     </div>
 
@@ -135,7 +163,7 @@
     <main>
         <section class="products-section">
             <div class="section-header">
-                <h2>LUXURY PERFUMES</h2>
+                <h2>SAREE</h2>
                 <div class="sort-wrapper">
                     <select id="sort-select" class="brutal-select">
                         <option value="featured">Featured</option>
@@ -173,8 +201,8 @@
     <footer class="footer">
         <div class="footer-grid">
             <div class="footer-brand">
-                <h3>Life Style</h3>
-                <p>Redefining luxury with curated scents and uncompromised comfort.</p>
+                <h3>House Of Viyara</h3>
+                <p>Redefining fashion with curated styles and premium quality for women.</p>
                 <div class="social-icons">
                     <a href="#"><i class="fab fa-instagram"></i></a>
                     <a href="#"><i class="fab fa-twitter"></i></a>
@@ -184,10 +212,11 @@
             <div class="footer-links">
                 <h4>SHOP</h4>
                 <ul>
-                    <li><a href="perfumes.html">Perfumes</a></li>
-                    <li><a href="slippers.html">Slippers</a></li>
-                    <li><a href="collections.html">New Arrivals</a></li>
-                    <li><a href="collections.html">Full Collection</a></li>
+                    <li><a href="saree.html">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
                 </ul>
             </div>
             <div class="footer-links">
@@ -209,7 +238,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Life Style. All Rights Reserved.</p>
+            <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
             <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
         </div>
     </footer>
@@ -260,27 +289,27 @@
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
-        <a href="perfumes.html" class="bottom-nav-item active">
-            <i class="fas fa-wind"></i>
-            <span>Scents</span>
+        <a href="collections.html" class="bottom-nav-item">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Shop</span>
         </a>
-        <a href="slippers.html" class="bottom-nav-item">
-            <i class="fas fa-shoe-prints"></i>
-            <span>Slippers</span>
+        <a href="wishlist.html" class="bottom-nav-item">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+            <span class="badge cart-count" id="bottom-wishlist-badge">0</span>
         </a>
-        <a href="javascript:void(0)" class="bottom-nav-item" onclick="toggleCart()">
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleCart()">
             <i class="fas fa-shopping-bag"></i>
             <span>Bag</span>
-            <span class="badge cart-count">0</span>
+            <span class="badge cart-count" id="mobile-cart-badge">0</span>
         </a>
-        <a href="javascript:void(0)" class="bottom-nav-item" onclick="toggleMenu()">
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleMenu()">
             <i class="fas fa-bars"></i>
             <span>Menu</span>
         </a>
     </nav>
 
     <script src="app.js" defer></script>
-    <script>window.category = 'perfumes';</script>
+    <script>window.category = 'saree';</script>
 </body>
 </html>
-

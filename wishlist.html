@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <meta name="description" content="House Of Viyara - Premium Clothing & Fashion. Elevate your style with our curated collection.">
-    <title>House Of Viyara | Premium Clothing & Fashion</title>
+    <meta name="description" content="House Of Viyara - Wishlist">
+    <title>House Of Viyara | My Wishlist</title>
     
     <!-- Instant DNS & Connection Pre-warm -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -149,7 +149,7 @@
             <div class="section-title">Categories</div>
             <li><a href="saree.html"><i class="fas fa-female"></i> Saree</a></li>
             <li><a href="kurtis.html"><i class="fas fa-female"></i> Kurtis</a></li>
-            <li><a href="ethnic.html"><i class="fas fa-female"></i> Ethnic Wear</a></li>
+            <li><a href="ethnic.html"><i class="fas fa-star"></i> Ethnic Wear</a></li>
             <li><a href="party.html"><i class="fas fa-glass-cheers"></i> Party Wear</a></li>
             <li><a href="casual.html"><i class="fas fa-tshirt"></i> Casual Wear</a></li>
             
@@ -169,10 +169,11 @@
             <div class="section-title">Support</div>
             <li><a href="javascript:void(0)" onclick="openSettings('policies')"><i class="fas fa-file-contract" style="color: #000;"></i> Policies & Licenses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
             <li><a href="javascript:void(0)" onclick="openSettings('faqs')"><i class="fas fa-info-circle" style="color: #000;"></i> FAQs <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            
+            <div class="logout-btn-container">
+                <button class="logout-btn" onclick="logoutUser()">Log Out</button>
+            </div>
         </ul>
-        <div class="logout-btn-container">
-            <button class="logout-btn" onclick="logoutUser()">Log Out</button>
-        </div>
     </div>
 
     <!-- Settings Modal (Dynamic) -->
@@ -211,45 +212,16 @@
     </div>
 
     <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="hero-content">
-                <div class="hero-tag">NEW COLLECTION 2026</div>
-                <h1>ELEVATE YOUR STYLE.</h1>
-                <p>Discover premium clothing and fashion pieces designed for the modern lifestyle.</p>
-                <div class="hero-btns">
-                    <a href="saree.html" class="btn btn-primary">SHOP SAREES</a>
-                    <a href="kurtis.html" class="btn btn-secondary">SHOP KURTIS</a>
+        <section class="products-section" id="wishlist-section">
+            <div class="section-header">
+                <h2>MY WISHLIST</h2>
+            </div>
+            <div class="products-grid" id="wishlist-products">
+                <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px;">
+                    <i class="fas fa-heart" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                    <p style="font-size: 1.2rem; font-weight: 700; color: #666; margin-bottom: 20px;">Your wishlist is empty!</p>
+                    <a href="index.html" class="btn btn-primary">BROWSE PRODUCTS</a>
                 </div>
-            </div>
-            <div class="hero-image">
-                <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=75" alt="Premium Fashion" loading="eager" decoding="async" fetchpriority="high">
-            </div>
-        </section>
-
-        <!-- Banners Section -->
-        <section class="banners-section" id="banners-section" style="display:none;">
-            <div class="banners-carousel" id="banners-carousel"></div>
-        </section>
-
-        <!-- Categories Section -->
-        <section class="categories">
-            <div class="section-header">
-                <h2>CATEGORIES</h2>
-            </div>
-            <div class="category-grid" id="category-grid">
-                <!-- Categories dynamically inserted via JS -->
-            </div>
-        </section>
-
-        <!-- Trending Section -->
-        <section class="products-section" id="trending">
-            <div class="section-header">
-                <h2>TRENDING NOW</h2>
-                <a href="collections.html" class="view-all">VIEW ALL</a>
-            </div>
-            <div class="products-grid" id="product-list">
-                <!-- Products dynamically inserted via JS -->
             </div>
         </section>
     </main>
@@ -320,12 +292,12 @@
                         
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label style="display: block; font-weight: 800; margin-bottom: 8px;">FULL NAME</label>
-                            <input type="text" id="checkout-name" class="brutal-input" placeholder="John Doe" required>
+                            <input type="text" id="checkout-name" class="brutal-input" placeholder="John Doe">
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label style="display: block; font-weight: 800; margin-bottom: 8px;">EMAIL ADDRESS</label>
-                            <input type="email" id="checkout-email" class="brutal-input" placeholder="john@example.com" required>
+                            <input type="email" id="checkout-email" class="brutal-input" placeholder="john@example.com">
                         </div>
 
                         <div class="form-group" style="margin-bottom: 20px;">
@@ -410,7 +382,7 @@
 
     <!-- Bottom Navigation (Mobile Only) -->
     <nav class="bottom-nav">
-        <a href="index.html" class="bottom-nav-item active">
+        <a href="index.html" class="bottom-nav-item">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
@@ -418,15 +390,15 @@
             <i class="fas fa-shopping-bag"></i>
             <span>Shop</span>
         </a>
-        <a href="wishlist.html" class="bottom-nav-item">
+        <a href="wishlist.html" class="bottom-nav-item active">
             <i class="fas fa-heart"></i>
             <span>Wishlist</span>
-            <span class="badge cart-count" id="bottom-wishlist-badge">0</span>
+            <span class="badge" id="bottom-wishlist-badge">0</span>
         </a>
         <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleCart()">
             <i class="fas fa-shopping-bag"></i>
             <span>Bag</span>
-            <span class="badge cart-count" id="mobile-cart-badge">0</span>
+            <span class="badge cart-count" id="bottom-cart-badge">0</span>
         </a>
         <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleMenu()">
             <i class="fas fa-bars"></i>
@@ -435,7 +407,7 @@
     </nav>
 
     <script src="app.js" defer></script>
-    <!-- Heavy scripts moved to end of body -->
+    <!-- Heavy scripts moved to body end -->
     <script id="bolt" src="https://sboxcheckout-static.citruspay.com/bolt/run/bolt.min.js" bolt-color="e34524" bolt-logo="https://house-of-viyara-gamma.vercel.app/logo.png" defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>

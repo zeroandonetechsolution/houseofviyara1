@@ -11,7 +11,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
-const Razorpay = require('razorpay');
+let compression;
+try { compression = require('compression'); } catch(e) { compression = null; }
 
 dotenv.config();
 
@@ -24,10 +25,22 @@ const io = new Server(server, {
     }
 });
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Razorpay — gracefully skip if keys are missing
+let razorpay = null;
+try {
+    const Razorpay = require('razorpay');
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+        razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+        console.log('Razorpay initialized.');
+    } else {
+        console.warn('RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set — payment gateway disabled.');
+    }
+} catch (e) {
+    console.warn('Razorpay module error:', e.message);
+}
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'lifestyle-secret-2024';
@@ -47,23 +60,24 @@ app.use((req, res, next) => {
     next();
 });
 
-// Add compression for faster transfers
-const compression = require('compression');
-app.use(compression());
+// Add compression for faster transfers (optional)
+if (compression) app.use(compression());
 
 // Static files with aggressive caching for assets
 app.use(express.static(path.join(__dirname, '..'), {
-    maxAge: '7d', // Cache static assets for 7 days
+    maxAge: '7d',
     setHeaders: (res, filePath) => {
         if (filePath.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache'); // Don't cache HTML to ensure fresh data
+            res.setHeader('Cache-Control', 'no-cache');
         } else if (filePath.match(/\.(js|css|webp|jpg|png|svg|woff2)$/)) {
             res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
         }
     }
 }));
 
-// Database setup
+// ─────────────────────────────────────────────
+// DATABASE SETUP
+// ─────────────────────────────────────────────
 let db;
 (async () => {
     db = await open({
@@ -71,6 +85,7 @@ let db;
         driver: sqlite3.Database
     });
 
+    // Core tables
     await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,6 +106,7 @@ let db;
             image_url TEXT,
             stock INTEGER DEFAULT 10,
             rating REAL DEFAULT 4.5,
+            is_trending INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -113,62 +129,133 @@ let db;
             otp TEXT,
             expires_at DATETIME
         );
+
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            slug TEXT UNIQUE NOT NULL,
+            icon TEXT DEFAULT 'fas fa-tag',
+            banner_image TEXT,
+            display_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS banners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            subtitle TEXT,
+            image_url TEXT NOT NULL,
+            cta_text TEXT DEFAULT 'Shop Now',
+            cta_link TEXT DEFAULT 'collections.html',
+            is_active INTEGER DEFAULT 1,
+            display_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
-    // Ensure offer_price column exists
-    try {
-        await db.exec('ALTER TABLE products ADD COLUMN offer_price REAL');
-    } catch (e) {
-        // Column already exists
+    // Migrations — add columns that may not exist in older databases
+    const migrations = [
+        'ALTER TABLE products ADD COLUMN offer_price REAL',
+        'ALTER TABLE products ADD COLUMN is_trending INTEGER DEFAULT 0',
+    ];
+    for (const sql of migrations) {
+        try { await db.exec(sql); } catch (e) { /* Column already exists */ }
     }
 
-    // Seed initial products if empty
+    // ── Reset if old perfume data detected ──
+    const oldProductCheck = await db.get("SELECT COUNT(*) as count FROM products WHERE name = 'Oud Wood'");
+    if (oldProductCheck && oldProductCheck.count > 0) {
+        console.log("Old seed detected. Clearing products to seed fresh data...");
+        await db.run("DELETE FROM products");
+        await db.run("DELETE FROM sqlite_sequence WHERE name='products'");
+    }
+
+    // ── Seed products if empty ──
     const productCount = await db.get('SELECT COUNT(*) as count FROM products');
     if (productCount.count === 0) {
         const initialProducts = [
-            // PERFUMES (10 GUARANTEED Luxury Perfume Images)
-            { name: 'Oud Wood', description: 'Rare. Exotic. Distinctive.', price: 4500, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80' },
-            { name: 'Santal 33', description: 'Capture the spirit of the American West.', price: 5200, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&q=80' },
-            { name: 'Black Orchid', description: 'Luxurious and sensual fragrance.', price: 3800, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=400&q=80' },
-            { name: 'Rose Prick', description: 'A wild bouquet of rose breeds.', price: 6100, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&q=80' },
-            { name: 'Tobacco Vanille', description: 'Modern take on an old world club.', price: 4800, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1557170334-a9632e77c6e4?w=400&q=80' },
-            { name: 'Neroli Portofino', description: 'Crisp, citrusy and vibrant.', price: 3200, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1583467875263-d50dec37a88c?w=400&q=80' },
-            { name: 'Lost Cherry', description: 'Full-bodied journey into the forbidden.', price: 7500, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1503236123135-083587a9ae2b?w=400&q=80' },
-            { name: 'Bleu de Chanel', description: 'Unexpected and undeniably bold.', price: 4100, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1563170339-244d767b34e5?w=400&q=80' },
-            { name: 'Sauvage', description: 'Radically fresh, raw and noble.', price: 3900, category: 'perfumes', image_url: 'https://images.unsplash.com/photo-1585120810355-35b6c502440f?w=400&q=80' },
-            
-            // SLIPPERS (10 unique images)
-            { name: 'Cloud Walkers', description: 'Memory foam base for light steps.', price: 850, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&q=80' },
-            { name: 'Midnight Satin', description: 'Sleek satin for evening lounging.', price: 1200, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80' },
-            { name: 'Silk Slides', description: 'Pure mulberry silk for home elegance.', price: 1500, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&q=80' },
-            { name: 'Velvet Royal', description: 'Handcrafted velvet for ultimate luxury.', price: 1950, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=400&q=80' },
-            { name: 'Leather Mules', description: 'Premium Italian leather mules.', price: 2600, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&q=80' },
-            { name: 'Sheepskin Loft', description: 'Natural warmth and breathability.', price: 3400, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&q=80' },
-            { name: 'Cashmere Cozy', description: 'Pure Mongolian cashmere comfort.', price: 4200, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80' },
-            { name: 'Gold Buckle Suede', description: 'Elegant suede with hardware accents.', price: 5100, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400&q=80' },
-            { name: 'Heritage Loafers', description: 'Traditional design, modern comfort.', price: 6500, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&q=80' },
-            { name: 'Crystal Slides', description: 'Adorned with sparkling accents.', price: 8900, category: 'slippers', image_url: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&q=80' },
-            
-            // ACCESSORIES (10 unique images)
-            { name: 'Silk Scarf', description: 'Hand-painted 100% silk.', price: 1200, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=400&q=80' },
-            { name: 'Leather Wallet', description: 'Slim bifold in genuine calfskin.', price: 2100, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&q=80' },
-            { name: 'Gold Cufflinks', description: '18k gold plated classic design.', price: 3500, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1614705827065-65c8233481d6?w=400&q=80' },
-            { name: 'Aviator Shades', description: 'UV400 protection, titanium frame.', price: 5800, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1511499767390-90342f5b89a7?w=400&q=80' },
-            { name: 'Leather Belt', description: 'Hand-burnished English leather.', price: 1800, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1624222247344-550fbadfd08d?w=400&q=80' },
-            { name: 'Silver Tie Bar', description: 'Sleek brushed sterling silver.', price: 2400, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1621333100650-74070445f171?w=400&q=80' },
-            { name: 'Wool Beanie', description: 'Fine merino wool, extremely soft.', price: 1100, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1576871337622-98d48d38537c?w=400&q=80' },
-            { name: 'Travel Watch Roll', description: 'Pebbled leather, holds 3 watches.', price: 4200, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&q=80' },
-            { name: 'Pocket Square', description: 'Linen with hand-rolled edges.', price: 850, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1598532163257-ae3c6b25ad30?w=400&q=80' },
-            { name: 'Designer Tote', description: 'Canvas and leather weekender.', price: 8900, category: 'accessories', image_url: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&q=80' }
+            // SAREE
+            { name: 'Banarasi Silk Saree', description: 'Elegant gold zari border with premium silk fabric.', price: 4500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: 1 },
+            { name: 'Kanjeevaram Saree', description: 'Pure mulberry silk with traditional temple patterns.', price: 6200, category: 'saree', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: 0 },
+            { name: 'Floral Organza Saree', description: 'Lightweight organza saree with delicate floral print.', price: 2800, category: 'saree', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: 0 },
+            { name: 'Georgette Designer Saree', description: 'Glamorous saree with sequin work, perfect for cocktails.', price: 3500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: 1 },
+            { name: 'Cotton Handloom Saree', description: 'Comfortable and breathable handwoven cotton saree.', price: 1999, category: 'saree', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: 0 },
+            // KURTIS
+            { name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: 1 },
+            { name: 'Floral Anarkali Kurta', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: 0 },
+            { name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: 0 },
+            { name: 'Embroidered Silk Kurta', description: 'Festive wear silk kurta with detailed hand-embroidery.', price: 3200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: 0 },
+            { name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: 1 },
+            // ETHNIC WEARS
+            { name: 'Velvet Lehenga Choli', description: 'Heavy embroidered velvet lehenga set for bridal wear.', price: 8900, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: 1 },
+            { name: 'Anarkali Suit Set', description: 'Traditional 3-piece georgette anarkali with net dupatta.', price: 4200, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: 0 },
+            { name: 'Sharara Suit Set', description: 'Trendy sharara bottom with short kurti and matching dupatta.', price: 3800, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: 0 },
+            { name: 'Palazzo Suit Set', description: 'Comfortable straight kurta with wide-leg printed palazzos.', price: 2600, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: 0 },
+            { name: 'Banarasi Brocade Suit', description: 'Rich Banarasi brocade fabric with elegant design and details.', price: 5500, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: 0 },
+            // PARTY WEARS
+            { name: 'Satin Evening Gown', description: 'Sleek and luxurious satin gown with cowl neck.', price: 7500, category: 'party', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: 1 },
+            { name: 'Sequin Bodycon Dress', description: 'Sparkling sequin party dress for clubbing and night events.', price: 4800, category: 'party', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: 0 },
+            { name: 'Off-Shoulder Velvet Dress', description: 'Classic luxury velvet dress with off-shoulder design.', price: 3900, category: 'party', image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80', is_trending: 1 },
+            { name: 'Chiffon Cocktail Dress', description: 'Flowy knee-length designer cocktail dress.', price: 3200, category: 'party', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80', is_trending: 0 },
+            { name: 'Embroidered Party Gown', description: 'Floor-length net gown with gorgeous embellishments.', price: 6800, category: 'party', image_url: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=800&q=80', is_trending: 0 },
+            // CASUAL WEARS
+            { name: 'Linen Summer Dress', description: 'Lightweight breathable linen dress for sunny days.', price: 2200, category: 'casual', image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80', is_trending: 0 },
+            { name: 'Denim Dungaree Set', description: 'Stylish classic blue denim dungarees with cotton inner.', price: 2600, category: 'casual', image_url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80', is_trending: 0 },
+            { name: 'Oversized Cotton Tee', description: 'Casual everyday oversized tee made of organic cotton.', price: 999, category: 'casual', image_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', is_trending: 0 },
+            { name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: 1 },
+            { name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: 0 }
         ];
         for (const p of initialProducts) {
-            await db.run('INSERT INTO products (name, description, price, offer_price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)', 
-                [p.name, p.description, p.price, p.price, p.category, p.image_url]);
+            await db.run(
+                'INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [p.name, p.description, p.price, p.price, p.category, p.image_url, p.is_trending]
+            );
         }
+        console.log('Products seeded.');
     }
+
+    // ── Seed default categories if empty ──
+    const catCount = await db.get('SELECT COUNT(*) as count FROM categories');
+    if (catCount.count === 0) {
+        const defaultCategories = [
+            { name: 'Saree', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&q=80', display_order: 1 },
+            { name: 'Kurtis', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=1200&q=80', display_order: 2 },
+            { name: 'Ethnic Wear', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1200&q=80', display_order: 3 },
+            { name: 'Party Wear', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1200&q=80', display_order: 4 },
+            { name: 'Casual Wear', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=80', display_order: 5 },
+        ];
+        for (const cat of defaultCategories) {
+            await db.run(
+                'INSERT INTO categories (name, slug, icon, banner_image, display_order) VALUES (?, ?, ?, ?, ?)',
+                [cat.name, cat.slug, cat.icon, cat.banner_image, cat.display_order]
+            );
+        }
+        console.log('Categories seeded.');
+    }
+
+    // ── Seed default banners if empty ──
+    const bannerCount = await db.get('SELECT COUNT(*) as count FROM banners');
+    if (bannerCount.count === 0) {
+        const defaultBanners = [
+            { title: 'New Arrivals', subtitle: 'Discover our latest Saree & Kurti collections', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&q=80', cta_text: 'Shop Now', cta_link: 'collections.html', display_order: 1 },
+            { title: 'Party Season', subtitle: 'Get ready to shine with our Party Wear', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1600&q=80', cta_text: 'Explore', cta_link: 'party.html', display_order: 2 },
+            { title: 'Ethnic Elegance', subtitle: 'Timeless ethnic styles for every occasion', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1600&q=80', cta_text: 'View Collection', cta_link: 'ethnic.html', display_order: 3 },
+        ];
+        for (const b of defaultBanners) {
+            await db.run(
+                'INSERT INTO banners (title, subtitle, image_url, cta_text, cta_link, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+                [b.title, b.subtitle, b.image_url, b.cta_text, b.cta_link, b.display_order]
+            );
+        }
+        console.log('Banners seeded.');
+    }
+
+    console.log('Database ready.');
 })();
 
-// Auth Routes
+// ─────────────────────────────────────────────
+// AUTH ROUTES
+// ─────────────────────────────────────────────
 app.post('/api/auth/google', async (req, res) => {
     try {
         const { credential } = req.body;
@@ -177,10 +264,10 @@ app.post('/api/auth/google', async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID
         });
         const payload = ticket.getPayload();
-        
+
         let user = await db.get('SELECT * FROM users WHERE email = ?', [payload.email]);
         if (!user) {
-            const result = await db.run('INSERT INTO users (email, name, google_id) VALUES (?, ?, ?)', 
+            const result = await db.run('INSERT INTO users (email, name, google_id) VALUES (?, ?, ?)',
                 [payload.email, payload.name, payload.sub]);
             user = { id: result.lastID, email: payload.email, name: payload.name };
         }
@@ -195,7 +282,7 @@ app.post('/api/auth/google', async (req, res) => {
 app.post('/api/auth/send-otp', async (req, res) => {
     const { email } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60000); // 10 mins
+    const expiresAt = new Date(Date.now() + 10 * 60000);
 
     await db.run('DELETE FROM otps WHERE email = ?', [email]);
     await db.run('INSERT INTO otps (email, otp, expires_at) VALUES (?, ?, ?)', [email, otp, expiresAt]);
@@ -204,17 +291,14 @@ app.post('/api/auth/send-otp', async (req, res) => {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: true,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
     });
 
     try {
         await transporter.sendMail({
-            from: `"Life Style" <${process.env.SMTP_USER}>`,
+            from: `"House Of Viyara" <${process.env.SMTP_USER}>`,
             to: email,
-            subject: "Your Life Style Login OTP",
+            subject: "Your House Of Viyara Login OTP",
             text: `Your OTP is: ${otp}. Valid for 10 minutes.`
         });
         res.json({ message: 'OTP sent' });
@@ -241,24 +325,20 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     }
 });
 
-// Product Routes
+// ─────────────────────────────────────────────
+// PRODUCT ROUTES
+// ─────────────────────────────────────────────
 app.get('/api/products', async (req, res) => {
-    const { category, search } = req.query;
+    const { category, search, trending } = req.query;
     let query = 'SELECT * FROM products';
+    let conditions = [];
     let params = [];
 
-    if (category || search) {
-        query += ' WHERE';
-        if (category) {
-            query += ' category = ?';
-            params.push(category);
-        }
-        if (search) {
-            if (category) query += ' AND';
-            query += ' (name LIKE ? OR description LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`);
-        }
-    }
+    if (category) { conditions.push('category = ?'); params.push(category); }
+    if (search) { conditions.push('(name LIKE ? OR description LIKE ?)'); params.push(`%${search}%`, `%${search}%`); }
+    if (trending === '1') { conditions.push('is_trending = 1'); }
+
+    if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
 
     try {
         const products = await db.all(query, params);
@@ -268,15 +348,48 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// Payment Routes (Razorpay)
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+        if (!product) return res.status(404).json({ error: 'Product not found' });
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch product' });
+    }
+});
+
+// ─────────────────────────────────────────────
+// BANNER ROUTES (Public)
+// ─────────────────────────────────────────────
+app.get('/api/banners', async (req, res) => {
+    try {
+        const banners = await db.all('SELECT * FROM banners WHERE is_active = 1 ORDER BY display_order ASC');
+        res.json(banners);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch banners' });
+    }
+});
+
+// ─────────────────────────────────────────────
+// CATEGORIES ROUTES (Public)
+// ─────────────────────────────────────────────
+app.get('/api/categories', async (req, res) => {
+    try {
+        const categories = await db.all('SELECT * FROM categories ORDER BY display_order ASC');
+        res.json(categories);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+});
+
+// ─────────────────────────────────────────────
+// PAYMENT ROUTES
+// ─────────────────────────────────────────────
 app.post('/api/payments/razorpay-order', async (req, res) => {
+    if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured' });
     const { amount, currency = 'INR', receipt } = req.body;
     try {
-        const order = await razorpay.orders.create({
-            amount: amount * 100, // Razorpay expects amount in paise
-            currency,
-            receipt,
-        });
+        const order = await razorpay.orders.create({ amount: amount * 100, currency, receipt });
         res.json(order);
     } catch (error) {
         console.error('Razorpay Order Error:', error);
@@ -286,12 +399,13 @@ app.post('/api/payments/razorpay-order', async (req, res) => {
 
 app.post('/api/payments/verify', async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, txnid } = req.body;
-    
-    // For demo/test mode, we can also support the simple status: success from our custom page
+
     if (req.body.status === 'success') {
         await db.run('UPDATE orders SET payment_status = "Paid", status = "Confirmed" WHERE txnid = ?', [txnid]);
         return res.json({ success: true });
     }
+
+    if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured' });
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
@@ -307,15 +421,16 @@ app.post('/api/payments/verify', async (req, res) => {
     }
 });
 
-// Order Routes
+// ─────────────────────────────────────────────
+// ORDER ROUTES
+// ─────────────────────────────────────────────
 app.post('/api/orders', async (req, res) => {
     const { user_id, items, total_amount, shipping_address, txnid } = req.body;
-    const orderId = 'LS-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    
-    await db.run(`INSERT INTO orders (id, user_id, items, total_amount, shipping_address, txnid) 
-                  VALUES (?, ?, ?, ?, ?, ?)`, 
-                  [orderId, user_id, JSON.stringify(items), total_amount, JSON.stringify(shipping_address), txnid]);
-    
+    const orderId = 'HOV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    await db.run(`INSERT INTO orders (id, user_id, items, total_amount, shipping_address, txnid) VALUES (?, ?, ?, ?, ?, ?)`,
+        [orderId, user_id, JSON.stringify(items), total_amount, JSON.stringify(shipping_address), txnid]);
+
     res.json({ orderId });
 });
 
@@ -330,42 +445,50 @@ app.get('/api/orders/:id', async (req, res) => {
     }
 });
 
-// Socket.io for Real-time tracking
+// Socket.io for real-time tracking
 io.on('connection', (socket) => {
     socket.on('join-order', (orderId) => {
         socket.join(orderId);
-        console.log(`User joined order room: ${orderId}`);
     });
 });
 
-// Admin Routes
-app.get('/api/admin/orders', async (req, res) => {
-    try {
-        const orders = await db.all('SELECT * FROM orders ORDER BY created_at DESC');
-        const parsedOrders = orders.map(order => ({
-            ...order,
-            items: JSON.parse(order.items),
-            shipping_address: JSON.parse(order.shipping_address)
-        }));
-        res.json(parsedOrders);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch orders' });
-    }
-});
+// ─────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────
 
+// ── Stats ──
 app.get('/api/admin/stats', async (req, res) => {
     try {
         const totalSales = await db.get('SELECT SUM(total_amount) as total FROM orders WHERE payment_status = "Paid"');
         const totalOrders = await db.get('SELECT COUNT(*) as count FROM orders');
         const pendingOrders = await db.get('SELECT COUNT(*) as count FROM orders WHERE status = "Pending"');
-        
+        const totalProducts = await db.get('SELECT COUNT(*) as count FROM products');
+        const trendingProducts = await db.get('SELECT COUNT(*) as count FROM products WHERE is_trending = 1');
+
         res.json({
             totalSales: totalSales.total || 0,
             totalOrders: totalOrders.count || 0,
-            pendingOrders: pendingOrders.count || 0
+            pendingOrders: pendingOrders.count || 0,
+            totalProducts: totalProducts.count || 0,
+            trendingProducts: trendingProducts.count || 0
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+});
+
+// ── Orders ──
+app.get('/api/admin/orders', async (req, res) => {
+    try {
+        const orders = await db.all('SELECT * FROM orders ORDER BY created_at DESC');
+        const parsedOrders = orders.map(order => ({
+            ...order,
+            items: JSON.parse(order.items || '[]'),
+            shipping_address: JSON.parse(order.shipping_address || '{}')
+        }));
+        res.json(parsedOrders);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch orders' });
     }
 });
 
@@ -374,6 +497,52 @@ app.post('/api/admin/update-order', async (req, res) => {
     await db.run('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
     io.to(orderId).emit('status-update', { status });
     res.json({ success: true });
+});
+
+// ── Products ──
+app.get('/api/admin/products', async (req, res) => {
+    try {
+        const products = await db.all('SELECT * FROM products ORDER BY created_at DESC');
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
+});
+
+app.post('/api/admin/products', async (req, res) => {
+    const { name, description, price, offer_price, category, image_url, is_trending } = req.body;
+    try {
+        const result = await db.run(
+            'INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, description, price, offer_price || price, category, image_url, is_trending ? 1 : 0]
+        );
+        res.json({ id: result.lastID, success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add product' });
+    }
+});
+
+app.put('/api/admin/products/:id', async (req, res) => {
+    const { name, description, price, offer_price, category, image_url, is_trending } = req.body;
+    try {
+        await db.run(
+            'UPDATE products SET name = ?, description = ?, price = ?, offer_price = ?, category = ?, image_url = ?, is_trending = ? WHERE id = ?',
+            [name, description, price, offer_price || price, category, image_url, is_trending ? 1 : 0, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update product' });
+    }
+});
+
+app.patch('/api/admin/products/:id/trending', async (req, res) => {
+    const { is_trending } = req.body;
+    try {
+        await db.run('UPDATE products SET is_trending = ? WHERE id = ?', [is_trending ? 1 : 0, req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update trending status' });
+    }
 });
 
 app.delete('/api/admin/products/:id', async (req, res) => {
@@ -385,30 +554,93 @@ app.delete('/api/admin/products/:id', async (req, res) => {
     }
 });
 
-app.post('/api/admin/products', async (req, res) => {
-    const { name, description, price, offer_price, category, image_url } = req.body;
+// ── Categories ──
+app.get('/api/admin/categories', async (req, res) => {
     try {
-        const result = await db.run(
-            'INSERT INTO products (name, description, price, offer_price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, description, price, offer_price, category, image_url]
-        );
-        res.json({ id: result.lastID, success: true });
+        const categories = await db.all('SELECT * FROM categories ORDER BY display_order ASC');
+        res.json(categories);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to add product' });
+        res.status(500).json({ error: 'Failed to fetch categories' });
     }
 });
 
-app.put('/api/admin/products/:id', async (req, res) => {
-    const { name, description, price, offer_price, category, image_url } = req.body;
-    const { id } = req.params;
+app.post('/api/admin/categories', async (req, res) => {
+    const { name, slug, icon, banner_image, display_order } = req.body;
+    try {
+        const result = await db.run(
+            'INSERT INTO categories (name, slug, icon, banner_image, display_order) VALUES (?, ?, ?, ?, ?)',
+            [name, slug, icon || 'fas fa-tag', banner_image || '', display_order || 0]
+        );
+        res.json({ id: result.lastID, success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add category' });
+    }
+});
+
+app.put('/api/admin/categories/:id', async (req, res) => {
+    const { name, slug, icon, banner_image, display_order } = req.body;
     try {
         await db.run(
-            'UPDATE products SET name = ?, description = ?, price = ?, offer_price = ?, category = ?, image_url = ? WHERE id = ?',
-            [name, description, price, offer_price, category, image_url, id]
+            'UPDATE categories SET name = ?, slug = ?, icon = ?, banner_image = ?, display_order = ? WHERE id = ?',
+            [name, slug, icon || 'fas fa-tag', banner_image || '', display_order || 0, req.params.id]
         );
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update product' });
+        res.status(500).json({ error: 'Failed to update category' });
+    }
+});
+
+app.delete('/api/admin/categories/:id', async (req, res) => {
+    try {
+        await db.run('DELETE FROM categories WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete category' });
+    }
+});
+
+// ── Banners ──
+app.get('/api/admin/banners', async (req, res) => {
+    try {
+        const banners = await db.all('SELECT * FROM banners ORDER BY display_order ASC');
+        res.json(banners);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch banners' });
+    }
+});
+
+app.post('/api/admin/banners', async (req, res) => {
+    const { title, subtitle, image_url, cta_text, cta_link, is_active, display_order } = req.body;
+    try {
+        const result = await db.run(
+            'INSERT INTO banners (title, subtitle, image_url, cta_text, cta_link, is_active, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [title, subtitle, image_url, cta_text || 'Shop Now', cta_link || 'collections.html', is_active !== false ? 1 : 0, display_order || 0]
+        );
+        res.json({ id: result.lastID, success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add banner' });
+    }
+});
+
+app.put('/api/admin/banners/:id', async (req, res) => {
+    const { title, subtitle, image_url, cta_text, cta_link, is_active, display_order } = req.body;
+    try {
+        await db.run(
+            'UPDATE banners SET title = ?, subtitle = ?, image_url = ?, cta_text = ?, cta_link = ?, is_active = ?, display_order = ? WHERE id = ?',
+            [title, subtitle, image_url, cta_text || 'Shop Now', cta_link || 'collections.html', is_active ? 1 : 0, display_order || 0, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update banner' });
+    }
+});
+
+app.delete('/api/admin/banners/:id', async (req, res) => {
+    try {
+        await db.run('DELETE FROM banners WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete banner' });
     }
 });
 

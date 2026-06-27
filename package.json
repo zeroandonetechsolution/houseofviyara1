@@ -1,5 +1,5 @@
 {
-  "name": "life-style-frontend",
+  "name": "house-of-viyara-frontend",
   "version": "1.0.0",
   "scripts": {
     "build": "node build.js"

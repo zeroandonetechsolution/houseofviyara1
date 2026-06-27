@@ -17,7 +17,12 @@ function walkAndReplace(dir) {
             const ext = path.extname(filePath);
             if (['.html', '.js', '.css', '.json'].includes(ext)) {
                 let content = fs.readFileSync(filePath, 'utf8');
-                let newContent = content.replace(/Life Style/g, 'Life Style');
+                let newContent = content;
+                // Update old clothing categories to new women's categories
+                newContent = newContent.replace(/shirts/g, 'saree');
+                newContent = newContent.replace(/pants/g, 'kurtis');
+                newContent = newContent.replace(/jackets/g, 'ethnic-wears');
+                // Also update any remaining old terms
                 if (content !== newContent) {
                     fs.writeFileSync(filePath, newContent, 'utf8');
                     console.log(`Updated: ${filePath}`);

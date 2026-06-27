@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Track Your Order | House Of Viyara</title>
+    <title>House Of Viyara | Product Details</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <div id="preloader" aria-live="polite" aria-busy="true">
+        <div class="loader-scene">
+            <div class="loader-orbit"><span></span><span></span><span></span></div>
+            <div class="loader-logo">HOUSE OF VIYARA</div>
+        </div>
+        <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
+        <div class="loader-percent" id="loader-percent">0%</div>
+        <div class="loader-text" id="loader-text">Loading luxury...</div>
+    </div>
+    <div id="page-transition" aria-hidden="true">
+        <div class="page-transition-logo">LIFE STYLE</div>
+        <div class="page-transition-text">Loading page...</div>
+    </div>
+    <script src="loader.js"></script>
+
     <header class="header">
         <div class="header-container">
             <div class="logo">
@@ -26,6 +41,10 @@
                     <li><a href="casual.html">Casual Wear</a></li>
                 </ul>
             </nav>
+            <div class="header-search-container">
+                <i class="fas fa-search header-search-icon"></i>
+                <input type="text" class="header-search-input" placeholder="SEARCH..." id="desktop-search-input">
+            </div>
             <div class="header-actions">
                 <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
                     <i class="fas fa-moon"></i>
@@ -46,6 +65,7 @@
                 </button>
                 <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
                     <i class="fas fa-bars"></i>
+                    <span class="menu-text">MENU</span>
                 </button>
             </div>
         </div>
@@ -77,6 +97,12 @@
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobile-menu">
         <button class="close-menu-btn" id="close-menu-btn"><i class="fas fa-times"></i></button>
+        <div style="padding: 25px 25px 0 25px;">
+            <div class="brutal-input-container" style="position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.5;"></i>
+                <input type="text" class="brutal-input" placeholder="SEARCH ITEMS..." style="padding-left: 45px; margin-bottom: 0;" id="mobile-search-input">
+            </div>
+        </div>
         <ul class="mobile-nav-links">
             <div class="section-title">Quick Actions</div>
             <li><a href="javascript:void(0)" onclick="toggleTheme(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-moon"></i> Toggle Theme <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
@@ -93,7 +119,7 @@
         </ul>
     </div>
 
-    <!-- Cart Drawer -->
+    <!-- Cartesian Drawer -->
     <div class="cart-drawer-overlay" id="cart-overlay"></div>
     <div class="cart-drawer" id="cart-drawer">
         <div class="cart-header">
@@ -104,7 +130,7 @@
             <div class="empty-cart" id="empty-cart-msg">
                 <i class="fas fa-box-open"></i>
                 <p>Your bag is empty.</p>
-                <a href="index.html" class="btn btn-primary" id="shop-now-btn">Shop Now</a>
+                <button class="btn btn-primary" id="shop-now-btn" onclick="closeCart()">Shop Now</button>
             </div>
         </div>
         <div class="cart-footer">
@@ -112,43 +138,19 @@
                 <span>Total</span>
                 <span id="cart-total-price">₹0</span>
             </div>
-            <button class="btn btn-primary checkout-btn" onclick="openCheckout()">CHECKOUT</button>
+            <button class="btn btn-primary checkout-btn">CHECKOUT</button>
         </div>
     </div>
 
-    <main style="padding: 40px; max-width: 800px; margin: 0 auto;">
-        <div class="card" style="padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
-            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">TRACK ORDER</h2>
-            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 30px;">
-                <input type="text" id="order-search-input" class="brutal-input" placeholder="Enter Order ID (e.g., LS-XXXXXX)" style="flex-grow: 1; border: 3px solid #000; padding: 15px;">
-                <button class="btn btn-primary" onclick="trackOrder()">TRACK</button>
-            </div>
-
-            <div id="tracking-result" style="display: none;">
-                <div style="background: var(--accent-yellow); border: 4px solid #000; padding: 20px; margin-bottom: 20px;">
-                    <h3 id="tracking-status" style="font-size: 2rem; font-weight: 900; margin: 0;">STATUS: CONFIRMED</h3>
-                </div>
-                
-                <div class="tracking-timeline" style="margin-top: 30px;">
-                    <div id="timeline-confirmed" class="timeline-step">
-                        <i class="fas fa-check-circle"></i> Order Confirmed
-                    </div>
-                    <div id="timeline-shipped" class="timeline-step">
-                        <i class="fas fa-truck"></i> Shipped
-                    </div>
-                    <div id="timeline-delivered" class="timeline-step">
-                        <i class="fas fa-home"></i> Delivered
-                    </div>
-                </div>
-            </div>
-        </div>
+    <main id="pdp-main-content">
+        <!-- Content will be injected by app.js initProductDetails() -->
     </main>
 
     <footer class="footer">
         <div class="footer-grid">
             <div class="footer-brand">
                 <h3>House Of Viyara</h3>
-                <p>Redefining fashion with curated styles and premium quality for women.</p>
+                <p>Redefining fashion with curated styles and premium quality.</p>
                 <div class="social-icons">
                     <a href="#"><i class="fab fa-instagram"></i></a>
                     <a href="#"><i class="fab fa-twitter"></i></a>
@@ -165,31 +167,13 @@
                     <li><a href="casual.html">Casual Wear</a></li>
                 </ul>
             </div>
-            <div class="footer-links">
-                <h4>HELP</h4>
-                <ul>
-                    <li><a href="orders.html">Track Order</a></li>
-                    <li><a href="return-policy.html">Returns & Exchanges</a></li>
-                    <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Contact Us</a></li>
-                </ul>
-            </div>
-            <div class="footer-links">
-                <h4>LEGAL</h4>
-                <ul>
-                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
-                    <li><a href="terms.html">Terms of Service</a></li>
-                    <li><a href="data-safety.html">Data Safety</a></li>
-                </ul>
-            </div>
         </div>
         <div class="footer-bottom">
             <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
-            <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
         </div>
     </footer>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Navigation (Mobile Only) -->
     <nav class="bottom-nav">
         <a href="index.html" class="bottom-nav-item">
             <i class="fas fa-home"></i>
@@ -216,44 +200,5 @@
     </nav>
 
     <script src="app.js" defer></script>
-    <script>
-        const socket = io();
-        
-        async function trackOrder() {
-            const orderId = document.getElementById('order-search-input').value.toUpperCase();
-            if (!orderId) return;
-
-            const res = await fetch(`/api/orders/${orderId}`);
-            if (res.ok) {
-                const order = await res.json();
-                document.getElementById('tracking-result').style.display = 'block';
-                document.getElementById('tracking-status').innerText = `STATUS: ${order.status.toUpperCase()}`;
-                
-                // Join socket room
-                socket.emit('join-order', orderId);
-            } else {
-                alert('Order not found');
-            }
-        }
-
-        socket.on('status-update', (data) => {
-            document.getElementById('tracking-status').innerText = `STATUS: ${data.status.toUpperCase()}`;
-        });
-    </script>
-
-    <style>
-        .timeline-step {
-            padding: 15px;
-            border: 3px solid #000;
-            margin-bottom: 10px;
-            font-weight: 800;
-            opacity: 0.3;
-        }
-        .timeline-step.active {
-            opacity: 1;
-            background: var(--accent-blue);
-        }
-    </style>
 </body>
 </html>
-

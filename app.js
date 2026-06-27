@@ -1,5 +1,6 @@
 // Global State
 let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
+let wishlist = JSON.parse(localStorage.getItem('lifestyle_wishlist')) || [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 
 // Determine API URL: Use port 3000 for localhost, otherwise current origin
@@ -9,15 +10,108 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.hos
 
 // Mock Data Fallback (to ensure UI works even if server is slow/down)
 const MOCK_PRODUCTS = [
-    { id: 1, name: "Premium Oud", description: "Deep, mysterious woody scent.", price: 4500, offer_price: 3999, category: "perfumes", image_url: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=60" },
-    { id: 2, name: "Royal Saffron", description: "Spicy and floral luxury.", price: 3200, offer_price: 2800, category: "perfumes", image_url: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&q=60" },
-    { id: 3, name: "Velvet Slippers", description: "Pure comfort for your feet.", price: 1800, offer_price: 1500, category: "slippers", image_url: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&q=60" },
-    { id: 4, name: "Classic Accessories", description: "Complete your look.", price: 999, offer_price: 799, category: "accessories", image_url: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=400&q=60" }
+    { 
+        id: 1, 
+        name: "Banarasi Silk Saree", 
+        description: "Elegant gold zari border with premium silk fabric.", 
+        price: 4500, 
+        offer_price: 3999, 
+        category: "saree", 
+        image_url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=60",
+        rating: 4.8,
+        reviews_count: 124,
+        gallery: ["https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80"],
+        video_url: "",
+        full_details: "A classic Banarasi Silk Saree features complex gold thread work and traditional patterns. Elegant and timeless.",
+        reviews: [
+            { user: "Sarah L.", rating: 5, date: "May 10, 2026", comment: "Absolutely stunning! The silk is very soft and premium." }
+        ]
+    },
+    { 
+        id: 2, 
+        name: "Chikankari Cotton Kurti", 
+        description: "Handcrafted Lucknowi chikankari embroidery on soft cotton.", 
+        price: 1800, 
+        offer_price: 1499, 
+        category: "kurtis", 
+        image_url: "https://images.unsplash.com/photo-1608748010899-18f300247112?w=400&q=60",
+        rating: 4.7,
+        reviews_count: 89,
+        gallery: ["https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80"],
+        video_url: "",
+        full_details: "Intricate hand-embroidered chikankari designs on premium breathable cotton. Ideal for hot days.",
+        reviews: [
+            { user: "Priya M.", rating: 5, date: "June 1, 2026", comment: "Very beautiful handwork." }
+        ]
+    },
+    { 
+        id: 3, 
+        name: "Velvet Lehenga Choli", 
+        description: "Heavy embroidered velvet lehenga set for bridal wear.", 
+        price: 8900, 
+        offer_price: 7999, 
+        category: "ethnic", 
+        image_url: "https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=400&q=60",
+        rating: 4.9,
+        reviews_count: 45,
+        gallery: ["https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80"],
+        video_url: "",
+        full_details: "Luxurious velvet fabric with heavy golden embroidery, matching choli, and net dupatta.",
+        reviews: [
+            { user: "Neha S.", rating: 5, date: "June 12, 2026", comment: "Wore it for my reception, received so many compliments!" }
+        ]
+    },
+    { 
+        id: 4, 
+        name: "Satin Evening Gown", 
+        description: "Sleek and luxurious satin gown with cowl neck.", 
+        price: 7500, 
+        offer_price: 6800, 
+        category: "party", 
+        image_url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=60",
+        rating: 4.6,
+        reviews_count: 72,
+        gallery: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80"],
+        video_url: "",
+        full_details: "Premium heavy satin gown featuring a beautiful drape, cowl neckline, and side slit.",
+        reviews: [
+            { user: "Aisha T.", rating: 4, date: "May 25, 2026", comment: "Beautiful drape and luxurious satin." }
+        ]
+    },
+    { 
+        id: 5, 
+        name: "Linen Summer Dress", 
+        description: "Lightweight breathable linen dress for sunny days.", 
+        price: 2200, 
+        offer_price: 1899, 
+        category: "casual", 
+        image_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=60",
+        rating: 4.5,
+        reviews_count: 56,
+        gallery: ["https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80"],
+        video_url: "",
+        full_details: "A loose-fitting casual dress made from 100% organic linen. Kept light and breathable.",
+        reviews: [
+            { user: "Dia R.", rating: 5, date: "June 20, 2026", comment: "So comfortable and breezy." }
+        ]
+    }
 ];
 
 // Client-side cache for products
 const productCache = new Map();
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+function optimizeImg(url, w = 400, q = 60) {
+    if (window.LifeStyleLoader) return LifeStyleLoader.optimizeImageUrl(url, w, q);
+    if (url && url.includes('unsplash.com')) {
+        return url.replace(/w=\d+/, 'w=' + w).replace(/q=\d+/, 'q=' + q);
+    }
+    return url;
+}
+
+function refreshLazyMedia(root) {
+    if (window.LifeStyleLoader) LifeStyleLoader.initLazyMedia(root);
+}
 
 // Fetch with timeout helper
 async function fetchWithTimeout(resource, options = {}) {
@@ -39,12 +133,100 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initAuth();
     updateCartBadge();
-    renderProducts();
+    updateWishlistBadge();
+    
+    // Check for SPA product link
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('product')) {
+        const pid = parseInt(urlParams.get('product'));
+        setTimeout(() => openProductPage(pid), 10);
+    }
+    
+    if (window.location.pathname.includes('wishlist.html')) {
+        renderWishlist();
+    } else if (window.location.pathname.includes('product.html')) {
+        initProductDetails();
+    } else {
+        renderProducts();
+        renderBanners();
+        renderCategories();
+    }
+    
     setupEventListeners();
     setupSearch();
     checkPaymentStatus();
     registerServiceWorker();
 });
+
+// --- Banner Rendering ---
+async function renderBanners() {
+    const bannersSection = document.getElementById('banners-section');
+    const bannersCarousel = document.getElementById('banners-carousel');
+    if (!bannersSection || !bannersCarousel) return;
+
+    try {
+        const response = await fetchWithTimeout(`${API_URL}/api/banners`, { timeout: 5000 });
+        if (!response.ok) throw new Error('Failed to fetch banners');
+        const banners = await response.json();
+        
+        if (banners.length > 0) {
+            bannersSection.style.display = 'block';
+            bannersCarousel.innerHTML = banners.map(banner => `
+                <a href="${banner.cta_link || '#'}" class="banner-card">
+                    <img src="${banner.image_url}" alt="${banner.title || 'Banner'}" loading="lazy">
+                    <div class="banner-overlay">
+                        ${banner.title ? `<h3 class="banner-title">${banner.title}</h3>` : ''}
+                        ${banner.subtitle ? `<p class="banner-subtitle">${banner.subtitle}</p>` : ''}
+                        <span class="banner-cta">${banner.cta_text || 'SHOP NOW'} <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+            `).join('');
+        }
+    } catch (error) {
+        console.warn('Failed to load banners:', error);
+    }
+}
+
+// --- Category Rendering ---
+async function renderCategories() {
+    const categoryGrid = document.getElementById('category-grid');
+    if (!categoryGrid) return;
+
+    // Fallback categories
+    const fallbackCategories = [
+        { name: 'SAREE', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60' },
+        { name: 'KURTIS', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=600&q=60' },
+        { name: 'ETHNIC WEAR', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=600&q=60' },
+        { name: 'PARTY WEAR', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=60' },
+        { name: 'CASUAL WEAR', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=60' }
+    ];
+
+    // Render fallback first
+    renderCategoryList(fallbackCategories, categoryGrid);
+
+    try {
+        const response = await fetchWithTimeout(`${API_URL}/api/categories`, { timeout: 5000 });
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const categories = await response.json();
+        
+        if (categories.length > 0) {
+            renderCategoryList(categories, categoryGrid);
+        }
+    } catch (error) {
+        console.warn('Failed to load categories:', error);
+    }
+}
+
+function renderCategoryList(categories, container) {
+    container.innerHTML = categories.map(cat => `
+        <a href="${cat.slug}.html" class="category-card" style="background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('${cat.banner_image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60'}'); background-size: cover; background-position: center;">
+            <div class="cat-info">
+                <h3>${cat.name.toUpperCase()}</h3>
+                <span>SHOP NOW <i class="fas fa-arrow-right"></i></span>
+            </div>
+        </a>
+    `).join('');
+}
 
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
@@ -192,18 +374,26 @@ async function renderProducts(searchTerm = '') {
     if (categoryParam) {
         category = categoryParam;
     } else if (!category) {
-        if (window.location.pathname.includes('perfumes')) category = 'perfumes';
-        if (window.location.pathname.includes('slippers')) category = 'slippers';
-        if (window.location.pathname.includes('accessories')) category = 'accessories';
+        if (window.location.pathname.includes('saree')) category = 'saree';
+        if (window.location.pathname.includes('kurtis')) category = 'kurtis';
+        if (window.location.pathname.includes('ethnic')) category = 'ethnic';
+        if (window.location.pathname.includes('party')) category = 'party';
+        if (window.location.pathname.includes('casual')) category = 'casual';
     }
 
+    const isTrendingSection = productList.closest('#trending') !== null;
+
     // Step 1: Render Mock Data IMMEDIATELY for instant loading
-    const initialProducts = MOCK_PRODUCTS.filter(p => !category || p.category === category);
+    let initialProducts = MOCK_PRODUCTS.filter(p => {
+        if (isTrendingSection) return p.is_trending;
+        return !category || p.category === category;
+    });
+    if (isTrendingSection) initialProducts = initialProducts.slice(0, 4);
     renderToDOM(initialProducts, productList, category);
 
     // Step 2: Try to fetch real products in the background
     try {
-        let cacheKey = `${category}-${searchTerm}`;
+        let cacheKey = `${category}-${searchTerm}-${isTrendingSection ? 'trending' : 'all'}`;
         let products;
 
         if (productCache.has(cacheKey) && (Date.now() - productCache.get(cacheKey).timestamp < CACHE_EXPIRY)) {
@@ -212,10 +402,11 @@ async function renderProducts(searchTerm = '') {
             const params = new URLSearchParams();
             if (category) params.append('category', category);
             if (searchTerm) params.append('search', searchTerm);
+            if (isTrendingSection) params.append('trending', '1');
             
             const url = `${API_URL}/api/products${params.toString() ? '?' + params.toString() : ''}`;
 
-            const res = await fetchWithTimeout(url, { timeout: 3000 }); // Faster timeout
+            const res = await fetchWithTimeout(url, { timeout: 2000 }); // Even faster timeout
             if (!res.ok) throw new Error('Failed to fetch');
             
             products = await res.json();
@@ -223,7 +414,7 @@ async function renderProducts(searchTerm = '') {
         }
 
         if (products && products.length > 0) {
-            if (productList.closest('#trending')) {
+            if (isTrendingSection) {
                 products = products.slice(0, 4);
             }
             renderToDOM(products, productList, category);
@@ -239,20 +430,28 @@ function renderToDOM(products, container, category) {
         return;
     }
 
-    container.innerHTML = products.map(p => {
-        const optimizedImg = p.image_url.includes('unsplash.com') 
-            ? p.image_url.replace(/w=\d+/, 'w=400').replace(/q=\d+/, 'q=60')
-            : p.image_url;
-
+    container.innerHTML = products.map((p, idx) => {
+        const optimizedImg = optimizeImg(p.image_url, 400, 60);
+        const thumbImg = optimizeImg(p.image_url, 40, 30);
+        const eager = idx < 4 ? 'eager' : 'lazy';
+        const imgAttrs = eager === 'lazy'
+            ? `src="${thumbImg}" data-src="${optimizedImg}" class="lazy-loading" loading="lazy"`
+            : `src="${optimizedImg}" loading="eager"`;
+        
+        const isInWishlist = wishlist.some(item => item.id === p.id);
+        
         return `
         <div class="product-card">
-            <div class="product-img">
-                <img src="${optimizedImg}" alt="${p.name}" loading="lazy" width="400" height="400">
-                <button class="add-to-cart-overlay" onclick="addToCart(${p.id}, '${p.name}', ${p.offer_price || p.price}, '${optimizedImg}')">
+            <div class="product-img" onclick="openProductPage(${p.id})" style="cursor: pointer; position: relative;">
+                <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
+                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
+                    ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
+                </button>
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.offer_price || p.price}, '${optimizedImg}')">
                     <i class="fas fa-plus"></i> ADD TO BAG
                 </button>
             </div>
-            <div class="product-info">
+            <div class="product-info" onclick="openProductPage(${p.id})" style="cursor: pointer;">
                 <h3>${p.name}</h3>
                 <p>${p.description}</p>
                 <div class="product-price">
@@ -262,6 +461,386 @@ function renderToDOM(products, container, category) {
             </div>
         </div>
     `}).join('');
+
+    refreshLazyMedia(container);
+}
+
+function renderWishlist() {
+    const container = document.getElementById('wishlist-products');
+    if (!container) return;
+    
+    if (wishlist.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px;">
+                <i class="fas fa-heart" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                <p style="font-size: 1.2rem; font-weight: 700; color: #666; margin-bottom: 20px;">Your wishlist is empty!</p>
+                <a href="index.html" class="btn btn-primary">BROWSE PRODUCTS</a>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render wishlist items as product cards (we can reuse MOCK_PRODUCTS or fetch from API)
+    // First, let's try to get full product data if available
+    container.innerHTML = wishlist.map((item, idx) => {
+        // Try to get full product from MOCK_PRODUCTS or API
+        let product = MOCK_PRODUCTS.find(p => p.id === item.id);
+        const optimizedImg = item.image || (product ? product.image_url : 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=60');
+        
+        return `
+        <div class="product-card">
+            <div class="product-img" onclick="openProductPage(${item.id})" style="cursor: pointer; position: relative;">
+                <img src="${optimizedImg}" alt="${item.name}" width="400" height="400" loading="${idx < 4 ? 'eager' : 'lazy'}" decoding="async">
+                <button class="product-wishlist-btn" data-product-id="${item.id}" onclick="event.stopPropagation(); toggleWishlist(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.price}, '${optimizedImg}')" style="position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border: 4px solid #000; background: #fff; box-shadow: 4px 4px 0px #000; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s; color: #FF007A;">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.price}, '${optimizedImg}')">
+                    <i class="fas fa-plus"></i> ADD TO BAG
+                </button>
+            </div>
+            <div class="product-info" onclick="openProductPage(${item.id})" style="cursor: pointer;">
+                <h3>${item.name}</h3>
+                <div class="product-price">
+                    <span class="current-price">₹${item.price}</span>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+// --- Product Details Page Logic (Instant SPA) ---
+window.openProductPage = async function(productId) {
+    if(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const pdpModal = document.getElementById('pdp-modal');
+    const pdpContent = document.getElementById('pdp-content');
+    if (!pdpModal || !pdpContent) return; // Fallback if missing
+    
+    // Update URL to match instantly
+    window.history.pushState({ productId }, '', `?product=${productId}`);
+    
+    let product = MOCK_PRODUCTS.find(p => p.id === productId);
+    
+    if (!product) {
+        try {
+            const res = await fetch(`${API_URL}/api/products/${productId}`);
+            if (res.ok) product = await res.json();
+        } catch (e) {
+            console.error('Failed to fetch product details', e);
+        }
+    }
+
+    if (!product) {
+        pdpModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        pdpContent.innerHTML = '<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><button class="btn btn-primary" onclick="closeProductPage()" style="margin-top: 20px;">Return</button></div>';
+        return;
+    }
+
+    // Render directly without loading screen
+    renderProductDetails(product, pdpContent);
+    
+    // Show modal after rendering to prevent empty flash
+    pdpModal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+window.closeProductPage = function() {
+    const pdpModal = document.getElementById('pdp-modal');
+    if(pdpModal) pdpModal.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // Revert URL
+    const url = new URL(window.location);
+    url.searchParams.delete('product');
+    window.history.pushState({}, '', url);
+}
+
+window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.productId) {
+        openProductPage(e.state.productId);
+    } else {
+        closeProductPage();
+    }
+});
+
+async function initProductDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = parseInt(urlParams.get('id'));
+    
+    const container = document.getElementById('pdp-main-content');
+    if (!container) return;
+    
+    if (!productId) {
+        container.innerHTML = '<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Return Home</a></div>';
+        return;
+    }
+
+    let product = MOCK_PRODUCTS.find(p => p.id === productId);
+    if (!product) {
+        container.innerHTML = '<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Return Home</a></div>';
+        return;
+    }
+
+    renderProductDetails(product, container);
+}
+
+function renderProductDetails(product, targetContainer) {
+    // Generate Stars
+    const fullStars = Math.floor(product.rating || 5);
+    const halfStar = (product.rating || 5) % 1 >= 0.5 ? 1 : 0;
+    const emptyStars = 5 - fullStars - halfStar;
+    let starsHtml = '';
+    for(let i=0; i<fullStars; i++) starsHtml += '<i class="fas fa-star"></i>';
+    if(halfStar) starsHtml += '<i class="fas fa-star-half-alt"></i>';
+    for(let i=0; i<emptyStars; i++) starsHtml += '<i class="far fa-star"></i>';
+
+    // Generate Gallery — first image eager, rest lazy; video deferred until selected
+    const gallery = product.gallery || [product.image_url];
+    let galleryDots = gallery.map((img, i) => {
+        const dotBg = optimizeImg(img, 80, 40);
+        return `<div class="gallery-dot ${i === 0 ? 'active' : ''}" style="background-image:url('${dotBg}')" onclick="changeGalleryImage(${i})"></div>`;
+    }).join('');
+    
+    let mediaHtml = '';
+    gallery.forEach((img, i) => {
+        const fullImg = optimizeImg(img, 900, 75);
+        const thumb = optimizeImg(img, 60, 30);
+        if (i === 0) {
+            mediaHtml += `<img src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item active" id="gallery-img-${i}" decoding="async">`;
+        } else {
+            mediaHtml += `<img src="${thumb}" data-src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item lazy-loading" id="gallery-img-${i}" decoding="async">`;
+        }
+    });
+    
+    if (product.video_url) {
+        mediaHtml += `
+            <div class="gallery-item video-placeholder" id="gallery-img-${gallery.length}" data-video-src="${product.video_url}" onclick="loadGalleryVideo(${gallery.length})">
+                <i class="fas fa-play"></i>
+            </div>
+            <video class="gallery-item" id="gallery-video-${gallery.length}" controls preload="none" playsinline style="display:none">
+            </video>
+        `;
+        galleryDots += `<div class="gallery-dot video-dot" onclick="changeGalleryImage(${gallery.length})"><i class="fas fa-play"></i></div>`;
+    }
+
+    // Generate Reviews
+    let reviewsHtml = '';
+    if (product.reviews && product.reviews.length > 0) {
+        reviewsHtml = product.reviews.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="reviewer-info">
+                        <div class="reviewer-avatar"><i class="fas fa-user"></i></div>
+                        <div>
+                            <strong>${r.user}</strong>
+                            <div class="review-date">${r.date}</div>
+                        </div>
+                    </div>
+                    <div class="review-stars">${'<i class="fas fa-star"></i>'.repeat(r.rating)}</div>
+                </div>
+                <p class="review-text">${r.comment}</p>
+            </div>
+        `).join('');
+    } else {
+        reviewsHtml = '<p>No reviews yet.</p>';
+    }
+
+    const html = `
+        <div class="pdp-container">
+            <!-- Left: Media Showcase -->
+            <div class="pdp-media-section">
+                <div class="pdp-main-media">
+                    ${mediaHtml}
+                </div>
+                <div class="pdp-gallery-nav">
+                    ${galleryDots}
+                </div>
+            </div>
+
+            <!-- Right: Details -->
+            <div class="pdp-details-section">
+                <div class="pdp-breadcrumbs">
+                    <a href="index.html">Home</a> / <a href="${product.category}.html" style="text-transform: capitalize;">${product.category}</a> / <span>${product.name}</span>
+                </div>
+                
+                <h1 class="pdp-title">${product.name}</h1>
+                
+                <div class="pdp-rating">
+                    <span class="stars">${starsHtml}</span>
+                    <span class="rating-number">${product.rating || 5.0}</span>
+                    <span class="review-count">(${product.reviews_count || 0} reviews)</span>
+                </div>
+                
+                <div class="pdp-price-container">
+                    <span class="pdp-current-price">₹${product.offer_price || product.price}</span>
+                    ${product.offer_price && product.offer_price < product.price ? `<span class="pdp-original-price">₹${product.price}</span><span class="pdp-discount">SAVE ₹${product.price - product.offer_price}</span>` : ''}
+                </div>
+                
+                <p class="pdp-short-desc">${product.description}</p>
+                
+                <div class="pdp-actions">
+                    <div class="qty-selector">
+                        <button onclick="updatePdpQty(-1)"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="pdp-qty" value="1" min="1" max="10" readonly>
+                        <button onclick="updatePdpQty(1)"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.offer_price || product.price}, '${product.image_url}')">
+                        ADD TO BAG
+                    </button>
+                    <button class="pdp-wishlist-btn" onclick="toggleWishlist(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.offer_price || product.price}, '${product.image_url}')" data-product-id="${product.id}">
+                        <i class="${wishlist.some(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
+                    </button>
+                </div>
+                
+                <div class="pdp-benefits">
+                    <div class="benefit-item">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>Free Express Shipping</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="fas fa-undo"></i>
+                        <span>30-Day Easy Returns</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Authenticity Guaranteed</span>
+                    </div>
+                </div>
+                
+                <div class="pdp-full-details">
+                    <h3>PRODUCT DETAILS</h3>
+                    <div class="details-content">
+                        <p>${product.full_details || product.description}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reviews Section -->
+        <div class="pdp-reviews-section">
+            <div class="reviews-header">
+                <h2>CUSTOMER REVIEWS</h2>
+                <div class="overall-rating">
+                    <h2>${product.rating || 5.0}</h2>
+                    <div class="stars">${starsHtml}</div>
+                    <p>Based on ${product.reviews_count || 0} reviews</p>
+                </div>
+            </div>
+            <div class="reviews-grid">
+                ${reviewsHtml}
+            </div>
+        </div>
+    `;
+
+    if (targetContainer) {
+        targetContainer.innerHTML = html;
+        // Scroll to top
+        if(targetContainer.parentElement) {
+            targetContainer.parentElement.scrollTop = 0;
+        } else {
+            window.scrollTo(0,0);
+        }
+        
+        refreshLazyMedia(targetContainer);
+
+        // Ensure close button works if in modal
+        const closeBtn = targetContainer.parentElement.querySelector('.close-modal-btn');
+        if (closeBtn) closeBtn.onclick = closeProductPage;
+    } else {
+        const pdpMain = document.getElementById('pdp-main-content');
+        if (pdpMain) pdpMain.innerHTML = html;
+    }
+}
+
+window.loadGalleryVideo = function(index) {
+    const placeholder = document.getElementById(`gallery-img-${index}`);
+    const video = document.getElementById(`gallery-video-${index}`);
+    if (!placeholder || !video || !placeholder.dataset.videoSrc) return;
+
+    if (!video.querySelector('source')) {
+        const source = document.createElement('source');
+        source.src = placeholder.dataset.videoSrc;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        video.load();
+    }
+
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    video.classList.add('active');
+    changeGalleryImage(index);
+};
+
+window.changeGalleryImage = function(index) {
+    document.querySelectorAll('.gallery-item, .video-placeholder').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.gallery-dot').forEach(el => el.classList.remove('active'));
+
+    const video = document.getElementById(`gallery-video-${index}`);
+    const placeholder = document.getElementById(`gallery-img-${index}`);
+    const target = video && video.querySelector('source') ? video : placeholder;
+
+    if (target) {
+        if (target.classList.contains('video-placeholder')) {
+            loadGalleryVideo(index);
+            return;
+        }
+
+        target.classList.add('active');
+        if (target.tagName === 'IMG' && target.dataset.src && window.LifeStyleLoader) {
+            LifeStyleLoader.loadLazyElement(target);
+        }
+        if (target.tagName === 'VIDEO') {
+            target.style.display = 'block';
+            if (placeholder && placeholder.classList.contains('video-placeholder')) placeholder.style.display = 'none';
+            target.play().catch(() => {});
+        } else {
+            document.querySelectorAll('video.gallery-item').forEach(v => { v.pause(); v.style.display = v.querySelector('source') ? 'none' : v.style.display; });
+            document.querySelectorAll('.video-placeholder').forEach(v => { if (v.id !== `gallery-img-${index}`) v.style.display = ''; });
+        }
+    }
+
+    const dots = document.querySelectorAll('.gallery-dot');
+    if (dots[index]) dots[index].classList.add('active');
+}
+
+window.updatePdpQty = function(delta) {
+    const input = document.getElementById('pdp-qty');
+    let val = parseInt(input.value) + delta;
+    if (val < 1) val = 1;
+    if (val > 10) val = 10;
+    input.value = val;
+}
+
+window.addFromPdp = function(id, name, price, image) {
+    const qty = parseInt(document.getElementById('pdp-qty').value) || 1;
+    const existing = cart.find(item => item.id === id);
+    if (existing) {
+        existing.quantity += qty;
+    } else {
+        cart.push({ id, name, price, image, quantity: qty });
+    }
+    saveCart();
+    updateCartBadge();
+    
+    // Show visual feedback
+    const btn = document.querySelector('.pdp-add-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> ADDED TO BAG';
+    btn.style.background = 'var(--accent-green)';
+    btn.style.color = '#fff';
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+        openCart();
+        renderCartItems();
+    }, 1000);
 }
 
 // --- Cart Logic ---
@@ -291,6 +870,66 @@ function updateCartBadge() {
             badge.style.display = totalItems > 0 ? 'flex' : 'none';
         }
     });
+}
+
+function updateWishlistBadge() {
+    const totalItems = wishlist.length;
+    const badges = document.querySelectorAll('#wishlist-badge, #mobile-wishlist-badge, #bottom-wishlist-badge');
+    badges.forEach(badge => {
+        if (badge) {
+            badge.innerText = totalItems;
+            badge.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
+    });
+}
+
+function saveWishlist() {
+    localStorage.setItem('lifestyle_wishlist', JSON.stringify(wishlist));
+    updateWishlistBadge();
+}
+
+function toggleWishlist(productId, productName, price, imageUrl) {
+    const existingIndex = wishlist.findIndex(item => item.id === productId);
+    if (existingIndex > -1) {
+        // Remove from wishlist
+        wishlist.splice(existingIndex, 1);
+    } else {
+        // Add to wishlist
+        wishlist.push({ id: productId, name: productName, price: price, image: imageUrl });
+    }
+    saveWishlist();
+    
+    // Re-render wishlist page if we're on it
+    if (document.getElementById('wishlist-products')) {
+        renderWishlist();
+    }
+    
+    // Re-render products to update heart icons if needed
+    const productGrids = document.querySelectorAll('#product-list, #wishlist-products');
+    productGrids.forEach(grid => {
+        if (grid.id !== 'wishlist-products') {
+            const currentCategory = window.category || '';
+            // We could re-render but let's just update the individual button if possible
+            const buttons = grid.querySelectorAll('.product-wishlist-btn');
+            buttons.forEach(btn => {
+                if (parseInt(btn.dataset.productId) === productId) {
+                    const isInWishlist = wishlist.some(item => item.id === productId);
+                    btn.innerHTML = isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
+                    btn.style.color = isInWishlist ? '#FF007A' : '#000';
+                }
+            });
+        }
+    });
+    
+    // Update PDP wishlist button if present
+    const pdpBtn = document.querySelector('.pdp-wishlist-btn');
+    if (pdpBtn && parseInt(pdpBtn.dataset.productId) === productId) {
+        const isInWishlist = wishlist.some(item => item.id === productId);
+        const icon = pdpBtn.querySelector('i');
+        if (icon) {
+            icon.className = isInWishlist ? 'fas fa-heart' : 'far fa-heart';
+        }
+    }
 }
 
 function renderCartItems() {
@@ -487,7 +1126,7 @@ function openSettings(type) {
 
     switch(type) {
         case 'plus':
-            headerText = 'Life Style Plus';
+            headerText = 'House Of Viyara Plus';
             html = `<div style="text-align:center; padding: 20px;"><i class="fas fa-crown" style="font-size: 4rem; color: var(--accent-yellow); margin-bottom: 20px;"></i><h3>GOLD MEMBER</h3><p>Exclusive benefits active.</p></div>`;
             break;
         case 'devices':
