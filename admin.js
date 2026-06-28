@@ -803,10 +803,17 @@ function categoryFormHTML(c = {}) {
         </div>
       </div>
       <div class="aform-group">
+        <label>Upload Banner Image</label>
+        <input class="aform-input" id="cf-banner-file" type="file" accept="image/*">
+        <small class="admin-form-hint">Choose a local file to upload and populate the Banner Image URL automatically.</small>
+      </div>
+      <div class="aform-group">
         <label>Banner Image URL</label>
         <input class="aform-input" id="cf-banner" value="${c.banner_image || ''}" placeholder="https://images.unsplash.com/...">
       </div>
-      ${c.banner_image ? `<img src="${c.banner_image}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:15px;" onerror="this.style.display='none'">` : ''}
+      <div id="cf-preview-wrap" style="display:${c.banner_image ? 'block' : 'none'}">
+        <img id="cf-preview" src="${c.banner_image || ''}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:15px;" onerror="this.style.display='none'">
+      </div>
       <div class="aform-actions">
         <button class="admin-btn admin-btn-primary" onclick="${c.id ? `handleEditCategory(${c.id})` : 'handleAddCategory()'}">
           <i class="fas fa-save"></i> ${c.id ? 'Update Category' : 'Add Category'}
@@ -820,6 +827,35 @@ function categoryFormHTML(c = {}) {
         if(!slugEl.dataset.edited) slugEl.value = this.value.toLowerCase().replace(/\\s+/g,'-').replace(/[^a-z0-9-]/g,'');
       });
       document.getElementById('cf-slug').addEventListener('input', function(){ this.dataset.edited = '1'; });
+
+      // Category banner file upload
+      document.getElementById('cf-banner-file').addEventListener('change', async function(){
+        const fileInput = this;
+        const urlInput = document.getElementById('cf-banner');
+        const wrap = document.getElementById('cf-preview-wrap');
+        const img = document.getElementById('cf-preview');
+        if (!fileInput.files.length) return;
+        try {
+          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
+          wrap.style.display = 'block';
+          img.src = uploadedUrl;
+        } catch (e) {
+          console.error('Upload failed:', e);
+          showToast('Image upload failed', 'error');
+        }
+      });
+
+      // Update preview when URL changes
+      document.getElementById('cf-banner').addEventListener('input', function(){
+        const wrap = document.getElementById('cf-preview-wrap');
+        const img = document.getElementById('cf-preview');
+        if (this.value) {
+          wrap.style.display = 'block';
+          img.src = this.value;
+        } else {
+          wrap.style.display = 'none';
+        }
+      });
     <\/script>`;
 }
 
