@@ -10,6 +10,17 @@ console.log('🔍 window.SUPABASE_URL:', window.SUPABASE_URL);
 console.log('🔍 window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
 console.log('🔍 window.SUPABASE_BUCKET:', window.SUPABASE_BUCKET);
 
+// Clear old localStorage to avoid conflicts with Supabase
+if (window.SUPABASE_URL) {
+    console.log('🧹 Clearing old localStorage to use Supabase exclusively...');
+    const keysToKeep = ['lifestyle_user', 'hov_admin_token'];
+    Object.keys(localStorage).forEach(key => {
+        if (!keysToKeep.includes(key)) {
+            localStorage.removeItem(key);
+        }
+    });
+}
+
 // Supabase client (optional)
 let appSupabase = null;
 let USE_SUPABASE = false;
