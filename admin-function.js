@@ -15,6 +15,13 @@ let editItemId = null;
 // When a backend server is running, admin changes should persist across devices.
 // Detect availability and switch to server-backed admin APIs when possible.
 let BACKEND_ADMIN_MODE = false;
+const BACKEND_URL = window.BACKEND_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
+  ? `${window.location.protocol}//${window.location.hostname}:3000`
+  : window.location.origin);
+
+function backendFetch(path, options = {}) {
+  return fetch(`${BACKEND_URL}${path}`, options);
+}
 
 // Supabase client (optional, used if `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY` are set)
 let supabase = null;
@@ -79,7 +86,7 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
 
 async function detectBackendAdmin() {
   try {
-    const resp = await fetch('/api/admin/products', { method: 'GET' });
+    const resp = await backendFetch('/api/admin/products', { method: 'GET' });
     if (resp && resp.ok) {
       BACKEND_ADMIN_MODE = true;
       console.log('Admin panel: backend API detected — using server persistence.');
@@ -326,7 +333,7 @@ function renderProducts() {
 
   // If a backend is available, fetch products from server; otherwise read from localStorage.
   if (BACKEND_ADMIN_MODE) {
-    fetch('/api/admin/products')
+    backendFetch('/api/admin/products')
       .then(r => r.ok ? r.json() : [])
       .then(products => renderProductsTable(products))
       .catch(() => renderProductsTable(getStore(PRODUCTS_KEY, [])));
@@ -524,7 +531,7 @@ async function saveProduct() {
   if (BACKEND_ADMIN_MODE) {
     // Server-backed persistence
     if (editItemId) {
-      fetch(`/api/admin/products/${editItemId}`, {
+      backendFetch(`/api/admin/products/${editItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -534,7 +541,7 @@ async function saveProduct() {
         renderProducts();
       }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
     } else {
-      fetch('/api/admin/products', {
+      backendFetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
