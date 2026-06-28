@@ -177,38 +177,17 @@
             const processing = document.getElementById('processing');
             processing.style.display = 'flex';
 
-            try {
-            const response = await fetch('/api/payments/payu/init', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId })
-            });
-            if (!response.ok) {
-                throw new Error('Payment initialization failed');
-            }
-
-            const { action, params } = await response.json();
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = action;
-            form.style.display = 'none';
-
-            Object.entries(params).forEach(([key, value]) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = value;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-        } catch (error) {
-            console.error('PayU init error:', error);
-            processing.style.display = 'none';
-            alert('Unable to start payment. Please try again later.');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+        const orderIndex = orders.findIndex(o => o.txnid === txnid);
+        if (orderIndex !== -1) {
+            orders[orderIndex].payment_status = 'Paid';
+            orders[orderIndex].status = 'Confirmed';
+            localStorage.setItem('hov_orders', JSON.stringify(orders));
         }
-    }
+            alert('Payment completed successfully. Your order has been recorded locally.');
+            window.location.href = `orders.html?payment=success&txnid=${encodeURIComponent(txnid)}`;
+        }
     </script>
 </body>
 </html>

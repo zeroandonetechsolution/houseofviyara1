@@ -11,9 +11,18 @@ A luxury e-commerce platform for perfumes and slippers, featuring a real-time or
 ## Getting Started
 
 ### Running the Application
-1. Open `index.html` in your browser, or use a local static server such as Live Server.
-2. Open `admin.html` to manage the store.
-3. You can also run `start-admin.bat` to open the admin panel quickly.
+1. For the easiest setup, double-click `start-local.bat`.
+   - It starts a local web server on `http://127.0.0.1:5501`
+   - It opens both the storefront and the admin panel automatically
+
+2. If you want to launch manually, open both pages through the same origin:
+   ```text
+   http://127.0.0.1:5501/index.html
+   http://127.0.0.1:5501/admin.html
+   ```
+
+### Important
+The admin panel stores data in browser `localStorage`, which is shared only between pages that use the same origin. If the storefront uses `http://127.0.0.1:5501`, the admin page must also use `http://127.0.0.1:5501`.
 
 ### Optional Backend
 If you want server-side features later, the optional backend is still available in the `backend` folder.

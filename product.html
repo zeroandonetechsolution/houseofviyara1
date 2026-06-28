@@ -71,31 +71,23 @@
         </div>
     </header>
 
-    <!-- Auth Modal -->
-    <div class="modal-overlay" id="auth-overlay"></div>
+        <!-- Auth Modal -->
+        <div class="modal-overlay" id="auth-overlay"></div>
     <div class="auth-modal" id="auth-modal">
         <button class="close-modal-btn" id="close-auth-btn"><i class="fas fa-times"></i></button>
-        <h2>Welcome Back</h2>
-        <p>Login to House Of Viyara for a personalized experience.</p>
-        <button class="google-auth-btn" id="google-auth-btn">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-            CONTINUE WITH GOOGLE
-        </button>
-        <div class="admin-link-container">
-            <a href="admin.html"><i class="fas fa-user-shield"></i> Admin Portal</a>
-        </div>
-        <div class="auth-divider">OR USE OTP</div>
-        <div class="auth-form">
-            <div class="form-group">
-                <label style="display: block; font-weight: 800; margin-bottom: 8px;">Email or Phone</label>
-                <input type="text" id="auth-email" class="brutal-input" placeholder="you@example.com or +91...">
+        <div class="auth-content">
+            <h2>WELCOME BACK</h2>
+            <p>Login to House Of Viyara for a personalized experience.</p>
+            <div id="google-login-btn" style="margin: 20px 0; min-height: 40px;"></div>
+            <div style="text-align: center; margin-top: -10px; margin-bottom: 20px;">
+                <a href="admin.html" class="admin-access-link" style="font-size: 0.8rem; font-weight: 800; text-decoration: underline; color: var(--primary-color); opacity: 0.7; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-user-shield"></i> ADMIN PORTAL
+                </a>
             </div>
-            <button class="btn btn-primary" onclick="handleSendOTP()">SEND OTP</button>
+            <p style="font-size: 0.85rem; opacity: 0.7; text-align: center; margin-top: 15px;">Sign in with Google to continue.</p>
         </div>
     </div>
-
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobile-menu">
+<div class="mobile-menu" id="mobile-menu">
         <button class="close-menu-btn" id="close-menu-btn"><i class="fas fa-times"></i></button>
         <div style="padding: 25px 25px 0 25px;">
             <div class="brutal-input-container" style="position: relative;">

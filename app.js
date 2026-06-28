@@ -3,7 +3,7 @@ let cart = [];
 let wishlist = [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 let googleClientId = '';
-const FALLBACK_GOOGLE_CLIENT_ID = '726850316250-edmj9eb620e1kufona6bse9o87gva9gr.apps.googleusercontent.com';
+const FALLBACK_GOOGLE_CLIENT_ID = '572682440348-hmhuv9dqbho0r3u96juvfnndbasm7moo.apps.googleusercontent.com';
 
 const AUTH_KEYS = {
     user: 'lifestyle_user',
@@ -53,16 +53,26 @@ function closeAuthModal() {
     if (authOverlay) authOverlay.classList.remove('active');
 }
 
-async function fetchAuthConfig() {
-    try {
-        const response = await fetch('/api/auth/config');
-        if (!response.ok) return;
-        const data = await response.json();
-        googleClientId = data.googleClientId || FALLBACK_GOOGLE_CLIENT_ID;
-    } catch (error) {
-        console.warn('Unable to fetch auth config:', error);
-        googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
+function loadGoogleIdentityScript() {
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+        return Promise.resolve();
     }
+    return new Promise((resolve, reject) => {
+        const existing = document.getElementById('google-identity-script');
+        if (existing) {
+            existing.addEventListener('load', () => resolve());
+            existing.addEventListener('error', () => reject(new Error('Failed to load Google Identity Services')));
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = 'google-identity-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+        document.head.appendChild(script);
+    });
 }
 
 function updateAuthButton() {
@@ -455,17 +465,7 @@ async function checkPaymentStatus() {
 
     if (status === 'success') {
         const orders = getStore(STORE_KEYS.orders, []);
-        let order = orders.find(o => o.txnid === txnid);
-        if (!order && txnid) {
-            try {
-                const response = await fetch(`/api/orders/txnid/${encodeURIComponent(txnid)}`);
-                if (response.ok) {
-                    order = await response.json();
-                }
-            } catch (e) {
-                console.warn('Unable to fetch order by txnid', e);
-            }
-        }
+        const order = orders.find(o => o.txnid === txnid);
         if (order) {
             showSuccessModal(order.id);
             cart = [];
@@ -519,147 +519,79 @@ function toggleTheme() {
 
 // --- Authentication ---
 async function initAuth() {
-    await fetchAuthConfig();
-    if (user) {
-        updateAuthButton();
-        initGoogleButton();
-        return;
-    }
-
     updateAuthButton();
     initGoogleButton();
-    openAuthModal();
 }
 
-async function handleGoogleResponse(response) {
-    if (!response || (!response.credential && !response.accessToken)) {
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Failed to parse JWT', error);
+        return null;
+    }
+}
+
+function handleGoogleResponse(response) {
+    if (!response || !response.credential) {
         alert('Google sign-in failed. Please try again.');
         return;
     }
-
-    try {
-        const body = response.credential
-            ? { credential: response.credential }
-            : { accessToken: response.accessToken };
-
-        const resp = await fetch('/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-
-        if (!resp.ok) {
-            const data = await resp.json().catch(() => ({}));
-            throw new Error(data.error || 'Google login failed');
-        }
-
-        const data = await resp.json();
-        if (!data.user) {
-            throw new Error('Invalid auth response');
-        }
-
-        storeUser({
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.name,
-            token: data.token
-        });
-        cart = loadUserScopedData(AUTH_KEYS.cart, []);
-        wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
-        updateCartBadge();
-        updateWishlistBadge();
-        updateAuthButton();
-        closeAuthModal();
-        alert(`Logged in as ${data.user.name}`);
-    } catch (error) {
-        console.error(error);
-        alert(error.message || 'Google login failed');
+    const payload = parseJwt(response.credential);
+    if (!payload) {
+        alert('Unable to parse Google sign-in response.');
+        return;
     }
+    const googleUser = {
+        id: payload.sub || payload.email || `google-${Date.now()}`,
+        email: payload.email || '',
+        name: payload.name || payload.email?.split('@')[0] || 'Google User',
+        picture: payload.picture || '',
+        token: response.credential
+    };
+    storeUser(googleUser);
+    cart = loadUserScopedData(AUTH_KEYS.cart, []);
+    wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
+    updateCartBadge();
+    updateWishlistBadge();
+    updateAuthButton();
+    closeAuthModal();
+    alert(`Logged in as ${googleUser.name}`);
 }
-
-let googleButtonInitialized = false;
 
 function initGoogleButton() {
-    const googleBtn = document.getElementById('google-auth-btn');
-    if (!googleBtn || googleButtonInitialized) return;
-
-    googleButtonInitialized = true;
-
-    const startGoogleFlow = async () => {
-        if (!googleClientId) {
-            googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
+    const googleBtn = document.getElementById('google-auth-btn') || document.getElementById('google-login-btn');
+    if (!googleBtn) return;
+    const renderGoogle = () => {
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+            console.warn('Google Identity Services not available.');
+            googleBtn.style.opacity = '0.6';
+            googleBtn.textContent = 'Google sign-in unavailable';
+            return;
         }
-
-        try {
-            await loadGoogleIdentityScript();
-
-            if (window.google && window.google.accounts && window.google.accounts.id) {
-                window.google.accounts.id.initialize({
-                    client_id: googleClientId,
-                    callback: handleGoogleResponse,
-                    ux_mode: 'popup',
-                    auto_select: false,
-                    cancel_on_tap_outside: false
-                });
-
-                window.google.accounts.id.renderButton(googleBtn, {
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'continue_with',
-                    shape: 'rectangular',
-                    logo_alignment: 'left',
-                    width: 280
-                });
-                return;
-            }
-
-            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-                const tokenClient = window.google.accounts.oauth2.initTokenClient({
-                    client_id: googleClientId,
-                    scope: 'openid email profile',
-                    callback: async (tokenResponse) => {
-                        if (tokenResponse.error) {
-                            console.error(tokenResponse);
-                            alert('Google login was cancelled or blocked.');
-                            return;
-                        }
-                        await handleGoogleResponse({ accessToken: tokenResponse.access_token });
-                    }
-                });
-                tokenClient.requestAccessToken({ prompt: 'consent' });
-                return;
-            }
-
-            alert('Google login is unavailable. Please try again later.');
-        } catch (error) {
-            console.warn('Google script load error:', error);
-            alert('Unable to load Google login. Use OTP instead.');
-        }
+        window.google.accounts.id.initialize({
+            client_id: FALLBACK_GOOGLE_CLIENT_ID,
+            callback: handleGoogleResponse,
+            ux_mode: 'popup',
+            cancel_on_tap_outside: false
+        });
+        googleBtn.innerHTML = '';
+        window.google.accounts.id.renderButton(googleBtn, {
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 280
+        });
     };
-
-    startGoogleFlow();
-}
-
-function loadGoogleIdentityScript() {
-    return new Promise((resolve, reject) => {
-        if (window.google && window.google.accounts && window.google.accounts.id) {
-            resolve();
-            return;
-        }
-        const existingScript = document.getElementById('google-identity-script');
-        if (existingScript) {
-            existingScript.addEventListener('load', resolve);
-            existingScript.addEventListener('error', () => reject(new Error('Google identity script failed to load')));
-            return;
-        }
-        const script = document.createElement('script');
-        script.id = 'google-identity-script';
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Google identity script failed to load'));
-        document.head.appendChild(script);
+    loadGoogleIdentityScript().then(renderGoogle).catch(error => {
+        console.warn('Unable to load Google login script:', error);
+        googleBtn.style.opacity = '0.6';
+        googleBtn.textContent = 'Google sign-in unavailable';
     });
 }
 
@@ -670,70 +602,6 @@ function requireAuth(action) {
         return false;
     }
     return true;
-}
-
-async function handleSendOTP() {
-    const input = document.getElementById('auth-email');
-    const value = input ? input.value.trim() : '';
-    if (!value) {
-        alert('Please enter email or phone to login.');
-        return;
-    }
-
-    try {
-        const resp = await fetch('/api/auth/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: value.includes('@') ? value : `${value}@hov.local` })
-        });
-        if (!resp.ok) {
-            const data = await resp.json().catch(() => ({}));
-            throw new Error(data.error || 'Unable to send OTP');
-        }
-        alert('OTP has been sent. Please check your email.');
-        document.getElementById('auth-otp-section')?.classList.add('active');
-    } catch (error) {
-        console.error(error);
-        alert(error.message || 'Unable to send OTP');
-    }
-}
-
-async function verifyOTP() {
-    const input = document.getElementById('auth-email');
-    const otpInput = document.getElementById('auth-otp');
-    const email = input ? input.value.trim() : '';
-    const otp = otpInput ? otpInput.value.trim() : '';
-    if (!email || !otp) {
-        alert('Please enter both email and OTP.');
-        return;
-    }
-
-    try {
-        const resp = await fetch('/api/auth/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email.includes('@') ? email : `${email}@hov.local`, otp })
-        });
-        if (!resp.ok) {
-            const data = await resp.json().catch(() => ({}));
-            throw new Error(data.error || 'OTP verification failed');
-        }
-        const data = await resp.json();
-        if (!data.user) {
-            throw new Error('Invalid auth response');
-        }
-        storeUser({ id: data.user.id, email: data.user.email, name: data.user.name || data.user.email.split('@')[0], token: data.token });
-        cart = loadUserScopedData(AUTH_KEYS.cart, []);
-        wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
-        updateCartBadge();
-        updateWishlistBadge();
-        updateAuthButton();
-        closeAuthModal();
-        alert(`Logged in as ${data.user.name || data.user.email}`);
-    } catch (error) {
-        console.error(error);
-        alert(error.message || 'OTP verification failed');
-    }
 }
 
 function closeSuccessModal() {
@@ -971,10 +839,10 @@ function renderWishlist() {
 }
 
 // --- Product Details Page Logic (Instant SPA) ---
-window.openProductPage = async function(productId) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
+window.openProductPage = async function(productId, evt) {
+    if (evt && typeof evt.preventDefault === 'function') {
+        evt.preventDefault();
+        evt.stopPropagation();
     }
 
     const pdpModal = document.getElementById('pdp-modal');
@@ -1683,6 +1551,10 @@ function getCheckoutPayload() {
 }
 
 async function completeCheckout() {
+    if (!requireAuth('complete checkout')) {
+        return;
+    }
+
     if (!cart.length) {
         alert('Your cart is empty. Please add items before checking out.');
         return;
@@ -1696,34 +1568,26 @@ async function completeCheckout() {
 
     const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
     const txnid = 'TXN' + Date.now();
-    const payload = {
-        user_id: user?.id || null,
-        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size' })),
-        total_amount: amount,
-        shipping_address: checkout.shipping_address,
+    const orderId = `LS-${Date.now()}`;
+    const order = {
+        id: orderId,
         txnid,
-        payment_gateway: 'payu'
+        customer: checkout.name,
+        email: checkout.email,
+        phone: checkout.phone || '',
+        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size' })),
+        total: amount,
+        shipping_address: checkout.shipping_address,
+        date: new Date().toLocaleDateString('en-IN'),
+        status: 'Pending',
+        payment_status: 'Pending'
     };
 
-    try {
-        const response = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+    const orders = getStore(STORE_KEYS.orders, []);
+    orders.unshift(order);
+    saveStore(STORE_KEYS.orders, orders);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create order');
-        }
-
-        const data = await response.json();
-        const orderId = data.orderId;
-        window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;
-    } catch (error) {
-        console.error('Checkout error:', error);
-        alert('Unable to complete checkout. Please try again later.');
-    }
+    window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;
 }
 
 function renderCartPage() {
@@ -1801,8 +1665,16 @@ function renderCartPage() {
 }
 
 function showSuccessModal(orderId) {
-    document.getElementById('success-modal').classList.add('active');
-    document.getElementById('order-id').innerText = orderId;
+    const modal = document.getElementById('success-modal');
+    const orderIdElem = document.getElementById('order-id');
+    if (modal && orderIdElem) {
+        modal.classList.add('active');
+        orderIdElem.innerText = orderId;
+        return;
+    }
+    if (orderId) {
+        alert(`Order completed successfully. Order ID: ${orderId}`);
+    }
 }
 
 // --- UI Helpers ---
@@ -1828,6 +1700,10 @@ window.closeCart = function() {
 
 window.toggleCart = function() {
     const drawer = document.getElementById('cart-drawer');
+    if (!drawer) {
+        openCart();
+        return;
+    }
     if (drawer.classList.contains('active')) {
         closeCart();
     } else {
@@ -1854,8 +1730,8 @@ function setupEventListeners() {
     const menu = document.getElementById('mobile-menu');
     const closeMenuBtn = document.getElementById('close-menu-btn');
 
-    if (menuBtn) menuBtn.onclick = () => menu.classList.add('active');
-    if (closeMenuBtn) closeMenuBtn.onclick = () => menu.classList.remove('active');
+    if (menuBtn && menu) menuBtn.onclick = () => menu.classList.add('active');
+    if (closeMenuBtn && menu) closeMenuBtn.onclick = () => menu.classList.remove('active');
 
     // Auth Modal
     const authBtn = document.getElementById('open-auth-btn');
