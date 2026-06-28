@@ -48,11 +48,58 @@ async function loadSupabaseClient() {
         appSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         USE_SUPABASE = true;
         console.log('Supabase client loaded');
+
+        // Subscribe to realtime changes
+        setupRealtimeSubscriptions();
+
         return true;
     } catch (e) {
         console.warn('Supabase init failed', e);
         return false;
     }
+}
+
+async function setupRealtimeSubscriptions() {
+    if (!USE_SUPABASE || !appSupabase) return;
+
+    // Subscribe to products changes
+    appSupabase
+        .channel('products-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'products' },
+            async (payload) => {
+                console.log('🔄 Product changed:', payload);
+                await renderProducts();
+            }
+        )
+        .subscribe();
+
+    // Subscribe to categories changes
+    appSupabase
+        .channel('categories-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'categories' },
+            async (payload) => {
+                console.log('🔄 Category changed:', payload);
+                await renderCategories();
+                await renderHeaderNavigation();
+            }
+        )
+        .subscribe();
+
+    // Subscribe to banners changes
+    appSupabase
+        .channel('banners-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'banners' },
+            async (payload) => {
+                console.log('🔄 Banner changed:', payload);
+                await initHeroCarousel();
+            }
+        )
+        .subscribe();
+
+    console.log('✅ Realtime subscriptions set up!');
 }
 
 // Fetch products preferring Supabase, then API_URL, then localStorage

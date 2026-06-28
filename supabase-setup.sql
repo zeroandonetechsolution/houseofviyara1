@@ -84,6 +84,12 @@ CREATE POLICY "Allow public write on banners" ON banners FOR ALL USING (true);
 CREATE POLICY "Allow public read on orders" ON orders FOR SELECT USING (true);
 CREATE POLICY "Allow public write on orders" ON orders FOR ALL USING (true);
 
+-- Enable Realtime for all tables
+alter publication supabase_realtime add table products;
+alter publication supabase_realtime add table categories;
+alter publication supabase_realtime add table banners;
+alter publication supabase_realtime add table orders;
+
 -- Insert sample data
 INSERT INTO products (name, description, price, category, image_url, is_trending)
 SELECT 'Banarasi Silk Saree', 'Elegant gold zari border with premium silk fabric.', 4500, 'saree', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', true
