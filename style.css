@@ -323,6 +323,11 @@ h1, h2, h3, h4 {
     display: block;
     object-fit: cover; /* Fill the entire container */
     object-position: center 30%; /* Focus on the top/middle of the bottle to keep it visible */
+    transition: opacity 0.6s ease;
+}
+
+.hero-image img.fade-out {
+    opacity: 0;
 }
 
 /* --- Preloader & Loading System --- */
@@ -683,11 +688,26 @@ video.lazy-loaded {
 
 .banner-card {
     position: relative;
-    height: 280px;
+    height: 420px;
     border: var(--brutal-border);
     box-shadow: var(--brutal-shadow);
     overflow: hidden;
-    transition: all 0.1s;
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: scale(0.98);
+    position: absolute;
+    inset: 0;
+    width: 100%;
+}
+
+.banner-card.active {
+    opacity: 1;
+    transform: scale(1);
+    position: relative;
+}
+
+.banner-slide {
+    transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
 .banner-card:hover {
@@ -699,6 +719,33 @@ video.lazy-loaded {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.banner-slider {
+    position: relative;
+    min-height: 420px;
+}
+
+.banner-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.banner-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.55);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.banner-dot.active {
+    background: var(--accent-yellow);
+    transform: scale(1.2);
 }
 
 .banner-overlay {
@@ -857,13 +904,56 @@ video.lazy-loaded {
     gap: 40px;
 }
 
-.product-card {
+..product-card {
     background: var(--card-bg);
     border: var(--brutal-border);
     box-shadow: var(--brutal-shadow);
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
+}
+
+.product-card.skeleton-card {
+    background: #f7f7f7;
+    border-color: #e3e3e3;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.product-card.skeleton-card .product-img {
+    background: linear-gradient(90deg, #ececec 0%, #f6f6f6 50%, #ececec 100%);
+    background-size: 200% 100%;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.product-card.skeleton-card .product-info {
+    display: grid;
+    gap: 12px;
+    padding: 20px;
+}
+
+.skeleton-line {
+    width: 100%;
+    height: 16px;
+    background: linear-gradient(90deg, #ececec 0%, #f6f6f6 50%, #ececec 100%);
+    background-size: 200% 100%;
+    animation: pulse 1.5s ease-in-out infinite;
+    border-radius: 999px;
+}
+
+.skeleton-title {
+    width: 70%;
+    height: 22px;
+}
+
+.skeleton-price {
+    width: 45%;
+    height: 20px;
+}
+
+@keyframes pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .product-card:hover {

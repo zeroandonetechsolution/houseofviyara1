@@ -127,6 +127,27 @@
                 <input type="text" id="auth-email" class="brutal-input" placeholder="you@example.com or +91...">
             </div>
             <button class="btn btn-primary" onclick="handleSendOTP()">SEND OTP</button>
+
+            <div id="auth-otp-section" style="display:none; margin-top:12px;">
+                <div class="form-group">
+                    <label style="display: block; font-weight: 800; margin-bottom: 8px;">Enter OTP</label>
+                    <input type="text" id="auth-otp" class="brutal-input" placeholder="6-digit code">
+                </div>
+                <button class="btn btn-primary" onclick="verifyOTP()">VERIFY OTP</button>
+            </div>
+            <script>
+                // Small helper to toggle OTP section when activated by JS
+                (function(){
+                    const obs = new MutationObserver(() => {
+                        const sec = document.getElementById('auth-otp-section');
+                        if (!sec) return;
+                        if (sec.classList.contains('active')) sec.style.display = 'block';
+                        else sec.style.display = sec.style.display === 'block' ? 'block' : 'none';
+                    });
+                    const target = document.getElementById('auth-modal');
+                    if (target) obs.observe(target, { attributes: true, attributeFilter: ['class'] });
+                })();
+            </script>
         </div>
     </div>
 
@@ -223,13 +244,8 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="assets/18.jpeg" alt="Premium Fashion" loading="eager" decoding="async" fetchpriority="high">
+                <img id="hero-image" src="assets/1.jpeg" alt="Premium Fashion" loading="eager" decoding="async" fetchpriority="high">
             </div>
-        </section>
-
-        <!-- Banners Section -->
-        <section class="banners-section" id="banners-section" style="display:none;">
-            <div class="banners-carousel" id="banners-carousel"></div>
         </section>
 
         <!-- Categories Section -->

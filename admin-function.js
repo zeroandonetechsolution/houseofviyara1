@@ -6,6 +6,7 @@ const PRODUCTS_KEY = 'hov_products';
 const CATEGORIES_KEY = 'hov_categories';
 const HEADER_LINKS_KEY = 'hov_header_links';
 const BANNERS_KEY = 'hov_banners';
+const HERO_IMAGES_KEY = 'hov_hero_images';
 const ORDERS_KEY = 'hov_orders';
 
 let adminToken = localStorage.getItem(ADMIN_KEY);
@@ -27,6 +28,13 @@ const defaultData = {
     { id: 1, title: 'New Arrivals', subtitle: 'Fresh styles ready to shine this season', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', cta_link: 'collections.html', is_active: true, display_order: 1 },
     { id: 2, title: 'Party Wear', subtitle: 'Elegant outfits for evenings to remember', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', cta_link: 'party.html', is_active: true, display_order: 2 },
     { id: 3, title: 'Ethnic Elegance', subtitle: 'Graceful picks for every special moment', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', cta_link: 'ethnic.html', is_active: true, display_order: 3 }
+  ],
+  hero_images: [
+    { id: 1, image_url: 'assets/1.jpeg', alt: 'Hero image 1', is_active: true, display_order: 1 },
+    { id: 2, image_url: 'assets/2.jpeg', alt: 'Hero image 2', is_active: true, display_order: 2 },
+    { id: 3, image_url: 'assets/6.jpeg', alt: 'Hero image 3', is_active: true, display_order: 3 },
+    { id: 4, image_url: 'assets/11.jpeg', alt: 'Hero image 4', is_active: true, display_order: 4 },
+    { id: 5, image_url: 'assets/22.jpeg', alt: 'Hero image 5', is_active: true, display_order: 5 }
   ],
   orders: []
 };
@@ -145,6 +153,7 @@ function renderApp() {
         <a class="admin-nav-item" id="nav-categories" onclick="navigate('categories')"><i class="fas fa-th-large"></i><span>Categories</span></a>
         <a class="admin-nav-item" id="nav-header" onclick="navigate('header')"><i class="fas fa-link"></i><span>Header</span></a>
         <a class="admin-nav-item" id="nav-banners" onclick="navigate('banners')"><i class="fas fa-image"></i><span>Banners</span></a>
+        <a class="admin-nav-item" id="nav-hero" onclick="navigate('hero')"><i class="fas fa-photo-film"></i><span>Hero Images</span></a>
         <a class="admin-nav-item" id="nav-orders" onclick="navigate('orders')"><i class="fas fa-shopping-bag"></i><span>Orders</span></a>
       </nav>
       <div class="admin-sidebar-footer">
@@ -178,6 +187,7 @@ function navigate(section) {
   if (section === 'categories') renderCategories();
   if (section === 'header') renderHeaderNavigationPanel();
   if (section === 'banners') renderBanners();
+  if (section === 'hero') renderHeroImages();
   if (section === 'orders') renderOrders();
 }
 
@@ -488,21 +498,94 @@ function renderBanners() {
     `).join('')}</div>`;
 }
 
-function openBannerForm(id) {
-  const banner = id ? getStore(BANNERS_KEY, []).find(b => b.id === id) : {};
+function renderHeroImages() {
+  const heroImages = getStore(HERO_IMAGES_KEY, []);
+  document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openHeroImageForm()"><i class="fas fa-plus"></i> Add Hero Image</button>`;
+  document.getElementById('admin-content').innerHTML = `
+    <div class="admin-section-card">
+      <p class="admin-section-hint">Manage the homepage hero placeholder images shown in the top section.</p>
+      <div class="admin-banners-grid">${heroImages.map(h => `
+        <div class="admin-banner-card ${h.is_active ? '' : 'banner-inactive'}">
+          <div class="abc-img-wrap"><img src="${h.image_url}" onerror="this.src='https://via.placeholder.com/300x180?text=No+Image'"></div>
+          <div class="abc-meta"><strong>${h.alt || 'Hero Image'}</strong><p>Order: ${h.display_order}</p><small>${h.is_active ? 'Active' : 'Inactive'}</small></div>
+          <div class="abc-actions">
+            <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openHeroImageForm(${h.id})">Edit</button>
+            <button class="admin-btn admin-btn-sm ${h.is_active ? 'admin-btn-warning' : 'admin-btn-success'}" onclick="toggleHeroImageActive(${h.id}, ${h.is_active ? 0 : 1})">${h.is_active ? '<i class="fas fa-eye-slash"></i> Hide' : '<i class="fas fa-eye"></i> Show'}</button>
+            <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteHeroImage(${h.id})">Delete</button>
+          </div>
+        </div>
+      `).join('')}</div>
+    </div>`;
+}
+
+function openHeroImageForm(id) {
+  const heroImages = getStore(HERO_IMAGES_KEY, []);
+  const hero = id ? heroImages.find(h => h.id === id) : {};
   editItemId = id || null;
   document.getElementById('admin-content').innerHTML = `
     <div class="admin-section-card">
-      <h3>${id ? 'Edit Banner' : 'Add Banner'}</h3>
+      <h3>${id ? 'Edit Hero Image' : 'Add Hero Image'}</h3>
       <div class="admin-form">
-        <div class="aform-group"><label>Title</label><input class="aform-input" id="bf-title" value="${banner.title || ''}"></div>
-        <div class="aform-group"><label>Subtitle</label><input class="aform-input" id="bf-sub" value="${banner.subtitle || ''}"></div>
-        <div class="aform-group"><label>Image URL or File</label><input class="aform-input" id="bf-img" value="${banner.image_url || ''}" placeholder="Paste URL or choose file"><input type="file" id="bf-img-file" class="admin-file-input" accept="image/*"></div>
-        <div class="aform-group"><label>Link</label><input class="aform-input" id="bf-link" value="${banner.cta_link || ''}"></div>
-        <div class="aform-actions"><button class="admin-btn admin-btn-primary" onclick="saveBanner()">Save Banner</button> <button class="admin-btn admin-btn-ghost" onclick="renderBanners()">Cancel</button></div>
+        <div class="aform-group"><label>Image URL or File</label><input class="aform-input" id="hf-img" value="${hero.image_url || ''}" placeholder="https://...jpg"><input type="file" id="hf-img-file" class="admin-file-input" accept="image/*"></div>
+        <div id="hf-preview-wrap" style="display:${hero.image_url ? 'block' : 'none'}"><img id="hf-preview" src="${hero.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'"></div>
+        <div class="aform-group"><label>Alt Text</label><input class="aform-input" id="hf-alt" value="${hero.alt || ''}" placeholder="Describe the image"></div>
+        <div class="aform-row"><div class="aform-group"><label>Display Order</label><input class="aform-input" id="hf-order" type="number" value="${hero.display_order || 0}" placeholder="1"></div><div class="aform-group"><label>Active</label><input type="checkbox" id="hf-active" ${hero.id === undefined || hero.is_active ? 'checked' : ''}></div></div>
+        <div class="aform-actions"><button class="admin-btn admin-btn-primary" onclick="saveHeroImage()">${id ? 'Update Hero Image' : 'Add Hero Image'}</button> <button class="admin-btn admin-btn-ghost" onclick="renderHeroImages()">Cancel</button></div>
       </div>
     </div>`;
-  document.getElementById('bf-img-file').addEventListener('change', handleBannerFilePreview);
+  document.getElementById('hf-img-file').addEventListener('change', handleHeroImageFilePreview);
+}
+
+function handleHeroImageFilePreview(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    document.getElementById('hf-img').value = reader.result;
+    document.getElementById('hf-preview').src = reader.result;
+    document.getElementById('hf-preview-wrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveHeroImage() {
+  const image_url = document.getElementById('hf-img').value.trim();
+  if (!image_url) return showToast('Image URL is required', 'error');
+  const heroImages = getStore(HERO_IMAGES_KEY, []);
+  const data = {
+    id: editItemId || Date.now(),
+    image_url,
+    alt: document.getElementById('hf-alt').value.trim(),
+    is_active: document.getElementById('hf-active').checked,
+    display_order: Number(document.getElementById('hf-order').value || 0)
+  };
+  if (editItemId) {
+    const index = heroImages.findIndex(h => h.id === editItemId);
+    heroImages[index] = data;
+    showToast('Hero image updated', 'success');
+  } else {
+    heroImages.unshift(data);
+    showToast('Hero image added', 'success');
+  }
+  saveStore(HERO_IMAGES_KEY, heroImages);
+  renderHeroImages();
+}
+
+function toggleHeroImageActive(id, newValue) {
+  const heroImages = getStore(HERO_IMAGES_KEY, []);
+  const index = heroImages.findIndex(h => h.id === id);
+  if (index === -1) return;
+  heroImages[index].is_active = Boolean(newValue);
+  saveStore(HERO_IMAGES_KEY, heroImages);
+  showToast(heroImages[index].is_active ? 'Hero image visible' : 'Hero image hidden', 'success');
+  renderHeroImages();
+}
+
+function deleteHeroImage(id) {
+  const heroImages = getStore(HERO_IMAGES_KEY, []).filter(h => h.id !== id);
+  saveStore(HERO_IMAGES_KEY, heroImages);
+  showToast('Hero image deleted', 'success');
+  renderHeroImages();
 }
 
 function handleBannerFilePreview(event) {

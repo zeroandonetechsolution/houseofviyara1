@@ -1,7 +1,78 @@
 // Global State
-let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
-let wishlist = JSON.parse(localStorage.getItem('lifestyle_wishlist')) || [];
+let cart = [];
+let wishlist = [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
+let googleClientId = '';
+
+const AUTH_KEYS = {
+    user: 'lifestyle_user',
+    cart: 'lifestyle_cart',
+    wishlist: 'lifestyle_wishlist'
+};
+
+function getUserScopedKey(baseKey) {
+    return user && user.id ? `${baseKey}_${user.id}` : baseKey;
+}
+
+function loadUserScopedData(baseKey, fallback) {
+    const raw = localStorage.getItem(getUserScopedKey(baseKey));
+    if (!raw) return fallback;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function saveUserScopedData(baseKey, data) {
+    localStorage.setItem(getUserScopedKey(baseKey), JSON.stringify(data));
+}
+
+function storeUser(userData) {
+    localStorage.setItem(AUTH_KEYS.user, JSON.stringify(userData));
+    user = userData;
+}
+
+function clearUser() {
+    localStorage.removeItem(AUTH_KEYS.user);
+    user = null;
+}
+
+function openAuthModal() {
+    const authModal = document.getElementById('auth-modal');
+    const authOverlay = document.getElementById('auth-overlay');
+    if (authModal) authModal.classList.add('active');
+    if (authOverlay) authOverlay.classList.add('active');
+}
+
+function closeAuthModal() {
+    const authModal = document.getElementById('auth-modal');
+    const authOverlay = document.getElementById('auth-overlay');
+    if (authModal) authModal.classList.remove('active');
+    if (authOverlay) authOverlay.classList.remove('active');
+}
+
+async function fetchAuthConfig() {
+    try {
+        const response = await fetch('/api/auth/config');
+        if (!response.ok) return;
+        const data = await response.json();
+        googleClientId = data.googleClientId || '';
+    } catch (error) {
+        console.warn('Unable to fetch auth config:', error);
+    }
+}
+
+function updateAuthButton() {
+    const authBtn = document.getElementById('open-auth-btn');
+    if (!authBtn) return;
+    if (user) {
+        const label = user.name ? user.name.split(' ')[0] : 'Me';
+        authBtn.innerHTML = `<i class="fas fa-user"></i> ${label}`;
+    } else {
+        authBtn.innerHTML = `<i class="fas fa-user"></i>`;
+    }
+}
 
 // Local-only mode: all storefront data is stored in localStorage or seeded from defaults.
 const API_URL = ''; // no backend API calls in static mode
@@ -41,6 +112,7 @@ const STORE_KEYS = {
     categories: 'hov_categories',
     header_links: 'hov_header_links',
     banners: 'hov_banners',
+    hero_images: 'hov_hero_images',
     orders: 'hov_orders'
 };
 
@@ -64,34 +136,62 @@ const defaultHeaderLinks = [
 const defaultBanners = [
     {
         id: 1,
-        title: 'New Arrivals',
-        subtitle: 'Fresh styles ready to shine this season',
-        image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1400&q=80',
-        cta_link: 'collections.html',
-        cta_text: 'Shop Now',
+        title: 'Saree Spotlight',
+        subtitle: 'Handpicked premium sarees for every occasion',
+        image_url: 'assets/1.jpeg',
+        cta_link: 'saree.html',
+        cta_text: 'Explore Sarees',
         is_active: true,
         display_order: 1
     },
     {
         id: 2,
-        title: 'Party Wear',
-        subtitle: 'Elegant outfits for evenings to remember',
-        image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1400&q=80',
-        cta_link: 'party.html',
-        cta_text: 'Explore',
+        title: 'Kurtis Collection',
+        subtitle: 'Soft prints and rich embroidery for daily wear',
+        image_url: 'assets/2.jpeg',
+        cta_link: 'kurtis.html',
+        cta_text: 'Shop Kurtis',
         is_active: true,
         display_order: 2
     },
     {
         id: 3,
-        title: 'Ethnic Elegance',
-        subtitle: 'Graceful picks for every special moment',
-        image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1400&q=80',
-        cta_link: 'ethnic.html',
-        cta_text: 'View Collection',
+        title: 'Party Ready',
+        subtitle: 'Glamorous evening looks with a modern edge',
+        image_url: 'assets/6.jpeg',
+        cta_link: 'party.html',
+        cta_text: 'Shop Party',
         is_active: true,
         display_order: 3
+    },
+    {
+        id: 4,
+        title: 'Ethnic Fusion',
+        subtitle: 'Bold prints and rich textures for special days',
+        image_url: 'assets/11.jpeg',
+        cta_link: 'ethnic.html',
+        cta_text: 'Shop Ethnic',
+        is_active: true,
+        display_order: 4
+    },
+    {
+        id: 5,
+        title: 'Casual Comfort',
+        subtitle: 'Easy summer silhouettes for everyday outings',
+        image_url: 'assets/22.jpeg',
+        cta_link: 'casual.html',
+        cta_text: 'Shop Casual',
+        is_active: true,
+        display_order: 5
     }
+];
+
+const defaultHeroImages = [
+    { id: 1, image_url: 'assets/1.jpeg', alt: 'Hero image 1', is_active: true, display_order: 1 },
+    { id: 2, image_url: 'assets/2.jpeg', alt: 'Hero image 2', is_active: true, display_order: 2 },
+    { id: 3, image_url: 'assets/6.jpeg', alt: 'Hero image 3', is_active: true, display_order: 3 },
+    { id: 4, image_url: 'assets/11.jpeg', alt: 'Hero image 4', is_active: true, display_order: 4 },
+    { id: 5, image_url: 'assets/22.jpeg', alt: 'Hero image 5', is_active: true, display_order: 5 }
 ];
 
 function getStore(key, fallback) {
@@ -142,8 +242,14 @@ function seedStoreData() {
     }
 
     const existingBanners = getStore(STORE_KEYS.banners, null);
-    if (!Array.isArray(existingBanners)) {
+    const isLegacyBanner = banners => Array.isArray(banners) && banners.length > 0 && banners.every(b => typeof b.image_url === 'string' && b.image_url.includes('unsplash.com'));
+    if (!Array.isArray(existingBanners) || isLegacyBanner(existingBanners) || existingBanners.length === 0) {
         saveStore(STORE_KEYS.banners, defaultBanners);
+    }
+
+    const existingHeroImages = getStore(STORE_KEYS.hero_images, null);
+    if (!Array.isArray(existingHeroImages) || existingHeroImages.length === 0) {
+        saveStore(STORE_KEYS.hero_images, defaultHeroImages);
     }
 
     const existingHeaderLinks = getStore(STORE_KEYS.header_links, null);
@@ -157,6 +263,7 @@ function seedStoreData() {
 // Client-side cache for products
 const productCache = new Map();
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+let bannerIntervalId = null;
 
 function optimizeImg(url, w = 400, q = 60) {
     if (window.LifeStyleLoader) return LifeStyleLoader.optimizeImageUrl(url, w, q);
@@ -186,10 +293,13 @@ async function fetchWithTimeout(resource, options = {}) {
 let searchTimeout;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     seedStoreData();
     initTheme();
-    initAuth();
+    await initAuth();
+
+    cart = loadUserScopedData(AUTH_KEYS.cart, []);
+    wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
     updateCartBadge();
     updateWishlistBadge();
     
@@ -208,8 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCartPage();
     } else {
         renderProducts();
-        renderBanners();
         renderCategories();
+        initHeroCarousel();
     }
 
     renderHeaderNavigation();
@@ -220,33 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
     registerServiceWorker();
 });
 
-// --- Banner Rendering ---
-function renderBanners() {
-    const bannersSection = document.getElementById('banners-section');
-    const bannersCarousel = document.getElementById('banners-carousel');
-    if (!bannersSection || !bannersCarousel) return;
-
-    const banners = getStore(STORE_KEYS.banners, [])
-        .filter(b => b.is_active)
-        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-
-    if (banners.length === 0) {
-        bannersSection.style.display = 'none';
-        return;
-    }
-
-    bannersSection.style.display = 'block';
-    bannersCarousel.innerHTML = banners.map(banner => `
-        <a href="${banner.cta_link || '#'}" class="banner-card">
-            <img src="${banner.image_url}" alt="${banner.title || 'Banner'}" loading="lazy">
-            <div class="banner-overlay">
-                ${banner.title ? `<h3 class="banner-title">${banner.title}</h3>` : ''}
-                ${banner.subtitle ? `<p class="banner-subtitle">${banner.subtitle}</p>` : ''}
-                <span class="banner-cta">${banner.cta_text || 'SHOP NOW'} <i class="fas fa-arrow-right"></i></span>
-            </div>
-        </a>
-    `).join('');
-}
 
 // --- Category Rendering ---
 function renderCategories() {
@@ -255,6 +338,42 @@ function renderCategories() {
 
     const categories = getStore(STORE_KEYS.categories, []);
     renderCategoryList(categories, categoryGrid);
+}
+
+let heroCarouselInterval = null;
+function getHeroImages() {
+    return getStore(STORE_KEYS.hero_images, [])
+        .filter(image => image.is_active)
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+}
+
+function initHeroCarousel() {
+    const heroImage = document.getElementById('hero-image');
+    if (!heroImage) return;
+
+    const heroImages = getHeroImages();
+    if (!heroImages.length) return;
+
+    heroImage.src = heroImages[0].image_url || heroImage.src;
+    let currentIndex = 0;
+    const changeHeroImage = index => {
+        if (!heroImage || !heroImages[index]) return;
+        if (heroImage.src.endsWith(heroImages[index].image_url)) return;
+        heroImage.classList.add('fade-out');
+        setTimeout(() => {
+            heroImage.src = heroImages[index].image_url;
+            heroImage.classList.remove('fade-out');
+        }, 300);
+        currentIndex = index;
+    };
+
+    const nextImage = () => {
+        const nextIndex = (currentIndex + 1) % heroImages.length;
+        changeHeroImage(nextIndex);
+    };
+
+    if (heroCarouselInterval) clearInterval(heroCarouselInterval);
+    heroCarouselInterval = setInterval(nextImage, 3000);
 }
 
 function renderCategoryList(categories, container) {
@@ -327,7 +446,7 @@ function registerServiceWorker() {
 }
 
 // --- Payment Status Check ---
-function checkPaymentStatus() {
+async function checkPaymentStatus() {
     const urlParams = new URLSearchParams(window.location.search);
     const status = urlParams.get('payment');
     const txnid = urlParams.get('txnid');
@@ -397,21 +516,122 @@ function toggleTheme() {
 }
 
 // --- Authentication ---
-function initAuth() {
+async function initAuth() {
+    await fetchAuthConfig();
     if (user) {
-        const authBtn = document.getElementById('open-auth-btn');
-        if (authBtn) {
-            authBtn.innerHTML = `<i class="fas fa-user"></i>`;
-        }
+        updateAuthButton();
+        initGoogleButton();
+        return;
     }
+
+    updateAuthButton();
+    initGoogleButton();
+    openAuthModal();
 }
 
 async function handleGoogleResponse(response) {
-    // Google sign-in is disabled in static mode.
-    console.warn('Google login is disabled in static mode.');
+    if (!response || !response.credential) {
+        alert('Google sign-in failed. Please try again.');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential })
+        });
+
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(data.error || 'Google login failed');
+        }
+
+        const data = await resp.json();
+        if (!data.user) {
+            throw new Error('Invalid auth response');
+        }
+
+        storeUser({
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.name,
+            token: data.token
+        });
+        cart = loadUserScopedData(AUTH_KEYS.cart, []);
+        wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
+        updateCartBadge();
+        updateWishlistBadge();
+        updateAuthButton();
+        closeAuthModal();
+        alert(`Logged in as ${data.user.name}`);
+    } catch (error) {
+        console.error(error);
+        alert(error.message || 'Google login failed');
+    }
 }
 
-function handleSendOTP() {
+function initGoogleButton() {
+    const googleBtn = document.getElementById('google-auth-btn');
+    if (!googleBtn) return;
+
+    googleBtn.onclick = async () => {
+        if (!googleClientId) {
+            alert('Google login is not configured. Use OTP login instead.');
+            return;
+        }
+
+        try {
+            await loadGoogleIdentityScript();
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                window.google.accounts.id.initialize({
+                    client_id: googleClientId,
+                    callback: handleGoogleResponse,
+                    cancel_on_tap_outside: false
+                });
+                window.google.accounts.id.prompt();
+            } else {
+                alert('Google login is unavailable. Please try again later.');
+            }
+        } catch (error) {
+            console.warn('Google script load error:', error);
+            alert('Unable to load Google login. Use OTP instead.');
+        }
+    };
+}
+
+function loadGoogleIdentityScript() {
+    return new Promise((resolve, reject) => {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            resolve();
+            return;
+        }
+        const existingScript = document.getElementById('google-identity-script');
+        if (existingScript) {
+            existingScript.addEventListener('load', resolve);
+            existingScript.addEventListener('error', () => reject(new Error('Google identity script failed to load')));
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = 'google-identity-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Google identity script failed to load'));
+        document.head.appendChild(script);
+    });
+
+function requireAuth(action) {
+    if (!user) {
+        openAuthModal();
+        alert(`Please log in to ${action}.`);
+        return false;
+    }
+    return true;
+}
+
+async function handleSendOTP() {
     const input = document.getElementById('auth-email');
     const value = input ? input.value.trim() : '';
     if (!value) {
@@ -419,25 +639,60 @@ function handleSendOTP() {
         return;
     }
 
-    const userData = {
-        id: value,
-        email: value.includes('@') ? value : `${value}@hov.local`,
-        name: value.includes('@') ? value.split('@')[0] : value,
-        loggedInAt: new Date().toISOString()
-    };
+    try {
+        const resp = await fetch('/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: value.includes('@') ? value : `${value}@hov.local` })
+        });
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(data.error || 'Unable to send OTP');
+        }
+        alert('OTP has been sent. Please check your email.');
+        document.getElementById('auth-otp-section')?.classList.add('active');
+    } catch (error) {
+        console.error(error);
+        alert(error.message || 'Unable to send OTP');
+    }
+}
 
-    localStorage.setItem('lifestyle_user', JSON.stringify(userData));
-    user = userData;
+async function verifyOTP() {
+    const input = document.getElementById('auth-email');
+    const otpInput = document.getElementById('auth-otp');
+    const email = input ? input.value.trim() : '';
+    const otp = otpInput ? otpInput.value.trim() : '';
+    if (!email || !otp) {
+        alert('Please enter both email and OTP.');
+        return;
+    }
 
-    const authBtn = document.getElementById('open-auth-btn');
-    if (authBtn) authBtn.innerHTML = `<i class="fas fa-user"></i>`;
-
-    const authModal = document.getElementById('auth-modal');
-    const authOverlay = document.getElementById('auth-overlay');
-    if (authModal) authModal.classList.remove('active');
-    if (authOverlay) authOverlay.classList.remove('active');
-
-    alert(`Logged in as ${userData.name}`);
+    try {
+        const resp = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.includes('@') ? email : `${email}@hov.local`, otp })
+        });
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(data.error || 'OTP verification failed');
+        }
+        const data = await resp.json();
+        if (!data.user) {
+            throw new Error('Invalid auth response');
+        }
+        storeUser({ id: data.user.id, email: data.user.email, name: data.user.name || data.user.email.split('@')[0], token: data.token });
+        cart = loadUserScopedData(AUTH_KEYS.cart, []);
+        wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
+        updateCartBadge();
+        updateWishlistBadge();
+        updateAuthButton();
+        closeAuthModal();
+        alert(`Logged in as ${data.user.name || data.user.email}`);
+    } catch (error) {
+        console.error(error);
+        alert(error.message || 'OTP verification failed');
+    }
 }
 
 function closeSuccessModal() {
@@ -447,8 +702,13 @@ function closeSuccessModal() {
 
 // Logout logic
 function logoutUser() {
-    localStorage.removeItem('lifestyle_user');
-    user = null;
+    clearUser();
+    cart = [];
+    wishlist = [];
+    saveCart();
+    saveWishlist();
+    updateCartBadge();
+    updateWishlistBadge();
     location.reload();
 }
 
@@ -529,9 +789,27 @@ function setProductSelection(productId, color, size) {
     productVariantSelections[productId] = { color, size };
 }
 
+async function renderProductSkeletons(container, count = 8) {
+    const skeletons = new Array(count).fill(null).map(() => `
+        <div class="product-card skeleton-card">
+            <div class="product-img skeleton-img"></div>
+            <div class="product-info">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line skeleton-price"></div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = skeletons;
+}
+
 async function renderProducts(searchTerm = '') {
     const productList = document.getElementById('product-list');
     if (!productList) return;
+
+    renderProductSkeletons(productList, 8);
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     let category = window.category || '';
     const urlParams = new URLSearchParams(window.location.search);
@@ -1129,7 +1407,7 @@ function addToCart(id, name, price, image, color = 'Default', size = 'One Size')
 }
 
 function saveCart() {
-    localStorage.setItem('lifestyle_cart', JSON.stringify(cart));
+    saveUserScopedData(AUTH_KEYS.cart, cart);
 }
 
 window.buyNowFromPdp = function(id, name, price, image, color, size, stock) {
@@ -1245,7 +1523,7 @@ function updateWishlistBadge() {
 }
 
 function saveWishlist() {
-    localStorage.setItem('lifestyle_wishlist', JSON.stringify(wishlist));
+    saveUserScopedData(AUTH_KEYS.wishlist, wishlist);
     updateWishlistBadge();
 }
 

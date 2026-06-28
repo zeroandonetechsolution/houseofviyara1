@@ -302,6 +302,27 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
+app.get('/api/auth/config', (req, res) => {
+    res.json({
+        googleClientId: process.env.GOOGLE_CLIENT_ID || ''
+    });
+});
+
+app.get('/api/auth/status', async (req, res) => {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (!token) {
+        return res.status(401).json({ authenticated: false });
+    }
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        const user = await db.get('SELECT id, email, name FROM users WHERE id = ?', [payload.id]);
+        return res.json({ authenticated: true, user: user || null });
+    } catch (error) {
+        return res.status(401).json({ authenticated: false });
+    }
+});
+
 app.post('/api/auth/send-otp', async (req, res) => {
     const { email } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
