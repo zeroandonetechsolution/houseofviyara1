@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
+const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
@@ -16,7 +17,7 @@ const cloudinary = require('cloudinary').v2;
 let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const CLOUDINARY_ENABLED = Boolean(
     process.env.CLOUDINARY_URL ||
@@ -89,6 +90,45 @@ const upload = multer({
 });
 app.use('/uploads', express.static(UPLOAD_DIR));
 
+const usePostgres = Boolean(process.env.DATABASE_URL);
+let db;
+let pgPool;
+
+function pgToPrepared(sql, params = []) {
+    let index = 0;
+    return {
+        text: sql.replace(/\?/g, () => `$${++index}`),
+        values: params
+    };
+}
+
+async function pgGet(sql, params = []) {
+    const result = await pgPool.query(pgToPrepared(sql, params));
+    return result.rows[0] || null;
+}
+
+async function pgAll(sql, params = []) {
+    const result = await pgPool.query(pgToPrepared(sql, params));
+    return result.rows;
+}
+
+async function pgRun(sql, params = []) {
+    let query = sql;
+    if (/^\s*INSERT\s+INTO/i.test(sql) && !/RETURNING\s+/i.test(sql)) {
+        query = `${sql} RETURNING id`;
+    }
+    const result = await pgPool.query(pgToPrepared(query, params));
+    return {
+        lastID: result.rows?.[0]?.id ?? null,
+        rowCount: result.rowCount,
+        rows: result.rows
+    };
+}
+
+async function pgExec(sql) {
+    return pgPool.query(sql);
+}
+
 // Simple request logger
 app.use((req, res, next) => {
     const start = Date.now();
@@ -117,83 +157,164 @@ app.use(express.static(path.join(__dirname, '..'), {
 // ─────────────────────────────────────────────
 // DATABASE SETUP
 // ─────────────────────────────────────────────
-let db;
 (async () => {
-    db = await open({
-        filename: path.join(__dirname, 'database.db'),
-        driver: sqlite3.Database
-    });
+    if (usePostgres) {
+        pgPool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+        db = {
+            get: pgGet,
+            all: pgAll,
+            run: pgRun,
+            exec: pgExec
+        };
 
-    // Core tables
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE,
-            phone TEXT,
-            name TEXT,
-            google_id TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE,
+                phone TEXT,
+                name TEXT,
+                google_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            description TEXT,
-            price REAL,
-            offer_price REAL,
-            category TEXT,
-            image_url TEXT,
-            video_url TEXT,
-            stock INTEGER DEFAULT 10,
-            rating REAL DEFAULT 4.5,
-            is_trending INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                description TEXT,
+                price REAL,
+                offer_price REAL,
+                category TEXT,
+                image_url TEXT,
+                video_url TEXT,
+                stock INTEGER DEFAULT 10,
+                rating REAL DEFAULT 4.5,
+                is_trending INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-        CREATE TABLE IF NOT EXISTS orders (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            items TEXT,
-            total_amount REAL,
-            status TEXT DEFAULT 'Pending',
-            shipping_address TEXT,
-            txnid TEXT,
-            payment_status TEXT DEFAULT 'Unpaid',
-            payu_response TEXT,
-            payment_gateway TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
+            CREATE TABLE IF NOT EXISTS orders (
+                id TEXT PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                items TEXT,
+                total_amount REAL,
+                status TEXT DEFAULT 'Pending',
+                shipping_address TEXT,
+                txnid TEXT,
+                payment_status TEXT DEFAULT 'Unpaid',
+                payu_response TEXT,
+                payment_gateway TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-        CREATE TABLE IF NOT EXISTS otps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT,
-            otp TEXT,
-            expires_at DATETIME
-        );
+            CREATE TABLE IF NOT EXISTS otps (
+                id SERIAL PRIMARY KEY,
+                email TEXT,
+                otp TEXT,
+                expires_at TIMESTAMP
+            );
 
-        CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            slug TEXT UNIQUE NOT NULL,
-            icon TEXT DEFAULT 'fas fa-tag',
-            banner_image TEXT,
-            display_order INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            CREATE TABLE IF NOT EXISTS categories (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                icon TEXT DEFAULT 'fas fa-tag',
+                banner_image TEXT,
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-        CREATE TABLE IF NOT EXISTS banners (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            subtitle TEXT,
-            image_url TEXT NOT NULL,
-            cta_text TEXT DEFAULT 'Shop Now',
-            cta_link TEXT DEFAULT 'collections.html',
-            is_active INTEGER DEFAULT 1,
-            display_order INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
+            CREATE TABLE IF NOT EXISTS banners (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                subtitle TEXT,
+                image_url TEXT NOT NULL,
+                cta_text TEXT DEFAULT 'Shop Now',
+                cta_link TEXT DEFAULT 'collections.html',
+                is_active INTEGER DEFAULT 1,
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+    } else {
+        db = await open({
+            filename: path.join(__dirname, 'database.db'),
+            driver: sqlite3.Database
+        });
+
+        // Core tables
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE,
+                phone TEXT,
+                name TEXT,
+                google_id TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                description TEXT,
+                price REAL,
+                offer_price REAL,
+                category TEXT,
+                image_url TEXT,
+                video_url TEXT,
+                stock INTEGER DEFAULT 10,
+                rating REAL DEFAULT 4.5,
+                is_trending INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS orders (
+                id TEXT PRIMARY KEY,
+                user_id INTEGER,
+                items TEXT,
+                total_amount REAL,
+                status TEXT DEFAULT 'Pending',
+                shipping_address TEXT,
+                txnid TEXT,
+                payment_status TEXT DEFAULT 'Unpaid',
+                payu_response TEXT,
+                payment_gateway TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS otps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT,
+                otp TEXT,
+                expires_at DATETIME
+            );
+
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                icon TEXT DEFAULT 'fas fa-tag',
+                banner_image TEXT,
+                display_order INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS banners (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                subtitle TEXT,
+                image_url TEXT NOT NULL,
+                cta_text TEXT DEFAULT 'Shop Now',
+                cta_link TEXT DEFAULT 'collections.html',
+                is_active INTEGER DEFAULT 1,
+                display_order INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+    }
 
     // Migrations — add columns that may not exist in older databases
     const migrations = [
@@ -212,7 +333,9 @@ let db;
     if (oldProductCheck && oldProductCheck.count > 0) {
         console.log("Old seed detected. Clearing products to seed fresh data...");
         await db.run("DELETE FROM products");
-        await db.run("DELETE FROM sqlite_sequence WHERE name='products'");
+        if (!usePostgres) {
+            await db.run("DELETE FROM sqlite_sequence WHERE name='products'");
+        }
     }
 
     // ── Seed products if empty ──
