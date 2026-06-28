@@ -6,7 +6,8 @@
     "backend"
   ],
   "scripts": {
-    "build": "node build.js",
+    "gen-config": "node scripts/gen-supabase-config.js",
+    "build": "npm run gen-config && node build.js",
     "start": "node backend/server.js"
   }
 }
