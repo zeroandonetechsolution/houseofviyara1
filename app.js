@@ -6,21 +6,21 @@ let googleClientId = '';
 const FALLBACK_GOOGLE_CLIENT_ID = '1089096335322-36amhoadv49hb4mt8eh6f3rf1f49mag3.apps.googleusercontent.com';
 
 // Supabase client (optional)
-let supabase = null;
+let appSupabase = null;
 let USE_SUPABASE = false;
 
 async function loadSupabaseClient() {
-    if (supabase) return true;
-    // try to load supabase-config if present
+    if (appSupabase) return true;
+    // try to load appSupabase-config if present
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-        // attempt to load /supabase-config.js dynamically (if present)
+        // attempt to load /appSupabase-config.js dynamically (if present)
         try {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = '/supabase-config.js';
+                s.src = '/appSupabase-config.js';
                 s.async = true;
                 s.onload = resolve;
-                s.onerror = () => reject(new Error('no supabase-config'));
+                s.onerror = () => reject(new Error('no appSupabase-config'));
                 document.head.appendChild(s);
             });
         } catch (e) {
@@ -45,7 +45,7 @@ async function loadSupabaseClient() {
     try {
         const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
         if (!createClient) return false;
-        supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        appSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         USE_SUPABASE = true;
         console.log('Supabase client loaded');
         return true;
@@ -57,11 +57,11 @@ async function loadSupabaseClient() {
 
 // Fetch products preferring Supabase, then API_URL, then localStorage
 async function fetchProductsPrefer() {
-    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
-            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            const { data, error } = await appSupabase.from('products').select('*').order('created_at', { ascending: false });
             if (!error && data) return data;
-        } catch (e) { console.warn('supabase fetch failed', e); }
+        } catch (e) { console.warn('appSupabase fetch failed', e); }
     }
     // try backend API
     if (API_URL) {
@@ -75,11 +75,11 @@ async function fetchProductsPrefer() {
 
 async function fetchProductByIdPrefer(id) {
     if (!id) return null;
-    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
-            const { data, error } = await supabase.from('products').select('*').eq('id', id).limit(1).single();
+            const { data, error } = await appSupabase.from('products').select('*').eq('id', id).limit(1).single();
             if (!error && data) return data;
-        } catch (e) { console.warn('supabase single fetch failed', e); }
+        } catch (e) { console.warn('appSupabase single fetch failed', e); }
     }
     if (API_URL) {
         try {
@@ -92,11 +92,11 @@ async function fetchProductByIdPrefer(id) {
 }
 
 async function fetchCategoriesPrefer() {
-    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
-            const { data, error } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+            const { data, error } = await appSupabase.from('categories').select('*').order('display_order', { ascending: true });
             if (!error && data) return data;
-        } catch (e) { console.warn('supabase categories fetch failed', e); }
+        } catch (e) { console.warn('appSupabase categories fetch failed', e); }
     }
     if (API_URL) {
         try {
@@ -108,11 +108,11 @@ async function fetchCategoriesPrefer() {
 }
 
 async function fetchBannersPrefer() {
-    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
-            const { data, error } = await supabase.from('banners').select('*').eq('is_active', true).order('display_order', { ascending: true });
+            const { data, error } = await appSupabase.from('banners').select('*').eq('is_active', true).order('display_order', { ascending: true });
             if (!error && data) return data;
-        } catch (e) { console.warn('supabase banners fetch failed', e); }
+        } catch (e) { console.warn('appSupabase banners fetch failed', e); }
     }
     if (API_URL) {
         try {

@@ -7,19 +7,19 @@ const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.l
     : window.location.origin);
 let adminToken = localStorage.getItem('hov_admin_token') || null;
 let currentSection = 'dashboard';
-let supabase = null;
+let adminSupabase = null;
 
 // Load Supabase client
 async function loadSupabaseClient() {
-    if (supabase) return true;
+    if (adminSupabase) return true;
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
         try {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = '/supabase-config.js';
+                s.src = '/adminSupabase-config.js';
                 s.async = true;
                 s.onload = resolve;
-                s.onerror = () => reject(new Error('no supabase-config'));
+                s.onerror = () => reject(new Error('no adminSupabase-config'));
                 document.head.appendChild(s);
             });
         } catch (e) {}
@@ -40,7 +40,7 @@ async function loadSupabaseClient() {
     try {
         const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
         if (!createClient) return false;
-        supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        adminSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         console.log('Supabase client loaded in admin');
         return true;
     } catch (e) {
@@ -277,10 +277,10 @@ async function renderDashboard() {
     try {
         await loadSupabaseClient();
         let stats, orders;
-        if (supabase) {
+        if (adminSupabase) {
             const [productsRes, ordersRes] = await Promise.all([
-                supabase.from('products').select('id, is_trending'),
-                supabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false })
+                adminSupabase.from('products').select('id, is_trending'),
+                adminSupabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false })
             ]);
             if (productsRes.error) throw productsRes.error;
             if (ordersRes.error) throw ordersRes.error;
@@ -372,8 +372,8 @@ async function renderProducts() {
     const content = document.getElementById('admin-content');
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('products').select('*').order('created_at', { ascending: false });
             if (error) throw error;
             allProducts = data;
         } else {
@@ -453,8 +453,8 @@ function renderProductGrid(products) {
 async function toggleTrending(id, newVal) {
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('products').update({ is_trending: newVal }).eq('id', id);
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('products').update({ is_trending: newVal }).eq('id', id);
             if (error) throw error;
         } else {
             await apiFetch(`/api/admin/products/${id}/trending`, {
@@ -473,8 +473,8 @@ async function deleteProduct(id, name) {
     confirmAction(`Delete "<strong>${name}</strong>"? This cannot be undone.`, async () => {
         try {
             await loadSupabaseClient();
-            if (supabase) {
-                const { error } = await supabase.from('products').delete().eq('id', id);
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('products').delete().eq('id', id);
                 if (error) throw error;
             } else {
                 await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
@@ -612,8 +612,8 @@ async function openEditProduct(id) {
     try {
         let p;
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('products').select('*').eq('id', id).single();
             if (error) throw error;
             p = data;
         } else {
@@ -633,8 +633,8 @@ async function handleAddProduct() {
 
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('products').insert({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('products').insert({
                 name,
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
@@ -678,8 +678,8 @@ async function handleEditProduct(id) {
 
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('products').update({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('products').update({
                 name,
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
@@ -726,8 +726,8 @@ async function renderCategories() {
     try {
         let categories;
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('categories').select('*').order('display_order', { ascending: true });
             if (error) throw error;
             categories = data;
         } else {
@@ -823,8 +823,8 @@ async function openEditCategory(id) {
     try {
         let cat;
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('categories').select('*').eq('id', id).single();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('categories').select('*').eq('id', id).single();
             if (error) throw error;
             cat = data;
         } else {
@@ -842,8 +842,8 @@ async function handleAddCategory() {
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('categories').insert({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('categories').insert({
                 name,
                 slug,
                 icon: document.getElementById('cf-icon').value,
@@ -867,8 +867,8 @@ async function handleEditCategory(id) {
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('categories').update({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('categories').update({
                 name,
                 slug,
                 icon: document.getElementById('cf-icon').value,
@@ -890,8 +890,8 @@ async function deleteCategory(id, name) {
     confirmAction(`Delete category "<strong>${name}</strong>"? Products in this category will NOT be deleted.`, async () => {
         try {
             await loadSupabaseClient();
-            if (supabase) {
-                const { error } = await supabase.from('categories').delete().eq('id', id);
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('categories').delete().eq('id', id);
                 if (error) throw error;
             } else {
                 await apiFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
@@ -912,8 +912,8 @@ async function renderBanners() {
     try {
         let banners;
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('banners').select('*').order('display_order', { ascending: true });
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('banners').select('*').order('display_order', { ascending: true });
             if (error) throw error;
             banners = data;
         } else {
@@ -1089,8 +1089,8 @@ async function openEditBanner(id) {
     try {
         let banners;
         await loadSupabaseClient();
-        if (supabase) {
-            const { data, error } = await supabase.from('banners').select('*').eq('id', id);
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('banners').select('*').eq('id', id);
             if (error) throw error;
             banners = data;
         } else {
@@ -1107,8 +1107,8 @@ async function handleAddBanner() {
     if (!image_url) return showToast('Image URL is required', 'error');
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('banners').insert({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('banners').insert({
                 title: document.getElementById('bf-title').value,
                 subtitle: document.getElementById('bf-sub').value,
                 image_url,
@@ -1141,8 +1141,8 @@ async function handleEditBanner(id) {
     if (!image_url) return showToast('Image URL is required', 'error');
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('banners').update({
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('banners').update({
                 title: document.getElementById('bf-title').value,
                 subtitle: document.getElementById('bf-sub').value,
                 image_url,
@@ -1173,8 +1173,8 @@ async function handleEditBanner(id) {
 async function toggleBannerActive(id, newVal) {
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('banners').update({ is_active: newVal }).eq('id', id);
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('banners').update({ is_active: newVal }).eq('id', id);
             if (error) throw error;
         } else {
             const banners = await apiFetch('/api/admin/banners');
@@ -1194,8 +1194,8 @@ async function deleteBanner(id, title) {
     confirmAction(`Delete banner "<strong>${title}</strong>"?`, async () => {
         try {
             await loadSupabaseClient();
-            if (supabase) {
-                const { error } = await supabase.from('banners').delete().eq('id', id);
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('banners').delete().eq('id', id);
                 if (error) throw error;
             } else {
                 await apiFetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
@@ -1214,8 +1214,8 @@ async function renderOrders() {
     try {
         await loadSupabaseClient();
         let orders;
-        if (supabase) {
-            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('orders').select('*').order('created_at', { ascending: false });
             if (error) throw error;
             orders = data.map(o => ({
                 ...o,
@@ -1293,8 +1293,8 @@ function renderOrdersTable(orders) {
 async function updateOrderStatus(orderId, status, selectEl) {
     try {
         await loadSupabaseClient();
-        if (supabase) {
-            const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('orders').update({ status }).eq('id', orderId);
             if (error) throw error;
         } else {
             await apiFetch('/api/admin/update-order', {
