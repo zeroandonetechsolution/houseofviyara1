@@ -12,11 +12,27 @@ const MOCK_PRODUCTS = [];
 const STORE_KEYS = {
     products: 'hov_products',
     categories: 'hov_categories',
+    header_links: 'hov_header_links',
     banners: 'hov_banners',
     orders: 'hov_orders'
 };
 
-const defaultCategories = [];
+const defaultCategories = [
+    { id: 1, name: 'Saree', slug: 'saree' },
+    { id: 2, name: 'Kurtis', slug: 'kurtis' },
+    { id: 3, name: 'Ethnic Wear', slug: 'ethnic' },
+    { id: 4, name: 'Party Wear', slug: 'party' },
+    { id: 5, name: 'Casual Wear', slug: 'casual' }
+];
+
+const defaultHeaderLinks = [
+    { id: 1, label: 'All', slug: 'all', href: 'collections.html' },
+    { id: 2, label: 'Saree', slug: 'saree', href: 'saree.html' },
+    { id: 3, label: 'Kurtis', slug: 'kurtis', href: 'kurtis.html' },
+    { id: 4, label: 'Ethnic Wear', slug: 'ethnic', href: 'ethnic.html' },
+    { id: 5, label: 'Party Wear', slug: 'party', href: 'party.html' },
+    { id: 6, label: 'Casual Wear', slug: 'casual', href: 'casual.html' }
+];
 
 const defaultBanners = [
     {
@@ -95,12 +111,17 @@ function seedStoreData() {
     if (!Array.isArray(existingCategories)) {
         saveStore(STORE_KEYS.categories, defaultCategories);
     } else if (hasLegacySampleCategorySet(existingCategories)) {
-        saveStore(STORE_KEYS.categories, []);
+        saveStore(STORE_KEYS.categories, defaultCategories);
     }
 
     const existingBanners = getStore(STORE_KEYS.banners, null);
-    if (!Array.isArray(existingBanners) || existingBanners.length === 0) {
+    if (!Array.isArray(existingBanners)) {
         saveStore(STORE_KEYS.banners, defaultBanners);
+    }
+
+    const existingHeaderLinks = getStore(STORE_KEYS.header_links, null);
+    if (!Array.isArray(existingHeaderLinks)) {
+        saveStore(STORE_KEYS.header_links, defaultHeaderLinks);
     }
 
     if (!localStorage.getItem(STORE_KEYS.orders)) saveStore(STORE_KEYS.orders, []);
@@ -161,6 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBanners();
         renderCategories();
     }
+
+    renderHeaderNavigation();
     
     setupEventListeners();
     setupSearch();
@@ -174,7 +197,7 @@ function renderBanners() {
     const bannersCarousel = document.getElementById('banners-carousel');
     if (!bannersSection || !bannersCarousel) return;
 
-    const banners = getStore(STORE_KEYS.banners, defaultBanners)
+    const banners = getStore(STORE_KEYS.banners, [])
         .filter(b => b.is_active)
         .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
@@ -201,12 +224,17 @@ function renderCategories() {
     const categoryGrid = document.getElementById('category-grid');
     if (!categoryGrid) return;
 
-    const categories = getStore(STORE_KEYS.categories, defaultCategories);
+    const categories = getStore(STORE_KEYS.categories, []);
     renderCategoryList(categories, categoryGrid);
 }
 
 function renderCategoryList(categories, container) {
-    container.innerHTML = categories.map(cat => `
+    if (!categories.length) {
+        container.innerHTML = '<div class="empty-state"><p>No categories found. Add categories from the admin panel.</p></div>';
+        return;
+    }
+    const categoryItems = categories;
+    container.innerHTML = categoryItems.map(cat => `
         <a href="${cat.slug}.html" class="category-card" style="background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('${cat.banner_image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60'}'); background-size: cover; background-position: center;">
             <div class="cat-info">
                 <h3>${cat.name.toUpperCase()}</h3>
@@ -214,6 +242,51 @@ function renderCategoryList(categories, container) {
             </div>
         </a>
     `).join('');
+}
+
+function getCurrentHeaderSlug() {
+    if (window.category) return window.category;
+    const path = window.location.pathname.toLowerCase();
+    if (path.endsWith('collections.html')) return 'all';
+    return ['saree', 'kurtis', 'ethnic', 'party', 'casual'].find(slug => path.includes(`${slug}.html`)) || '';
+}
+
+function renderHeaderNavigation() {
+    const headerLinks = getStore(STORE_KEYS.header_links, []);
+    const navLinks = headerLinks.length ? headerLinks : [];
+    const currentSlug = getCurrentHeaderSlug();
+
+    const headerNavLists = document.querySelectorAll('header .nav-links');
+    headerNavLists.forEach(nav => {
+        nav.innerHTML = navLinks.map(link => `
+            <li><a href="${link.href}" class="${currentSlug === link.slug ? 'active' : ''}">${link.label}</a></li>
+        `).join('');
+    });
+
+    const mobileNav = document.querySelector('.mobile-nav-links');
+    if (!mobileNav) return;
+
+    let categorySectionIndex = -1;
+    const children = Array.from(mobileNav.children);
+    for (let i = 0; i < children.length; i++) {
+        if (children[i].classList && children[i].classList.contains('section-title') && children[i].textContent.trim().toLowerCase() === 'categories') {
+            categorySectionIndex = i;
+            break;
+        }
+    }
+
+    if (categorySectionIndex === -1) return;
+
+    let removeIndex = categorySectionIndex + 1;
+    while (removeIndex < mobileNav.children.length && mobileNav.children[removeIndex].tagName === 'LI') {
+        mobileNav.children[removeIndex].remove();
+    }
+
+    navLinks.slice().reverse().forEach(link => {
+        const item = document.createElement('li');
+        item.innerHTML = `<a href="${link.href}"><i class="fas fa-female"></i> ${link.label}</a>`;
+        mobileNav.insertBefore(item, mobileNav.children[categorySectionIndex + 1]);
+    });
 }
 
 function registerServiceWorker() {
@@ -346,6 +419,76 @@ function isMobile() {
     return window.innerWidth <= 768;
 }
 
+const productVariantSelections = {};
+
+function escapeForAttr(value) {
+    return String(value || '').replace(/'/g, "\\'");
+}
+
+function normalizeProductVariants(product) {
+    const rawVariants = Array.isArray(product?.variants) ? product.variants : [];
+    if (rawVariants.length > 0) {
+        return rawVariants.map((variant, index) => ({
+            id: variant.id || `${product.id || 'variant'}-${index + 1}`,
+            color: variant.color || 'Default',
+            size: variant.size || 'One Size',
+            stock: Number(variant.stock || 0),
+            image_url: variant.image_url || product.image_url || '',
+            gallery: Array.isArray(variant.gallery) && variant.gallery.length ? variant.gallery : (Array.isArray(product.gallery) ? product.gallery : [product.image_url])
+        }));
+    }
+
+    return [{
+        id: `${product?.id || 'default'}-default`,
+        color: 'Default',
+        size: 'One Size',
+        stock: Number(product?.stock || 10),
+        image_url: product?.image_url || '',
+        gallery: Array.isArray(product?.gallery) ? product.gallery : [product?.image_url || '']
+    }];
+}
+
+function getProductColors(product) {
+    const variants = normalizeProductVariants(product);
+    return [...new Set(variants.map(v => v.color || 'Default'))];
+}
+
+function getAvailableSizes(product, color) {
+    const variants = normalizeProductVariants(product);
+    const selectedColor = color || 'Default';
+    return variants.filter(v => (v.color || 'Default') === selectedColor).map(v => v.size || 'One Size');
+}
+
+function getVariantForSelection(product, color, size) {
+    const variants = normalizeProductVariants(product);
+    const selectedColor = color || 'Default';
+    const selectedSize = size || 'One Size';
+    return variants.find(v => (v.color || 'Default') === selectedColor && (v.size || 'One Size') === selectedSize) || variants[0] || null;
+}
+
+function getDefaultSelection(product) {
+    const colors = getProductColors(product);
+    const selectedColor = colors[0] || 'Default';
+    const sizes = getAvailableSizes(product, selectedColor);
+    const selectedSize = sizes[0] || 'One Size';
+    return { color: selectedColor, size: selectedSize };
+}
+
+function getProductSelection(product) {
+    if (!product) return getDefaultSelection({ id: Date.now(), variants: [] });
+    const state = productVariantSelections[product.id];
+    if (state) {
+        return state;
+    }
+    const defaultSelection = getDefaultSelection(product);
+    productVariantSelections[product.id] = defaultSelection;
+    return defaultSelection;
+}
+
+function setProductSelection(productId, color, size) {
+    productVariantSelections[productId] = { color, size };
+}
+
 async function renderProducts(searchTerm = '') {
     const productList = document.getElementById('product-list');
     if (!productList) return;
@@ -366,7 +509,7 @@ async function renderProducts(searchTerm = '') {
 
     const isTrendingSection = productList.closest('#trending') !== null;
 
-    const products = getStore(STORE_KEYS.products, MOCK_PRODUCTS)
+    const products = getStore(STORE_KEYS.products, [])
         .filter(p => {
             if (isTrendingSection) return p.is_trending;
             return !category || p.category === category;
@@ -395,21 +538,23 @@ function renderToDOM(products, container, category) {
             : `src="${optimizedImg}" loading="eager"`;
         
         const isInWishlist = wishlist.some(item => item.id === p.id);
+        const variantSummary = normalizeProductVariants(p).slice(0, 3).map(v => `${v.color} / ${v.size}`).join(', ');
         
         return `
         <div class="product-card">
             <div class="product-img" onclick="openProductPage(${p.id})" style="cursor: pointer; position: relative;">
                 <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
-                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
+                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
                     ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
                 </button>
-                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')">
                     <i class="fas fa-plus"></i> ADD TO BAG
                 </button>
             </div>
             <div class="product-info" onclick="openProductPage(${p.id})" style="cursor: pointer;">
                 <h3>${p.name}</h3>
                 <p>${p.description}</p>
+                <div class="product-variant-summary">${variantSummary ? `Variants: ${variantSummary}` : 'Single variant'}</div>
                 <div class="product-price">
                     <span class="current-price">₹${p.offer_price || p.price}</span>
                     ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
@@ -478,8 +623,8 @@ window.openProductPage = async function(productId) {
 
     window.history.pushState({ productId }, '', `?product=${productId}`);
 
-    const products = getStore(STORE_KEYS.products, MOCK_PRODUCTS);
-    const product = products.find(p => p.id === productId) || MOCK_PRODUCTS.find(p => p.id === productId);
+    const products = getStore(STORE_KEYS.products, []);
+    const product = products.find(p => p.id === productId);
 
     if (!product) {
         pdpModal.classList.add('active');
@@ -543,8 +688,14 @@ function renderProductDetails(product, targetContainer) {
     if(halfStar) starsHtml += '<i class="fas fa-star-half-alt"></i>';
     for(let i=0; i<emptyStars; i++) starsHtml += '<i class="far fa-star"></i>';
 
+    const selection = getProductSelection(product);
+    const colors = getProductColors(product);
+    const sizes = getAvailableSizes(product, selection.color);
+    const selectedVariant = getVariantForSelection(product, selection.color, selection.size) || normalizeProductVariants(product)[0];
+
     // Generate Gallery — first image eager, rest lazy; video deferred until selected
-    const gallery = product.gallery || [product.image_url];
+    const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length ? selectedVariant.gallery : Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url];
+    const gallery = Array.isArray(variantGallery) && variantGallery.length ? variantGallery : [selectedVariant.image_url || product.image_url];
     let galleryDots = gallery.map((img, i) => {
         const dotBg = optimizeImg(img, 80, 40);
         return `<div class="gallery-dot ${i === 0 ? 'active' : ''}" style="background-image:url('${dotBg}')" onclick="changeGalleryImage(${i})"></div>`;
@@ -627,16 +778,32 @@ function renderProductDetails(product, targetContainer) {
                 
                 <p class="pdp-short-desc">${product.description}</p>
                 
+                <div class="pdp-variant-block">
+                    <div class="pdp-variant-group">
+                        <label>Colour</label>
+                        <div class="pdp-variant-options">
+                            ${colors.map(color => `<button class="pdp-variant-btn ${selection.color === color ? 'active' : ''}" onclick="selectPdpVariant(${product.id}, '${escapeForAttr(color)}', '${escapeForAttr(selection.size || 'One Size')}')">${color}</button>`).join('')}
+                        </div>
+                    </div>
+                    <div class="pdp-variant-group">
+                        <label>Size</label>
+                        <div class="pdp-variant-options">
+                            ${(sizes.length ? sizes : ['One Size']).map(size => `<button class="pdp-variant-btn ${selection.size === size ? 'active' : ''}" onclick="selectPdpVariant(${product.id}, '${escapeForAttr(selection.color || 'Default')}', '${escapeForAttr(size)}')">${size}</button>`).join('')}
+                        </div>
+                    </div>
+                    <div class="pdp-stock-info">${selectedVariant ? `${selectedVariant.color} / ${selectedVariant.size} • ${selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : 'Out of stock'}` : 'Select a variant'}</div>
+                </div>
+
                 <div class="pdp-actions">
                     <div class="qty-selector">
                         <button onclick="updatePdpQty(-1)"><i class="fas fa-minus"></i></button>
                         <input type="number" id="pdp-qty" value="1" min="1" max="10" readonly>
                         <button onclick="updatePdpQty(1)"><i class="fas fa-plus"></i></button>
                     </div>
-                    <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.offer_price || product.price}, '${product.image_url}')">
+                    <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
                         ADD TO BAG
                     </button>
-                    <button class="pdp-wishlist-btn" onclick="toggleWishlist(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.offer_price || product.price}, '${product.image_url}')" data-product-id="${product.id}">
+                    <button class="pdp-wishlist-btn" onclick="toggleWishlist(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}')" data-product-id="${product.id}">
                         <i class="${wishlist.some(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
                     </button>
                 </div>
@@ -760,40 +927,67 @@ window.updatePdpQty = function(delta) {
     input.value = val;
 }
 
-window.addFromPdp = function(id, name, price, image) {
+window.selectPdpVariant = function(productId, color, size) {
+    const product = getStore(STORE_KEYS.products, []).find(p => p.id === productId);
+    if (!product) return;
+
+    const normalizedColor = color || 'Default';
+    const normalizedSize = size || 'One Size';
+    let variant = getVariantForSelection(product, normalizedColor, normalizedSize);
+
+    if (!variant) {
+        const sizesForColor = getAvailableSizes(product, normalizedColor);
+        if (sizesForColor.length) {
+            variant = getVariantForSelection(product, normalizedColor, sizesForColor[0]);
+        } else {
+            variant = normalizeProductVariants(product).find(v => v.size === normalizedSize) || normalizeProductVariants(product)[0];
+        }
+    }
+
+    setProductSelection(productId, variant.color, variant.size);
+    renderProductDetails(product, document.getElementById('pdp-content') || document.getElementById('pdp-main-content'));
+}
+
+window.addFromPdp = function(id, name, price, image, color, size, stock) {
     const qty = parseInt(document.getElementById('pdp-qty').value) || 1;
-    const existing = cart.find(item => item.id === id);
+    if (stock !== undefined && stock <= 0) {
+        alert('Selected variant is out of stock.');
+        return;
+    }
+    const existing = cart.find(item => item.id === id && item.variantColor === color && item.variantSize === size);
     if (existing) {
         existing.quantity += qty;
     } else {
-        cart.push({ id, name, price, image, quantity: qty });
+        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}` });
     }
     saveCart();
     updateCartBadge();
     
     // Show visual feedback
     const btn = document.querySelector('.pdp-add-btn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i> ADDED TO BAG';
-    btn.style.background = 'var(--accent-green)';
-    btn.style.color = '#fff';
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        btn.style.color = '';
-        openCart();
-        renderCartItems();
-    }, 1000);
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> ADDED TO BAG';
+        btn.style.background = 'var(--accent-green)';
+        btn.style.color = '#fff';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+            btn.style.color = '';
+            openCart();
+            renderCartItems();
+        }, 1000);
+    }
 }
 
 // --- Cart Logic ---
-function addToCart(id, name, price, image) {
-    const existing = cart.find(item => item.id === id);
+function addToCart(id, name, price, image, color = 'Default', size = 'One Size') {
+    const existing = cart.find(item => item.id === id && item.variantColor === color && item.variantSize === size);
     if (existing) {
         existing.quantity += 1;
     } else {
-        cart.push({ id, name, price, image, quantity: 1 });
+        cart.push({ id, name, price, image, quantity: 1, variantColor: color, variantSize: size, variantLabel: `${color} / ${size}` });
     }
     saveCart();
     updateCartBadge();
@@ -892,7 +1086,7 @@ function renderCartItems() {
             <img src="${item.image}" alt="${item.name}">
             <div class="cart-item-info">
                 <h4>${item.name}</h4>
-                <p>₹${item.price} x ${item.quantity}</p>
+                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price} x ${item.quantity}</p>
                 <div class="cart-item-qty">
                     <button onclick="changeQty(${index}, -1)"><i class="fas fa-minus"></i></button>
                     <span>${item.quantity}</span>
@@ -937,7 +1131,7 @@ async function completeCheckout() {
         total: amount,
         status: 'Pending',
         date: new Date().toISOString().split('T')[0],
-        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
+        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size' })),
         email,
         shipping_address: { street: 'Default Street', city: 'Default City', state: 'Default State', pin: '000000' }
     };
