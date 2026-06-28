@@ -1,15 +1,10 @@
 {
   "version": 2,
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html",
-      "has": [
-        {
-          "type": "host",
-          "value": "(.*)"
-        }
-      ]
+      "destination": "/index.html"
     }
   ]
 }
