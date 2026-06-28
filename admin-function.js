@@ -12,16 +12,10 @@ const ORDERS_KEY = 'hov_orders';
 let adminToken = localStorage.getItem(ADMIN_KEY);
 let currentSection = 'dashboard';
 let editItemId = null;
-// When a backend server is running, admin changes should persist across devices.
-// Detect availability and switch to server-backed admin APIs when possible.
-let BACKEND_ADMIN_MODE = false;
-const BACKEND_URL = window.BACKEND_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
-  ? `${window.location.protocol}//${window.location.hostname}:3000`
-  : window.location.origin);
 
-function backendFetch(path, options = {}) {
-  return fetch(`${BACKEND_URL}${path}`, options);
-}
+// Supabase client (optional, used if `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY` are set)
+let supabase = null;
+let USE_SUPABASE = false;
 
 // Supabase client (optional, used if `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY` are set)
 let supabase = null;
@@ -82,18 +76,6 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   }
   const url = supabase.storage.from(bucket).getPublicUrl(data.path).publicURL;
   return url;
-}
-
-async function detectBackendAdmin() {
-  try {
-    const resp = await backendFetch('/api/admin/products', { method: 'GET' });
-    if (resp && resp.ok) {
-      BACKEND_ADMIN_MODE = true;
-      console.log('Admin panel: backend API detected — using server persistence.');
-    }
-  } catch (e) {
-    BACKEND_ADMIN_MODE = false;
-  }
 }
 
 const defaultData = {
@@ -330,22 +312,11 @@ function renderDashboard() {
 function renderProducts() {
   document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openProductForm()"><i class="fas fa-plus"></i> Add Product</button>`;
   document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading products...</div></div>`;
-
-  // If a backend is available, fetch products from server; otherwise read from localStorage.
-  if (BACKEND_ADMIN_MODE) {
-    backendFetch('/api/admin/products')
-      .then(r => r.ok ? r.json() : [])
-      .then(products => renderProductsTable(products))
-      .catch(() => renderProductsTable(getStore(PRODUCTS_KEY, [])));
-  } else {
-    const products = getStore(PRODUCTS_KEY, []);
-    renderProductsTable(products);
-  }
+  renderProducts();
 }
 
-// Prefer Supabase when configured, then backend API, then localStorage
+// Prefer Supabase when configured, then localStorage
 async function fetchProductsPrefer() {
-  // try Supabase
   if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
     try {
       const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -354,18 +325,15 @@ async function fetchProductsPrefer() {
       console.warn('Supabase fetch failed', e);
     }
   }
-  // try backend API
-  try {
-    const r = await fetch('/api/admin/products');
-    if (r.ok) return await r.json();
-  } catch (e) {
-    // ignore
-  }
-  // fallback to localStorage
   return getStore(PRODUCTS_KEY, []);
 }
 
 async function renderProducts() {
+  document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openProductForm()"><i class="fas fa-plus"></i> Add Product</button>`;
+  document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading products...</div></div>`;
+  const products = await fetchProductsPrefer();
+  renderProductsTable(products);
+}
   document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openProductForm()"><i class="fas fa-plus"></i> Add Product</button>`;
   document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading products...</div></div>`;
   const products = await fetchProductsPrefer();
@@ -524,45 +492,20 @@ async function saveProduct() {
       return renderProducts();
     } catch (e) {
       console.warn('Supabase save failed', e);
-      showToast('Supabase save failed', 'error');
+      showToast('Supabase save failed, using local storage', 'error');
     }
   }
 
-  if (BACKEND_ADMIN_MODE) {
-    // Server-backed persistence
-    if (editItemId) {
-      backendFetch(`/api/admin/products/${editItemId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      }).then(r => {
-        if (r.ok) showToast('Product updated (server)', 'success');
-        else showToast('Failed updating product on server', 'error');
-        renderProducts();
-      }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
-    } else {
-      backendFetch('/api/admin/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      }).then(r => r.json()).then(resp => {
-        if (resp && resp.success !== false) showToast('Product added (server)', 'success');
-        else showToast('Failed to add product on server', 'error');
-        renderProducts();
-      }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
-    }
+  if (editItemId) {
+    const index = products.findIndex(p => p.id === editItemId);
+    products[index] = data;
+    showToast('Product updated', 'success');
   } else {
-    if (editItemId) {
-      const index = products.findIndex(p => p.id === editItemId);
-      products[index] = data;
-      showToast('Product updated', 'success');
-    } else {
-      products.unshift(data);
-      showToast('Product added', 'success');
-    }
-    saveStore(PRODUCTS_KEY, products);
-    renderProducts();
+    products.unshift(data);
+    showToast('Product added', 'success');
   }
+  saveStore(PRODUCTS_KEY, products);
+  renderProducts();
 }
 
 // Supabase save (insert or update)
@@ -587,7 +530,6 @@ async function supabaseDeleteProduct(id) {
 
 function deleteProduct(id) {
   (async () => {
-    // Supabase preference
     if (await loadSupabaseClient() && USE_SUPABASE) {
       try {
         await supabaseDeleteProduct(id);
@@ -595,23 +537,14 @@ function deleteProduct(id) {
         return renderProducts();
       } catch (e) {
         console.warn('Supabase delete failed', e);
-        showToast('Supabase delete failed', 'error');
+        showToast('Supabase delete failed, using local storage', 'error');
       }
     }
 
-    if (BACKEND_ADMIN_MODE) {
-      fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
-        .then(r => {
-          if (r.ok) showToast('Product deleted (server)', 'success');
-          else showToast('Failed to delete product on server', 'error');
-          renderProducts();
-        }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
-    } else {
-      const products = getStore(PRODUCTS_KEY, []).filter(p => p.id !== id);
-      saveStore(PRODUCTS_KEY, products);
-      showToast('Product deleted', 'success');
-      renderProducts();
-    }
+    const products = getStore(PRODUCTS_KEY, []).filter(p => p.id !== id);
+    saveStore(PRODUCTS_KEY, products);
+    showToast('Product deleted', 'success');
+    renderProducts();
   })();
 }
 
