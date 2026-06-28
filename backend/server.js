@@ -12,10 +12,30 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 
 dotenv.config();
+
+const CLOUDINARY_ENABLED = Boolean(
+    process.env.CLOUDINARY_URL ||
+    (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
+);
+if (CLOUDINARY_ENABLED) {
+    if (process.env.CLOUDINARY_URL) {
+        cloudinary.config();
+    } else {
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+    }
+    console.log('Cloudinary configured.');
+} else {
+    console.warn('Cloudinary not configured. Falling back to local uploads.');
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -123,6 +143,7 @@ let db;
             offer_price REAL,
             category TEXT,
             image_url TEXT,
+            video_url TEXT,
             stock INTEGER DEFAULT 10,
             rating REAL DEFAULT 4.5,
             is_trending INTEGER DEFAULT 0,
@@ -178,6 +199,7 @@ let db;
     const migrations = [
         'ALTER TABLE products ADD COLUMN offer_price REAL',
         'ALTER TABLE products ADD COLUMN is_trending INTEGER DEFAULT 0',
+        'ALTER TABLE products ADD COLUMN video_url TEXT',
         'ALTER TABLE orders ADD COLUMN payu_response TEXT',
         'ALTER TABLE orders ADD COLUMN payment_gateway TEXT'
     ];
@@ -228,6 +250,7 @@ let db;
             { name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: 1 },
             { name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: 0 }
         ];
+    }
     console.log('Database ready.');
 })();
 
@@ -403,10 +426,26 @@ app.get('/api/categories', async (req, res) => {
     }
 });
 
-app.post('/api/admin/upload-image', upload.single('image'), (req, res) => {
+app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    if (CLOUDINARY_ENABLED) {
+        try {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                resource_type: 'auto',
+                folder: 'house-of-viyara'
+            });
+            if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.json({ url: uploadResult.secure_url, provider: 'cloudinary' });
+        } catch (error) {
+            console.warn('Cloudinary upload failed, falling back to local storage.', error.message);
+        }
+    }
+
     const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    res.json({ url });
+    res.json({ url, provider: 'local' });
 });
 
 // ─────────────────────────────────────────────
@@ -617,11 +656,11 @@ app.get('/api/admin/products', async (req, res) => {
 });
 
 app.post('/api/admin/products', async (req, res) => {
-    const { name, description, price, offer_price, category, image_url, is_trending } = req.body;
+    const { name, description, price, offer_price, category, image_url, video_url, is_trending } = req.body;
     try {
         const result = await db.run(
-            'INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [name, description, price, offer_price || price, category, image_url, is_trending ? 1 : 0]
+            'INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, description, price, offer_price || price, category, image_url, video_url || '', is_trending ? 1 : 0]
         );
         res.json({ id: result.lastID, success: true });
     } catch (error) {
@@ -630,11 +669,11 @@ app.post('/api/admin/products', async (req, res) => {
 });
 
 app.put('/api/admin/products/:id', async (req, res) => {
-    const { name, description, price, offer_price, category, image_url, is_trending } = req.body;
+    const { name, description, price, offer_price, category, image_url, video_url, is_trending } = req.body;
     try {
         await db.run(
-            'UPDATE products SET name = ?, description = ?, price = ?, offer_price = ?, category = ?, image_url = ?, is_trending = ? WHERE id = ?',
-            [name, description, price, offer_price || price, category, image_url, is_trending ? 1 : 0, req.params.id]
+            'UPDATE products SET name = ?, description = ?, price = ?, offer_price = ?, category = ?, image_url = ?, video_url = ?, is_trending = ? WHERE id = ?',
+            [name, description, price, offer_price || price, category, image_url, video_url || '', is_trending ? 1 : 0, req.params.id]
         );
         res.json({ success: true });
     } catch (error) {

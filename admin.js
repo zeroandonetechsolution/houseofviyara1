@@ -455,6 +455,18 @@ function productFormHTML(p = {}) {
       <div class="aform-group" id="pf-img-preview-wrap" style="display:${p.image_url ? 'block' : 'none'}">
         <img id="pf-img-preview" src="${p.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;" onerror="this.style.display='none'">
       </div>
+      <div class="aform-group">
+        <label>Upload Video (optional)</label>
+        <input class="aform-input" id="pf-video-file" type="file" accept="video/*">
+        <small class="admin-form-hint">Choose a local video file to upload and populate the Video URL automatically.</small>
+      </div>
+      <div class="aform-group">
+        <label>Video URL</label>
+        <input class="aform-input" id="pf-video" value="${p.video_url || ''}" placeholder="https://...mp4">
+      </div>
+      <div class="aform-group" id="pf-video-preview-wrap" style="display:${p.video_url ? 'block' : 'none'}">
+        <video id="pf-video-preview" src="${p.video_url || ''}" style="width:100%;max-height:200px;border-radius:8px;border:2px solid #eee;" controls onerror="this.style.display='none'"></video>
+      </div>
       <div class="aform-check">
         <input type="checkbox" id="pf-trending" ${p.is_trending ? 'checked' : ''}>
         <label for="pf-trending"><i class="fas fa-fire" style="color:#FF6B35"></i> Mark as Trending</label>
@@ -482,11 +494,32 @@ function productFormHTML(p = {}) {
           showToast('Upload failed: ' + err.message, 'error');
         }
       });
+      document.getElementById('pf-video-file').addEventListener('change', async function(){
+        const fileInput = this;
+        const urlInput = document.getElementById('pf-video');
+        const wrap = document.getElementById('pf-video-preview-wrap');
+        const video = document.getElementById('pf-video-preview');
+        if (!fileInput.files.length) return;
+        try {
+          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
+          wrap.style.display = 'block';
+          video.src = uploadedUrl;
+          video.style.display = 'block';
+        } catch (err) {
+          showToast('Upload failed: ' + err.message, 'error');
+        }
+      });
       document.getElementById('pf-img').addEventListener('input', function(){
         const w = document.getElementById('pf-img-preview-wrap');
         const img = document.getElementById('pf-img-preview');
         if(this.value){ w.style.display='block'; img.src=this.value; img.style.display='block'; }
         else { w.style.display='none'; }
+      });
+      document.getElementById('pf-video').addEventListener('input', function(){
+        const w = document.getElementById('pf-video-preview-wrap');
+        const video = document.getElementById('pf-video-preview');
+        if (this.value) { w.style.display = 'block'; video.src = this.value; video.style.display = 'block'; }
+        else { w.style.display = 'none'; }
       });
     <\/script>`;
 }
@@ -521,6 +554,7 @@ async function handleAddProduct() {
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
+                video_url: document.getElementById('pf-video').value.trim() || '',
                 is_trending: document.getElementById('pf-trending').checked
             })
         });
@@ -549,6 +583,7 @@ async function handleEditProduct(id) {
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
+                video_url: document.getElementById('pf-video').value.trim() || '',
                 is_trending: document.getElementById('pf-trending').checked
             })
         });
