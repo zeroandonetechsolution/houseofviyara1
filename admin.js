@@ -21,10 +21,10 @@ async function loadSupabaseClient() {
         try {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = '/adminSupabase-config.js';
+                s.src = '/supabase-config.js';
                 s.async = true;
                 s.onload = resolve;
-                s.onerror = () => reject(new Error('no adminSupabase-config'));
+                s.onerror = () => reject(new Error('no supabase-config'));
                 document.head.appendChild(s);
             });
         } catch (e) {}

@@ -16,16 +16,16 @@ let USE_SUPABASE = false;
 
 async function loadSupabaseClient() {
     if (appSupabase) return true;
-    // try to load appSupabase-config if present
+    // try to load supabase-config if present
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-        // attempt to load /appSupabase-config.js dynamically (if present)
+        // attempt to load /supabase-config.js dynamically (if present)
         try {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = '/appSupabase-config.js';
+                s.src = '/supabase-config.js';
                 s.async = true;
                 s.onload = resolve;
-                s.onerror = () => reject(new Error('no appSupabase-config'));
+                s.onerror = () => reject(new Error('no supabase-config'));
                 document.head.appendChild(s);
             });
         } catch (e) {
