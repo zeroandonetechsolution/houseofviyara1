@@ -3,7 +3,93 @@ let cart = [];
 let wishlist = [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 let googleClientId = '';
-const FALLBACK_GOOGLE_CLIENT_ID = '572682440348-hmhuv9dqbho0r3u96juvfnndbasm7moo.apps.googleusercontent.com';
+const FALLBACK_GOOGLE_CLIENT_ID = '1089096335322-36amhoadv49hb4mt8eh6f3rf1f49mag3.apps.googleusercontent.com';
+
+// Supabase client (optional)
+let supabase = null;
+let USE_SUPABASE = false;
+
+async function loadSupabaseClient() {
+    if (supabase) return true;
+    // try to load supabase-config if present
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        // attempt to load /supabase-config.js dynamically (if present)
+        try {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = '/supabase-config.js';
+                s.async = true;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('no supabase-config'));
+                document.head.appendChild(s);
+            });
+        } catch (e) {
+            // no config available
+        }
+    }
+
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
+
+    // load supabase UMD if not present
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js';
+            s.async = true;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load supabase-js'));
+            document.head.appendChild(s);
+        }).catch(() => null);
+    }
+
+    try {
+        const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+        if (!createClient) return false;
+        supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        USE_SUPABASE = true;
+        console.log('Supabase client loaded');
+        return true;
+    } catch (e) {
+        console.warn('Supabase init failed', e);
+        return false;
+    }
+}
+
+// Fetch products preferring Supabase, then API_URL, then localStorage
+async function fetchProductsPrefer() {
+    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+        try {
+            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            if (!error && data) return data;
+        } catch (e) { console.warn('supabase fetch failed', e); }
+    }
+    // try backend API
+    if (API_URL) {
+        try {
+            const r = await fetch(API_URL + '/api/products');
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    return getStore(STORE_KEYS.products, []);
+}
+
+async function fetchProductByIdPrefer(id) {
+    if (!id) return null;
+    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+        try {
+            const { data, error } = await supabase.from('products').select('*').eq('id', id).limit(1).single();
+            if (!error && data) return data;
+        } catch (e) { console.warn('supabase single fetch failed', e); }
+    }
+    if (API_URL) {
+        try {
+            const r = await fetch(`${API_URL}/api/products/${id}`);
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    const products = getStore(STORE_KEYS.products, []);
+    return products.find(p => Number(p.id) === Number(id)) || null;
+}
 
 const AUTH_KEYS = {
     user: 'lifestyle_user',
@@ -40,6 +126,7 @@ function clearUser() {
 }
 
 function openAuthModal() {
+    renderAuthModalLogoutControls();
     const authModal = document.getElementById('auth-modal');
     const authOverlay = document.getElementById('auth-overlay');
     if (authModal) authModal.classList.add('active');
@@ -78,11 +165,59 @@ function loadGoogleIdentityScript() {
 function updateAuthButton() {
     const authBtn = document.getElementById('open-auth-btn');
     if (!authBtn) return;
+    authBtn.innerHTML = `<i class="fas fa-user"></i>`;
+    renderAuthModalLogoutControls();
+}
+
+function renderAuthModalLogoutControls() {
+    const authContent = document.querySelector('#auth-modal .auth-content');
+    if (!authContent) return;
+
+    let statusText = document.getElementById('auth-user-status');
+    if (!statusText) {
+        statusText = document.createElement('p');
+        statusText.id = 'auth-user-status';
+        statusText.style.fontSize = '0.9rem';
+        statusText.style.opacity = '0.8';
+        statusText.style.textAlign = 'center';
+        statusText.style.margin = '0';
+        statusText.style.marginTop = '10px';
+        const buttonContainer = authContent.querySelector('#google-login-btn');
+        if (buttonContainer) {
+            authContent.insertBefore(statusText, buttonContainer.nextSibling);
+        } else {
+            authContent.appendChild(statusText);
+        }
+    }
+
+    let logoutBtn = document.getElementById('auth-logout-btn');
+    if (!logoutBtn) {
+        logoutBtn = document.createElement('button');
+        logoutBtn.id = 'auth-logout-btn';
+        logoutBtn.type = 'button';
+        logoutBtn.className = 'logout-btn';
+        logoutBtn.style.margin = '0 auto 20px';
+        logoutBtn.style.display = 'none';
+        logoutBtn.style.width = '100%';
+        logoutBtn.textContent = 'Log out';
+        authContent.insertBefore(logoutBtn, authContent.querySelector('div')?.nextSibling || authContent.firstChild);
+    }
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            logoutUser();
+            closeAuthModal();
+        };
+    }
+
+    const googleLoginBtn = document.getElementById('google-login-btn');
     if (user) {
-        const label = user.name ? user.name.split(' ')[0] : 'Me';
-        authBtn.innerHTML = `<i class="fas fa-user"></i> ${label}`;
+        if (statusText) statusText.textContent = `Signed in as ${user.email || user.name}`;
+        logoutBtn.style.display = 'block';
+        if (googleLoginBtn) googleLoginBtn.style.display = 'none';
     } else {
-        authBtn.innerHTML = `<i class="fas fa-user"></i>`;
+        if (statusText) statusText.textContent = 'Sign in with Google to continue.';
+        logoutBtn.style.display = 'none';
+        if (googleLoginBtn) googleLoginBtn.style.display = '';
     }
 }
 
@@ -559,7 +694,7 @@ function handleGoogleResponse(response) {
     updateWishlistBadge();
     updateAuthButton();
     closeAuthModal();
-    alert(`Logged in as ${googleUser.name}`);
+    alert('Logged in.');
 }
 
 function initGoogleButton() {
@@ -611,6 +746,7 @@ function closeSuccessModal() {
 
 // Logout logic
 function logoutUser() {
+    closeAuthModal();
     clearUser();
     cart = [];
     wishlist = [];
@@ -618,7 +754,8 @@ function logoutUser() {
     saveWishlist();
     updateCartBadge();
     updateWishlistBadge();
-    location.reload();
+    updateAuthButton();
+    alert('You have been logged out.');
 }
 
 // --- Product Management ---
@@ -736,7 +873,8 @@ async function renderProducts(searchTerm = '') {
 
     const isTrendingSection = productList.closest('#trending') !== null;
 
-    const products = getStore(STORE_KEYS.products, [])
+    const allProducts = await fetchProductsPrefer();
+    const products = (Array.isArray(allProducts) ? allProducts : [])
         .filter(p => {
             if (p.parent_id != null) return false;
             if (isTrendingSection) return p.is_trending;
@@ -907,8 +1045,7 @@ async function initProductDetails() {
         return;
     }
 
-    const products = getStore(STORE_KEYS.products, []);
-    let product = products.find(p => p.id === productId);
+    let product = await fetchProductByIdPrefer(productId);
     if (!product) {
         product = MOCK_PRODUCTS.find(p => p.id === productId);
     }
@@ -1739,14 +1876,9 @@ function setupEventListeners() {
     const authOverlay = document.getElementById('auth-overlay');
     const closeAuthBtn = document.getElementById('close-auth-btn');
 
-    if (authBtn) authBtn.onclick = () => {
-        authModal.classList.add('active');
-        authOverlay.classList.add('active');
-    };
-    if (closeAuthBtn) closeAuthBtn.onclick = () => {
-        authModal.classList.remove('active');
-        authOverlay.classList.remove('active');
-    };
+    if (authBtn) authBtn.onclick = openAuthModal;
+    if (authOverlay) authOverlay.onclick = closeAuthModal;
+    if (closeAuthBtn) closeAuthBtn.onclick = closeAuthModal;
 
     // Settings Modal
     const settingsModal = document.getElementById('settings-modal');

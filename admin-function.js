@@ -12,6 +12,82 @@ const ORDERS_KEY = 'hov_orders';
 let adminToken = localStorage.getItem(ADMIN_KEY);
 let currentSection = 'dashboard';
 let editItemId = null;
+// When a backend server is running, admin changes should persist across devices.
+// Detect availability and switch to server-backed admin APIs when possible.
+let BACKEND_ADMIN_MODE = false;
+
+// Supabase client (optional, used if `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY` are set)
+let supabase = null;
+let USE_SUPABASE = false;
+
+async function loadSupabaseClient() {
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
+  if (supabase) return true;
+  // load supabase-js from CDN if not present
+  if (typeof window.supabase === 'undefined') {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    }).catch(() => null);
+  }
+  try {
+    // global exported as supabase (umd) or window.supabase
+    const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+    if (!createClient) return false;
+    supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    USE_SUPABASE = true;
+    console.log('Admin panel: Supabase client loaded');
+    return true;
+  } catch (e) {
+    console.warn('Supabase init failed', e);
+    return false;
+  }
+}
+
+function dataURLToBlob(dataURL) {
+  const parts = dataURL.split(',');
+  const meta = parts[0];
+  const base64 = parts[1];
+  const mime = meta.match(/:(.*?);/)[1];
+  const binary = atob(base64);
+  const len = binary.length;
+  const u8 = new Uint8Array(len);
+  for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+  return new Blob([u8], { type: mime });
+}
+
+async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
+  if (!await loadSupabaseClient() || !supabase) throw new Error('Supabase not initialized');
+  let file = fileOrData;
+  if (typeof fileOrData === 'string' && fileOrData.startsWith('data:')) {
+    file = dataURLToBlob(fileOrData);
+  }
+  if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
+  const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+  const bucket = window.SUPABASE_BUCKET || 'public';
+  const { data, error } = await supabase.storage.from(bucket).upload(filename, file, { upsert: true });
+  if (error) {
+    console.warn('Supabase storage upload error', error);
+    throw error;
+  }
+  const url = supabase.storage.from(bucket).getPublicUrl(data.path).publicURL;
+  return url;
+}
+
+async function detectBackendAdmin() {
+  try {
+    const resp = await fetch('/api/admin/products', { method: 'GET' });
+    if (resp && resp.ok) {
+      BACKEND_ADMIN_MODE = true;
+      console.log('Admin panel: backend API detected — using server persistence.');
+    }
+  } catch (e) {
+    BACKEND_ADMIN_MODE = false;
+  }
+}
 
 const defaultData = {
   categories: [],
@@ -70,6 +146,8 @@ function hasLegacySampleCategorySet(categories) {
 }
 
 function seedData() {
+  // Probe for a backend API once; if present we'll use it for persistence.
+  detectBackendAdmin();
   const existingProducts = getStore(PRODUCTS_KEY, null);
   if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct)) {
     saveStore(PRODUCTS_KEY, defaultData.products);
@@ -206,6 +284,9 @@ function renderDashboard() {
         <div class="admin-eyebrow">Local-only control center</div>
         <h2>Run your store from one polished dashboard.</h2>
         <p>Manage products, categories, banners, and orders instantly. Everything stays inside your browser, so the storefront works even without a backend server.</p>
+          <div style="margin-top:12px;">
+            <button class="admin-btn admin-btn-secondary" onclick="importLocalProducts()">Import local → Supabase</button>
+          </div>
       </div>
       <div class="admin-hero-pill">No npm backend</div>
     </div>
@@ -240,9 +321,51 @@ function renderDashboard() {
 }
 
 function renderProducts() {
-  const products = getStore(PRODUCTS_KEY, []);
-
   document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openProductForm()"><i class="fas fa-plus"></i> Add Product</button>`;
+  document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading products...</div></div>`;
+
+  // If a backend is available, fetch products from server; otherwise read from localStorage.
+  if (BACKEND_ADMIN_MODE) {
+    fetch('/api/admin/products')
+      .then(r => r.ok ? r.json() : [])
+      .then(products => renderProductsTable(products))
+      .catch(() => renderProductsTable(getStore(PRODUCTS_KEY, [])));
+  } else {
+    const products = getStore(PRODUCTS_KEY, []);
+    renderProductsTable(products);
+  }
+}
+
+// Prefer Supabase when configured, then backend API, then localStorage
+async function fetchProductsPrefer() {
+  // try Supabase
+  if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+    try {
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (!error) return data || [];
+    } catch (e) {
+      console.warn('Supabase fetch failed', e);
+    }
+  }
+  // try backend API
+  try {
+    const r = await fetch('/api/admin/products');
+    if (r.ok) return await r.json();
+  } catch (e) {
+    // ignore
+  }
+  // fallback to localStorage
+  return getStore(PRODUCTS_KEY, []);
+}
+
+async function renderProducts() {
+  document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openProductForm()"><i class="fas fa-plus"></i> Add Product</button>`;
+  document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading products...</div></div>`;
+  const products = await fetchProductsPrefer();
+  renderProductsTable(products);
+}
+
+function renderProductsTable(products) {
   document.getElementById('admin-content').innerHTML = `
     <div class="admin-section-card">
       <div class="admin-table-wrap">
@@ -333,9 +456,10 @@ function parseProductVariants(rawValue, defaultStock) {
 }
 
 function saveProduct() {
+async function saveProduct() {
   const name = document.getElementById('pf-name').value.trim();
   const price = Number(document.getElementById('pf-price').value || 0);
-  const image_url = document.getElementById('pf-img').value.trim();
+  let image_url = document.getElementById('pf-img').value.trim();
   const video_url = document.getElementById('pf-video').value.trim();
   if (!name || !price || !image_url) return showToast('Name, price and image are required', 'error');
 
@@ -361,23 +485,128 @@ function saveProduct() {
     is_trending: document.getElementById('pf-trending').checked
   };
 
-  if (editItemId) {
-    const index = products.findIndex(p => p.id === editItemId);
-    products[index] = data;
-    showToast('Product updated', 'success');
-  } else {
-    products.unshift(data);
-    showToast('Product added', 'success');
+  // Supabase preference
+  // If an image file was selected or the image field is a data URL, upload it to Supabase Storage
+  try {
+    await loadSupabaseClient();
+    const imgFileInput = document.getElementById('pf-img-file');
+    if (imgFileInput && imgFileInput.files && imgFileInput.files[0] && supabase) {
+      const uploaded = await supabaseUploadFile(imgFileInput.files[0], 'products');
+      if (uploaded) {
+        image_url = uploaded;
+        data.image_url = image_url;
+        // ensure gallery first item points to uploaded
+        if (!data.gallery || !data.gallery.length) data.gallery = [image_url];
+      }
+    } else if (image_url && image_url.startsWith('data:') && supabase) {
+      const uploaded = await supabaseUploadFile(image_url, 'products');
+      if (uploaded) {
+        image_url = uploaded;
+        data.image_url = image_url;
+        if (!data.gallery || !data.gallery.length) data.gallery = [image_url];
+      }
+    }
+  } catch (e) {
+    console.warn('Image upload skipped or failed', e);
   }
-  saveStore(PRODUCTS_KEY, products);
-  renderProducts();
+
+  if (await loadSupabaseClient() && USE_SUPABASE) {
+    try {
+      await supabaseSaveProduct(data);
+      showToast(editItemId ? 'Product updated (supabase)' : 'Product added (supabase)', 'success');
+      editItemId = null;
+      return renderProducts();
+    } catch (e) {
+      console.warn('Supabase save failed', e);
+      showToast('Supabase save failed', 'error');
+    }
+  }
+
+  if (BACKEND_ADMIN_MODE) {
+    // Server-backed persistence
+    if (editItemId) {
+      fetch(`/api/admin/products/${editItemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(r => {
+        if (r.ok) showToast('Product updated (server)', 'success');
+        else showToast('Failed updating product on server', 'error');
+        renderProducts();
+      }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
+    } else {
+      fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(r => r.json()).then(resp => {
+        if (resp && resp.success !== false) showToast('Product added (server)', 'success');
+        else showToast('Failed to add product on server', 'error');
+        renderProducts();
+      }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
+    }
+  } else {
+    if (editItemId) {
+      const index = products.findIndex(p => p.id === editItemId);
+      products[index] = data;
+      showToast('Product updated', 'success');
+    } else {
+      products.unshift(data);
+      showToast('Product added', 'success');
+    }
+    saveStore(PRODUCTS_KEY, products);
+    renderProducts();
+  }
+}
+
+// Supabase save (insert or update)
+async function supabaseSaveProduct(data) {
+  if (!await loadSupabaseClient() || !supabase) throw new Error('No supabase');
+  if (editItemId) {
+    const { error } = await supabase.from('products').update(data).eq('id', editItemId);
+    if (error) throw error;
+  } else {
+    const { data: inserted, error } = await supabase.from('products').insert([data]).select();
+    if (error) throw error;
+    if (inserted && inserted[0] && inserted[0].id) editItemId = inserted[0].id;
+  }
+}
+
+// Supabase delete
+async function supabaseDeleteProduct(id) {
+  if (!await loadSupabaseClient() || !supabase) throw new Error('No supabase');
+  const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) throw error;
 }
 
 function deleteProduct(id) {
-  const products = getStore(PRODUCTS_KEY, []).filter(p => p.id !== id);
-  saveStore(PRODUCTS_KEY, products);
-  showToast('Product deleted', 'success');
-  renderProducts();
+  (async () => {
+    // Supabase preference
+    if (await loadSupabaseClient() && USE_SUPABASE) {
+      try {
+        await supabaseDeleteProduct(id);
+        showToast('Product deleted (supabase)', 'success');
+        return renderProducts();
+      } catch (e) {
+        console.warn('Supabase delete failed', e);
+        showToast('Supabase delete failed', 'error');
+      }
+    }
+
+    if (BACKEND_ADMIN_MODE) {
+      fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+        .then(r => {
+          if (r.ok) showToast('Product deleted (server)', 'success');
+          else showToast('Failed to delete product on server', 'error');
+          renderProducts();
+        }).catch(() => { showToast('Server error', 'error'); renderProducts(); });
+    } else {
+      const products = getStore(PRODUCTS_KEY, []).filter(p => p.id !== id);
+      saveStore(PRODUCTS_KEY, products);
+      showToast('Product deleted', 'success');
+      renderProducts();
+    }
+  })();
 }
 
 function renderCategories() {
@@ -442,17 +671,36 @@ function openCategoryForm(id) {
 function saveCategory() {
   const name = document.getElementById('cf-name').value.trim();
   const slug = document.getElementById('cf-slug').value.trim();
-  const banner_image = document.getElementById('cf-img').value.trim();
+  let banner_image = document.getElementById('cf-img').value.trim();
   if (!name || !slug) return showToast('Name and slug are required', 'error');
   const categories = getStore(CATEGORIES_KEY, []);
   const data = { id: editItemId || Date.now(), name, slug, banner_image };
-  if (editItemId) {
-    const index = categories.findIndex(c => c.id === editItemId);
-    categories[index] = data;
-    showToast('Category updated', 'success');
-  } else { categories.unshift(data); showToast('Category added', 'success'); }
-  saveStore(CATEGORIES_KEY, categories);
-  renderCategories();
+  // upload image if file selected and supabase available
+  (async () => {
+    try {
+      await loadSupabaseClient();
+      const fileInput = document.getElementById('cf-img-file');
+      if (fileInput && fileInput.files && fileInput.files[0] && supabase) {
+        const uploaded = await supabaseUploadFile(fileInput.files[0], 'categories');
+        if (uploaded) {
+          data.banner_image = uploaded;
+        }
+      } else if (banner_image && banner_image.startsWith('data:') && supabase) {
+        const uploaded = await supabaseUploadFile(banner_image, 'categories');
+        if (uploaded) data.banner_image = uploaded;
+      }
+    } catch (e) {
+      console.warn('Category image upload failed', e);
+    }
+
+    if (editItemId) {
+      const index = categories.findIndex(c => c.id === editItemId);
+      categories[index] = data;
+      showToast('Category updated', 'success');
+    } else { categories.unshift(data); showToast('Category added', 'success'); }
+    saveStore(CATEGORIES_KEY, categories);
+    renderCategories();
+  })();
 }
 
 function saveHeaderLink() {
@@ -559,16 +807,30 @@ function saveHeroImage() {
     is_active: document.getElementById('hf-active').checked,
     display_order: Number(document.getElementById('hf-order').value || 0)
   };
-  if (editItemId) {
-    const index = heroImages.findIndex(h => h.id === editItemId);
-    heroImages[index] = data;
-    showToast('Hero image updated', 'success');
-  } else {
-    heroImages.unshift(data);
-    showToast('Hero image added', 'success');
-  }
-  saveStore(HERO_IMAGES_KEY, heroImages);
-  renderHeroImages();
+  (async () => {
+    try {
+      await loadSupabaseClient();
+      const fileInput = document.getElementById('hf-img-file');
+      if (fileInput && fileInput.files && fileInput.files[0] && supabase) {
+        const uploaded = await supabaseUploadFile(fileInput.files[0], 'hero');
+        if (uploaded) data.image_url = uploaded;
+      } else if (data.image_url && data.image_url.startsWith('data:') && supabase) {
+        const uploaded = await supabaseUploadFile(data.image_url, 'hero');
+        if (uploaded) data.image_url = uploaded;
+      }
+    } catch (e) { console.warn('Hero image upload failed', e); }
+
+    if (editItemId) {
+      const index = heroImages.findIndex(h => h.id === editItemId);
+      heroImages[index] = data;
+      showToast('Hero image updated', 'success');
+    } else {
+      heroImages.unshift(data);
+      showToast('Hero image added', 'success');
+    }
+    saveStore(HERO_IMAGES_KEY, heroImages);
+    renderHeroImages();
+  })();
 }
 
 function toggleHeroImageActive(id, newValue) {
@@ -586,6 +848,50 @@ function deleteHeroImage(id) {
   saveStore(HERO_IMAGES_KEY, heroImages);
   showToast('Hero image deleted', 'success');
   renderHeroImages();
+}
+
+async function importLocalProducts() {
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return showToast('Supabase not configured', 'error');
+  await loadSupabaseClient();
+  if (!supabase) return showToast('Failed to initialize Supabase', 'error');
+  const raw = localStorage.getItem(PRODUCTS_KEY);
+  if (!raw) return showToast('No local products found', 'error');
+  let products = [];
+  try { products = JSON.parse(raw || '[]'); } catch (e) { return showToast('Local product JSON invalid', 'error'); }
+  if (!products.length) return showToast('No local products to import', 'error');
+
+  // normalize products for Supabase
+  const payload = products.map(p => ({
+    id: p.id || Date.now() + Math.floor(Math.random()*1000),
+    name: p.name || '',
+    description: p.description || '',
+    price: p.price || 0,
+    offer_price: p.offer_price || p.price || 0,
+    category: p.category || '',
+    stock: p.stock || 0,
+    sizes: p.sizes || null,
+    image_url: p.image_url || '',
+    video_url: p.video_url || null,
+    parent_id: p.parent_id || null,
+    gallery: p.gallery || [],
+    variants: p.variants || [],
+    is_trending: p.is_trending ? true : false,
+    created_at: p.created_at || new Date().toISOString()
+  }));
+
+  try {
+    // upsert to avoid duplicate PK errors
+    const { data, error } = await supabase.from('products').upsert(payload, { onConflict: ['id'] });
+    if (error) {
+      console.error('Supabase import error', error);
+      return showToast('Import failed: ' + (error.message || error), 'error');
+    }
+    showToast('Imported ' + (data ? data.length : payload.length) + ' products to Supabase', 'success');
+    renderProducts();
+  } catch (e) {
+    console.error(e);
+    showToast('Import failed', 'error');
+  }
 }
 
 function handleBannerFilePreview(event) {
@@ -606,17 +912,31 @@ function handleCategoryFilePreview(event) {
 
 function saveBanner() {
   const title = document.getElementById('bf-title').value.trim();
-  const image_url = document.getElementById('bf-img').value.trim();
+  let image_url = document.getElementById('bf-img').value.trim();
   if (!title || !image_url) return showToast('Title and image are required', 'error');
   const banners = getStore(BANNERS_KEY, []);
   const data = { id: editItemId || Date.now(), title, subtitle: document.getElementById('bf-sub').value.trim(), image_url, cta_link: document.getElementById('bf-link').value.trim(), is_active: true, display_order: banners.length + 1 };
-  if (editItemId) {
-    const index = banners.findIndex(b => b.id === editItemId);
-    banners[index] = data;
-    showToast('Banner updated', 'success');
-  } else { banners.unshift(data); showToast('Banner added', 'success'); }
-  saveStore(BANNERS_KEY, banners);
-  renderBanners();
+  (async () => {
+    try {
+      await loadSupabaseClient();
+      const fileInput = document.getElementById('bf-img-file');
+      if (fileInput && fileInput.files && fileInput.files[0] && supabase) {
+        const uploaded = await supabaseUploadFile(fileInput.files[0], 'banners');
+        if (uploaded) data.image_url = uploaded;
+      } else if (image_url && image_url.startsWith('data:') && supabase) {
+        const uploaded = await supabaseUploadFile(image_url, 'banners');
+        if (uploaded) data.image_url = uploaded;
+      }
+    } catch (e) { console.warn('Banner image upload failed', e); }
+
+    if (editItemId) {
+      const index = banners.findIndex(b => b.id === editItemId);
+      banners[index] = data;
+      showToast('Banner updated', 'success');
+    } else { banners.unshift(data); showToast('Banner added', 'success'); }
+    saveStore(BANNERS_KEY, banners);
+    renderBanners();
+  })();
 }
 
 function deleteBanner(id) {
@@ -636,6 +956,9 @@ function renderOrders() {
     </div>`;
 }
 
-window.onload = () => {
+window.onload = async () => {
+  // initialize supabase and backend detection in background
+  loadSupabaseClient().catch(() => {});
+  detectBackendAdmin().catch(() => {});
   if (adminToken) renderApp(); else renderLogin();
 };
