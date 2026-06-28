@@ -232,7 +232,7 @@ function hasLegacySampleCategorySet(categories) {
 
 function seedStoreData() {
     const existingProducts = getStore(STORE_KEYS.products, null);
-    if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct) || existingProducts.length === 0) {
+    if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct)) {
         saveStore(STORE_KEYS.products, DEFAULT_PRODUCTS);
     }
 
@@ -245,12 +245,12 @@ function seedStoreData() {
 
     const existingBanners = getStore(STORE_KEYS.banners, null);
     const isLegacyBanner = banners => Array.isArray(banners) && banners.length > 0 && banners.every(b => typeof b.image_url === 'string' && b.image_url.includes('unsplash.com'));
-    if (!Array.isArray(existingBanners) || isLegacyBanner(existingBanners) || existingBanners.length === 0) {
+    if (!Array.isArray(existingBanners) || isLegacyBanner(existingBanners)) {
         saveStore(STORE_KEYS.banners, defaultBanners);
     }
 
     const existingHeroImages = getStore(STORE_KEYS.hero_images, null);
-    if (!Array.isArray(existingHeroImages) || existingHeroImages.length === 0) {
+    if (!Array.isArray(existingHeroImages)) {
         saveStore(STORE_KEYS.hero_images, defaultHeroImages);
     }
 

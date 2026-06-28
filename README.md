@@ -3,35 +3,17 @@
 A luxury e-commerce platform for perfumes and slippers, featuring a real-time order tracking system and a neobrutalist design.
 
 ## Features
-- **Real-time Order Tracking**: Powered by Socket.io for instant status updates.
-- **Modern Backend**: Node.js/Express server with SQLite database.
+- **Local Admin Panel**: Manage products, categories, banners, and orders directly from the browser.
+- **No Backend Required**: The site runs as a static storefront with local storage.
 - **Neobrutalist UI**: High-contrast, bold design with dark mode support.
-- **Interactive Cart**: Seamless shopping experience with AJAX-based checkout.
+- **Interactive Cart**: Seamless shopping experience with local order management.
 
 ## Getting Started
 
-### Prerequisites
-- Node.js installed on your machine.
-
-### Installation
-1. Navigate to the `backend` directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
 ### Running the Application
-1. Start the backend server:
-   ```bash
-   npm run dev
-   ```
-2. Open `index.html` in your browser (use a local server like Live Server for the best experience).
+1. Open `index.html` in your browser, or use a local static server such as Live Server.
+2. Open `admin.html` to manage the store.
+3. You can also run `start-admin.bat` to open the admin panel quickly.
 
-### Testing the Tracking System
-1. Place an order on the website.
-2. Copy the Order ID provided in the success modal.
-3. Go to the **Track Order** page and enter your ID.
-4. (Optional) Use a tool like Postman to send a POST request to `http://localhost:3000/api/admin/update-order` with `{ "id": "YOUR_ORDER_ID", "status": "Shipped" }` to see the status update in real-time!
+### Optional Backend
+If you want server-side features later, the optional backend is still available in the `backend` folder.

@@ -1,23 +1,14 @@
 Run the app locally
 
-1. Start the backend server (only needed once per session)
+1. Open the storefront
 
-   Open `start-backend.bat` (double-click) or run:
+   Open `index.html` in your browser, or use a simple local static server if you prefer.
 
-   ```powershell
-   cd "e:\Life Style\backend"
-   npm start
-   ```
+2. Open the admin panel
 
-2. Open the admin panel (once backend is running):
-
-   Double-click `start-admin.bat` or open in browser:
-
-   ```text
-   http://127.0.0.1:3000/admin.html
-   ```
+   Double-click `start-admin.bat` or open `admin.html` directly in your browser.
 
 Notes
-- `start-backend.bat` will open a new terminal and run `npm start` for you.
-- `start-admin.bat` attempts to open Chrome; edit the path if you use another browser.
-- To run on a real domain, deploy the `backend` to a server and set `API_URL` accordingly.
+- The admin panel now works without any backend server.
+- All admin data is stored in your browser via `localStorage`.
+- If you want server-side features later, the optional backend in the `backend` folder can still be used.

@@ -228,51 +228,6 @@ let db;
             { name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: 1 },
             { name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: 0 }
         ];
-        for (const p of initialProducts) {
-            await db.run(
-                'INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [p.name, p.description, p.price, p.price, p.category, p.image_url, p.is_trending]
-            );
-        }
-        console.log('Products seeded.');
-    }
-
-    // ── Seed default categories if empty ──
-    const catCount = await db.get('SELECT COUNT(*) as count FROM categories');
-    if (catCount.count === 0) {
-        const defaultCategories = [
-            { name: 'Saree', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&q=80', display_order: 1 },
-            { name: 'Kurtis', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=1200&q=80', display_order: 2 },
-            { name: 'Ethnic Wear', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1200&q=80', display_order: 3 },
-            { name: 'Party Wear', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1200&q=80', display_order: 4 },
-            { name: 'Casual Wear', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=80', display_order: 5 },
-        ];
-        for (const cat of defaultCategories) {
-            await db.run(
-                'INSERT INTO categories (name, slug, icon, banner_image, display_order) VALUES (?, ?, ?, ?, ?)',
-                [cat.name, cat.slug, cat.icon, cat.banner_image, cat.display_order]
-            );
-        }
-        console.log('Categories seeded.');
-    }
-
-    // ── Seed default banners if empty ──
-    const bannerCount = await db.get('SELECT COUNT(*) as count FROM banners');
-    if (bannerCount.count === 0) {
-        const defaultBanners = [
-            { title: 'New Arrivals', subtitle: 'Discover our latest Saree & Kurti collections', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&q=80', cta_text: 'Shop Now', cta_link: 'collections.html', display_order: 1 },
-            { title: 'Party Season', subtitle: 'Get ready to shine with our Party Wear', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1600&q=80', cta_text: 'Explore', cta_link: 'party.html', display_order: 2 },
-            { title: 'Ethnic Elegance', subtitle: 'Timeless ethnic styles for every occasion', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1600&q=80', cta_text: 'View Collection', cta_link: 'ethnic.html', display_order: 3 },
-        ];
-        for (const b of defaultBanners) {
-            await db.run(
-                'INSERT INTO banners (title, subtitle, image_url, cta_text, cta_link, display_order) VALUES (?, ?, ?, ?, ?, ?)',
-                [b.title, b.subtitle, b.image_url, b.cta_text, b.cta_link, b.display_order]
-            );
-        }
-        console.log('Banners seeded.');
-    }
-
     console.log('Database ready.');
 })();
 
