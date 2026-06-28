@@ -2,6 +2,11 @@
 // HOUSE OF VIYARA — ADMIN PANEL
 // ═══════════════════════════════════════════════════════════════
 
+// DEBUG: Check Supabase config
+console.log('🔍 [ADMIN] window.SUPABASE_URL:', window.SUPABASE_URL);
+console.log('🔍 [ADMIN] window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
+console.log('🔍 [ADMIN] window.SUPABASE_BUCKET:', window.SUPABASE_BUCKET);
+
 const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
     ? `${window.location.protocol}//${window.location.hostname}:3000`
     : window.location.origin);

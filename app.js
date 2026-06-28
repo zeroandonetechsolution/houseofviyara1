@@ -5,6 +5,11 @@ let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 let googleClientId = '';
 const FALLBACK_GOOGLE_CLIENT_ID = '1089096335322-36amhoadv49hb4mt8eh6f3rf1f49mag3.apps.googleusercontent.com';
 
+// DEBUG: Check Supabase config
+console.log('🔍 window.SUPABASE_URL:', window.SUPABASE_URL);
+console.log('🔍 window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
+console.log('🔍 window.SUPABASE_BUCKET:', window.SUPABASE_BUCKET);
+
 // Supabase client (optional)
 let appSupabase = null;
 let USE_SUPABASE = false;
