@@ -455,7 +455,6 @@ function parseProductVariants(rawValue, defaultStock) {
   });
 }
 
-function saveProduct() {
 async function saveProduct() {
   const name = document.getElementById('pf-name').value.trim();
   const price = Number(document.getElementById('pf-price').value || 0);
