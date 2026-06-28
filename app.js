@@ -3,6 +3,7 @@ let cart = [];
 let wishlist = [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 let googleClientId = '';
+const FALLBACK_GOOGLE_CLIENT_ID = '726850316250-edmj9eb620e1kufona6bse9o87gva9gr.apps.googleusercontent.com';
 
 const AUTH_KEYS = {
     user: 'lifestyle_user',
@@ -57,9 +58,10 @@ async function fetchAuthConfig() {
         const response = await fetch('/api/auth/config');
         if (!response.ok) return;
         const data = await response.json();
-        googleClientId = data.googleClientId || '';
+        googleClientId = data.googleClientId || FALLBACK_GOOGLE_CLIENT_ID;
     } catch (error) {
         console.warn('Unable to fetch auth config:', error);
+        googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
     }
 }
 
@@ -530,16 +532,20 @@ async function initAuth() {
 }
 
 async function handleGoogleResponse(response) {
-    if (!response || !response.credential) {
+    if (!response || (!response.credential && !response.accessToken)) {
         alert('Google sign-in failed. Please try again.');
         return;
     }
 
     try {
+        const body = response.credential
+            ? { credential: response.credential }
+            : { accessToken: response.accessToken };
+
         const resp = await fetch('/api/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: response.credential })
+            body: JSON.stringify(body)
         });
 
         if (!resp.ok) {
@@ -571,33 +577,67 @@ async function handleGoogleResponse(response) {
     }
 }
 
+let googleButtonInitialized = false;
+
 function initGoogleButton() {
     const googleBtn = document.getElementById('google-auth-btn');
-    if (!googleBtn) return;
+    if (!googleBtn || googleButtonInitialized) return;
 
-    googleBtn.onclick = async () => {
+    googleButtonInitialized = true;
+
+    const startGoogleFlow = async () => {
         if (!googleClientId) {
-            alert('Google login is not configured. Use OTP login instead.');
-            return;
+            googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
         }
 
         try {
             await loadGoogleIdentityScript();
+
             if (window.google && window.google.accounts && window.google.accounts.id) {
                 window.google.accounts.id.initialize({
                     client_id: googleClientId,
                     callback: handleGoogleResponse,
+                    ux_mode: 'popup',
+                    auto_select: false,
                     cancel_on_tap_outside: false
                 });
-                window.google.accounts.id.prompt();
-            } else {
-                alert('Google login is unavailable. Please try again later.');
+
+                window.google.accounts.id.renderButton(googleBtn, {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'continue_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left',
+                    width: 280
+                });
+                return;
             }
+
+            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+                const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: googleClientId,
+                    scope: 'openid email profile',
+                    callback: async (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.error(tokenResponse);
+                            alert('Google login was cancelled or blocked.');
+                            return;
+                        }
+                        await handleGoogleResponse({ accessToken: tokenResponse.access_token });
+                    }
+                });
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+                return;
+            }
+
+            alert('Google login is unavailable. Please try again later.');
         } catch (error) {
             console.warn('Google script load error:', error);
             alert('Unable to load Google login. Use OTP instead.');
         }
     };
+
+    startGoogleFlow();
 }
 
 function loadGoogleIdentityScript() {
@@ -621,6 +661,7 @@ function loadGoogleIdentityScript() {
         script.onerror = () => reject(new Error('Google identity script failed to load'));
         document.head.appendChild(script);
     });
+}
 
 function requireAuth(action) {
     if (!user) {

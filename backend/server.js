@@ -281,12 +281,33 @@ let db;
 // ─────────────────────────────────────────────
 app.post('/api/auth/google', async (req, res) => {
     try {
-        const { credential } = req.body;
-        const ticket = await googleClient.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
-        const payload = ticket.getPayload();
+        const { credential, accessToken } = req.body;
+        let payload = null;
+
+        if (credential) {
+            const ticket = await googleClient.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID
+            });
+            payload = ticket.getPayload();
+        } else if (accessToken) {
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            if (!userInfoResponse.ok) {
+                throw new Error('Google userinfo request failed');
+            }
+            const userInfo = await userInfoResponse.json();
+            payload = {
+                email: userInfo.email,
+                name: userInfo.name,
+                sub: userInfo.sub
+            };
+        }
+
+        if (!payload || !payload.email) {
+            throw new Error('Invalid Google payload');
+        }
 
         let user = await db.get('SELECT * FROM users WHERE email = ?', [payload.email]);
         if (!user) {
@@ -298,6 +319,7 @@ app.post('/api/auth/google', async (req, res) => {
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
         res.json({ token, user });
     } catch (error) {
+        console.error('Google auth failed:', error);
         res.status(400).json({ error: 'Google Auth failed' });
     }
 });
