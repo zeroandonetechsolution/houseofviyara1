@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="description" content="House Of Viyara - Your Cart.">
+    <title>House Of Viyara | Cart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">House Of Viyara</a></h1>
+            </div>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="saree.html">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
+                </ul>
+            </nav>
+            <div class="header-search-container">
+                <i class="fas fa-search header-search-icon"></i>
+                <input type="text" class="header-search-input" placeholder="SEARCH..." id="desktop-search-input">
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <a href="wishlist.html" class="icon-btn wishlist-btn" aria-label="Wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span class="cart-badge" id="wishlist-badge">0</span>
+                </a>
+                <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </a>
+                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <section class="section section-lg">
+            <div class="section-header">
+                <h2>YOUR CART</h2>
+                <p>Review your selected items and continue to checkout.</p>
+            </div>
+            <div id="cart-page-content" class="cart-page-content"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>House Of Viyara</h3>
+                <p>Redefining fashion with curated styles and premium quality.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>SHOP</h4>
+                <ul>
+                    <li><a href="saree.html">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>HELP</h4>
+                <ul>
+                    <li><a href="orders.html">Track Order</a></li>
+                    <li><a href="return-policy.html">Returns & Exchanges</a></li>
+                    <li><a href="#">Shipping Info</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>LEGAL</h4>
+                <ul>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Service</a></li>
+                    <li><a href="data-safety.html">Data Safety</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
+            <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

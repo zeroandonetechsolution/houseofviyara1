@@ -6,8 +6,35 @@ let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 // Local-only mode: all storefront data is stored in localStorage or seeded from defaults.
 const API_URL = ''; // no backend API calls in static mode
 
-// Start with a blank catalog so you can create your own products.
-const MOCK_PRODUCTS = [];
+// Default product catalog for local mode.
+const DEFAULT_PRODUCTS = [
+    { id: 1, name: 'Banarasi Silk Saree', description: 'Elegant gold zari border with premium silk fabric.', price: 4500, offer_price: 4500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true },
+    { id: 2, name: 'Kanjeevaram Saree', description: 'Pure mulberry silk with traditional temple patterns.', price: 6200, offer_price: 6200, category: 'saree', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
+    { id: 3, name: 'Floral Organza Saree', description: 'Lightweight organza saree with delicate floral print.', price: 2800, offer_price: 2800, category: 'saree', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false },
+    { id: 4, name: 'Georgette Designer Saree', description: 'Glamorous saree with sequin work, perfect for cocktails.', price: 3500, offer_price: 3500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true },
+    { id: 5, name: 'Cotton Handloom Saree', description: 'Comfortable and breathable handwoven cotton saree.', price: 1999, offer_price: 1999, category: 'saree', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false },
+    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true },
+    { id: 7, name: 'Floral Anarkali Kurta', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false },
+    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false },
+    { id: 9, name: 'Embroidered Silk Kurta', description: 'Festive wear silk kurta with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false },
+    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true },
+    { id: 11, name: 'Velvet Lehenga Choli', description: 'Heavy embroidered velvet lehenga set for bridal wear.', price: 8900, offer_price: 8900, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true },
+    { id: 12, name: 'Anarkali Suit Set', description: 'Traditional 3-piece georgette anarkali with net dupatta.', price: 4200, offer_price: 4200, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false },
+    { id: 13, name: 'Sharara Suit Set', description: 'Trendy sharara bottom with short kurti and matching dupatta.', price: 3800, offer_price: 3800, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
+    { id: 14, name: 'Palazzo Suit Set', description: 'Comfortable straight kurta with wide-leg printed palazzos.', price: 2600, offer_price: 2600, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false },
+    { id: 15, name: 'Banarasi Brocade Suit', description: 'Rich Banarasi brocade fabric with elegant design and details.', price: 5500, offer_price: 5500, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false },
+    { id: 16, name: 'Satin Evening Gown', description: 'Sleek and luxurious satin gown with cowl neck.', price: 7500, offer_price: 7500, category: 'party', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true },
+    { id: 17, name: 'Sequin Bodycon Dress', description: 'Sparkling sequin party dress for clubbing and night events.', price: 4800, offer_price: 4800, category: 'party', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false },
+    { id: 18, name: 'Off-Shoulder Velvet Dress', description: 'Classic luxury velvet dress with off-shoulder design.', price: 3900, offer_price: 3900, category: 'party', image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80', is_trending: true },
+    { id: 19, name: 'Chiffon Cocktail Dress', description: 'Flowy knee-length designer cocktail dress.', price: 3200, offer_price: 3200, category: 'party', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80', is_trending: false },
+    { id: 20, name: 'Embroidered Party Gown', description: 'Floor-length net gown with gorgeous embellishments.', price: 6800, offer_price: 6800, category: 'party', image_url: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=800&q=80', is_trending: false },
+    { id: 21, name: 'Linen Summer Dress', description: 'Lightweight breathable linen dress for sunny days.', price: 2200, offer_price: 2200, category: 'casual', image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80', is_trending: false },
+    { id: 22, name: 'Denim Dungaree Set', description: 'Stylish classic blue denim dungarees with cotton inner.', price: 2600, offer_price: 2600, category: 'casual', image_url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80', is_trending: false },
+    { id: 23, name: 'Oversized Cotton Tee', description: 'Casual everyday oversized tee made of organic cotton.', price: 999, offer_price: 999, category: 'casual', image_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', is_trending: false },
+    { id: 24, name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, offer_price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: true },
+    { id: 25, name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, offer_price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: false }
+];
+const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
 
 const STORE_KEYS = {
     products: 'hov_products',
@@ -103,8 +130,8 @@ function hasLegacySampleCategorySet(categories) {
 
 function seedStoreData() {
     const existingProducts = getStore(STORE_KEYS.products, null);
-    if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct)) {
-        saveStore(STORE_KEYS.products, []);
+    if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct) || existingProducts.length === 0) {
+        saveStore(STORE_KEYS.products, DEFAULT_PRODUCTS);
     }
 
     const existingCategories = getStore(STORE_KEYS.categories, null);
@@ -177,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderWishlist();
     } else if (window.location.pathname.includes('product.html')) {
         initProductDetails();
+    } else if (window.location.pathname.includes('cart.html')) {
+        renderCartPage();
     } else {
         renderProducts();
         renderBanners();
@@ -305,7 +334,17 @@ function checkPaymentStatus() {
 
     if (status === 'success') {
         const orders = getStore(STORE_KEYS.orders, []);
-        const order = orders.find(o => o.txnid === txnid);
+        let order = orders.find(o => o.txnid === txnid);
+        if (!order && txnid) {
+            try {
+                const response = await fetch(`/api/orders/txnid/${encodeURIComponent(txnid)}`);
+                if (response.ok) {
+                    order = await response.json();
+                }
+            } catch (e) {
+                console.warn('Unable to fetch order by txnid', e);
+            }
+        }
         if (order) {
             showSuccessModal(order.id);
             cart = [];
@@ -438,14 +477,15 @@ function normalizeProductVariants(product) {
         }));
     }
 
-    return [{
-        id: `${product?.id || 'default'}-default`,
+    const rawSizes = Array.isArray(product?.sizes) && product.sizes.length ? product.sizes : ['One Size'];
+    return rawSizes.map((size, index) => ({
+        id: `${product?.id || 'default'}-${size || 'one-size'}-${index + 1}`,
         color: 'Default',
-        size: 'One Size',
+        size: size || 'One Size',
         stock: Number(product?.stock || 10),
         image_url: product?.image_url || '',
-        gallery: Array.isArray(product?.gallery) ? product.gallery : [product?.image_url || '']
-    }];
+        gallery: Array.isArray(product?.gallery) && product.gallery.length ? product.gallery : [product?.image_url || '']
+    }));
 }
 
 function getProductColors(product) {
@@ -511,6 +551,7 @@ async function renderProducts(searchTerm = '') {
 
     const products = getStore(STORE_KEYS.products, [])
         .filter(p => {
+            if (p.parent_id != null) return false;
             if (isTrendingSection) return p.is_trending;
             return !category || p.category === category;
         });
@@ -541,8 +582,8 @@ function renderToDOM(products, container, category) {
         const variantSummary = normalizeProductVariants(p).slice(0, 3).map(v => `${v.color} / ${v.size}`).join(', ');
         
         return `
-        <div class="product-card">
-            <div class="product-img" onclick="openProductPage(${p.id})" style="cursor: pointer; position: relative;">
+        <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor: pointer;">
+            <div class="product-img" style="position: relative;">
                 <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
                 <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
                     ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
@@ -551,7 +592,7 @@ function renderToDOM(products, container, category) {
                     <i class="fas fa-plus"></i> ADD TO BAG
                 </button>
             </div>
-            <div class="product-info" onclick="openProductPage(${p.id})" style="cursor: pointer;">
+            <div class="product-info">
                 <h3>${p.name}</h3>
                 <p>${p.description}</p>
                 <div class="product-variant-summary">${variantSummary ? `Variants: ${variantSummary}` : 'Single variant'}</div>
@@ -621,13 +662,23 @@ window.openProductPage = async function(productId) {
     const pdpContent = document.getElementById('pdp-content');
     if (!pdpModal || !pdpContent) return;
 
-    window.history.pushState({ productId }, '', `?product=${productId}`);
+    if (!window.location.pathname.includes('product.html')) {
+        window.location.href = `product.html?id=${productId}`;
+        return;
+    }
+
+    window.history.pushState({ productId }, '', `?id=${productId}`);
 
     const products = getStore(STORE_KEYS.products, []);
     const product = products.find(p => p.id === productId);
 
     if (!product) {
-        pdpModal.classList.add('active');
+        if (pdpModal) {
+            pdpModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            pdpContent.innerHTML = `<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><button class="btn btn-primary" onclick="closeProductPage()" style="margin-top: 20px;">Return</button></div>`;
+        }
+        return;
         document.body.style.overflow = 'hidden';
         pdpContent.innerHTML = `<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><button class="btn btn-primary" onclick="closeProductPage()" style="margin-top: 20px;">Return</button></div>`;
         return;
@@ -669,7 +720,11 @@ async function initProductDetails() {
         return;
     }
 
-    let product = MOCK_PRODUCTS.find(p => p.id === productId);
+    const products = getStore(STORE_KEYS.products, []);
+    let product = products.find(p => p.id === productId);
+    if (!product) {
+        product = MOCK_PRODUCTS.find(p => p.id === productId);
+    }
     if (!product) {
         container.innerHTML = '<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Return Home</a></div>';
         return;
@@ -692,6 +747,76 @@ function renderProductDetails(product, targetContainer) {
     const colors = getProductColors(product);
     const sizes = getAvailableSizes(product, selection.color);
     const selectedVariant = getVariantForSelection(product, selection.color, selection.size) || normalizeProductVariants(product)[0];
+
+    const reviews = Array.isArray(product.reviews) ? product.reviews : [];
+    const reviewCount = reviews.length;
+    const reviewHtml = reviews.length > 0 ? reviews.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="reviewer-info">
+                        <div class="reviewer-avatar"><i class="fas fa-user"></i></div>
+                        <div>
+                            <strong>${r.user}</strong>
+                            <div class="review-date">${r.date}</div>
+                        </div>
+                    </div>
+                    <div class="review-stars">${'<i class="fas fa-star"></i>'.repeat(r.rating)}${'<i class="far fa-star"></i>'.repeat(5 - r.rating)}</div>
+                </div>
+                <p class="review-text">${r.comment}</p>
+                ${r.image ? `<img class="review-media" src="${optimizeImg(r.image, 640, 360)}" alt="Review image" />` : ''}
+                ${r.video_url ? `<video class="review-media" src="${r.video_url}" controls muted playsinline></video>` : ''}
+            </div>
+        `).join('') : '<p class="no-reviews">No reviews yet. Be the first to share your thoughts.</p>';
+
+    const reviewFormHtml = `
+        <div class="review-form-card">
+            <h3>Share your review</h3>
+            <div class="review-form-row">
+                <label>Rating</label>
+                <div class="review-rating-inputs">
+                    ${[5,4,3,2,1].map(value => `
+                        <label class="review-star-option">
+                            <input type="radio" name="review-rating" value="${value}" ${value === 5 ? 'checked' : ''}>
+                            ${value} <i class="fas fa-star"></i>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="review-form-row">
+                <label>Name</label>
+                <input id="review-name" type="text" placeholder="Your name" />
+            </div>
+            <div class="review-form-row">
+                <label>Review</label>
+                <textarea id="review-text" rows="4" placeholder="Write your experience."></textarea>
+            </div>
+            <div class="review-form-row review-upload-row">
+                <label>Image URL or file</label>
+                <input id="review-image-url" type="text" placeholder="Paste image URL" />
+                <input id="review-image-file" type="file" accept="image/*" />
+            </div>
+            <div class="review-form-row review-upload-row">
+                <label>Video URL or file</label>
+                <input id="review-video-url" type="text" placeholder="Paste video URL" />
+                <input id="review-video-file" type="file" accept="video/*" />
+            </div>
+            <button class="btn btn-primary review-submit-btn" onclick="submitProductReview(${product.id})">Post Review</button>
+        </div>
+    `;
+
+    const allProducts = getStore(STORE_KEYS.products, []);
+    let relatedProducts = allProducts.filter(p => p.parent_id === product.id);
+    if (!relatedProducts.length) {
+        relatedProducts = allProducts
+            .filter(p => p.id !== product.id && p.category === product.category && p.parent_id == null)
+            .slice(0, 8);
+    }
+
+    const relatedThumbsHtml = relatedProducts.slice(0, 4).map(r => `
+        <div class="related-thumb" onclick="openProductPage(${r.id})">
+            <img src="${optimizeImg(r.image_url, 120, 120)}" alt="${r.name}" />
+        </div>
+    `).join('');
 
     // Generate Gallery — first image eager, rest lazy; video deferred until selected
     const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length ? selectedVariant.gallery : Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url];
@@ -755,6 +880,10 @@ function renderProductDetails(product, targetContainer) {
                 <div class="pdp-gallery-nav">
                     ${galleryDots}
                 </div>
+                <div class="pdp-similar-label">Similar Products</div>
+                <div class="pdp-related-thumbs">
+                    ${relatedThumbsHtml}
+                </div>
             </div>
 
             <!-- Right: Details -->
@@ -776,7 +905,10 @@ function renderProductDetails(product, targetContainer) {
                     ${product.offer_price && product.offer_price < product.price ? `<span class="pdp-original-price">₹${product.price}</span><span class="pdp-discount">SAVE ₹${product.price - product.offer_price}</span>` : ''}
                 </div>
                 
-                <p class="pdp-short-desc">${product.description}</p>
+                <div class="pdp-short-desc">
+                    <div class="pdp-description-title">Description</div>
+                    <div class="pdp-description-text">${product.description || ''}</div>
+                </div>
                 
                 <div class="pdp-variant-block">
                     <div class="pdp-variant-group">
@@ -795,14 +927,21 @@ function renderProductDetails(product, targetContainer) {
                 </div>
 
                 <div class="pdp-actions">
-                    <div class="qty-selector">
-                        <button onclick="updatePdpQty(-1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" id="pdp-qty" value="1" min="1" max="10" readonly>
-                        <button onclick="updatePdpQty(1)"><i class="fas fa-plus"></i></button>
+                    <div class="pdp-cta-wrap">
+                        <div class="qty-selector">
+                            <button onclick="updatePdpQty(-1)"><i class="fas fa-minus"></i></button>
+                            <input type="number" id="pdp-qty" value="1" min="1" max="10" readonly>
+                            <button onclick="updatePdpQty(1)"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="pdp-cta-buttons">
+                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
+                                <i class="fas fa-shopping-cart"></i> ADD TO BAG
+                            </button>
+                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
+                                BUY NOW <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
-                        ADD TO BAG
-                    </button>
                     <button class="pdp-wishlist-btn" onclick="toggleWishlist(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}')" data-product-id="${product.id}">
                         <i class="${wishlist.some(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
                     </button>
@@ -822,18 +961,12 @@ function renderProductDetails(product, targetContainer) {
                         <span>Authenticity Guaranteed</span>
                     </div>
                 </div>
-                
-                <div class="pdp-full-details">
-                    <h3>PRODUCT DETAILS</h3>
-                    <div class="details-content">
-                        <p>${product.full_details || product.description}</p>
-                    </div>
-                </div>
+                ${reviewFormHtml}
             </div>
         </div>
         
         <!-- Reviews Section -->
-        <div class="pdp-reviews-section">
+        <div class="reviews-section">
             <div class="reviews-header">
                 <h2>CUSTOMER REVIEWS</h2>
                 <div class="overall-rating">
@@ -999,6 +1132,96 @@ function saveCart() {
     localStorage.setItem('lifestyle_cart', JSON.stringify(cart));
 }
 
+window.buyNowFromPdp = function(id, name, price, image, color, size, stock) {
+    const qty = parseInt(document.getElementById('pdp-qty').value) || 1;
+    if (stock !== undefined && stock <= 0) {
+        alert('Selected variant is out of stock.');
+        return;
+    }
+    const existing = cart.find(item => item.id === id && item.variantColor === color && item.variantSize === size);
+    if (existing) {
+        existing.quantity += qty;
+    } else {
+        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}` });
+    }
+    saveCart();
+    updateCartBadge();
+    renderCartItems();
+    openCart();
+    setTimeout(() => {
+        const checkoutBtn = document.querySelector('.checkout-btn');
+        if (checkoutBtn) checkoutBtn.focus();
+    }, 200);
+}
+
+window.submitProductReview = function(productId) {
+    const name = document.getElementById('review-name')?.value.trim() || 'Guest';
+    const comment = document.getElementById('review-text')?.value.trim();
+    const ratingInput = document.querySelector('input[name="review-rating"]:checked');
+    const rating = ratingInput ? Number(ratingInput.value) : 5;
+    const imageUrl = document.getElementById('review-image-url')?.value.trim();
+    const videoUrl = document.getElementById('review-video-url')?.value.trim();
+    const imageFile = document.getElementById('review-image-file')?.files?.[0];
+    const videoFile = document.getElementById('review-video-file')?.files?.[0];
+
+    if (!comment) {
+        alert('Please write a review before posting.');
+        return;
+    }
+
+    const products = getStore(STORE_KEYS.products, []);
+    const productIndex = products.findIndex(p => p.id === productId);
+    if (productIndex === -1) {
+        alert('Unable to save review. Product not found.');
+        return;
+    }
+
+    const review = {
+        user: name,
+        rating,
+        comment,
+        date: new Date().toLocaleDateString('en-IN'),
+        image: imageUrl || '',
+        video_url: videoUrl || ''
+    };
+
+    const fileToDataUrl = async file => {
+        if (!file) return '';
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+        });
+    };
+
+    Promise.all([fileToDataUrl(imageFile), fileToDataUrl(videoFile)]).then(([imageData, videoData]) => {
+        if (imageData) review.image = imageData;
+        if (videoData) review.video_url = videoData;
+
+        if (!products[productIndex].reviews) {
+            products[productIndex].reviews = [];
+        }
+        products[productIndex].reviews.unshift(review);
+        products[productIndex].reviews_count = (products[productIndex].reviews_count || 0) + 1;
+        saveStore(STORE_KEYS.products, products);
+
+        alert('Thank you! Your review has been posted.');
+        initProductDetails();
+    });
+};
+
+window.scrollRelatedProducts = function(direction) {
+    const container = document.querySelector('.related-scroll');
+    if (!container) return;
+    const distance = container.offsetWidth * 0.7;
+    if (direction === 'right') {
+        container.scrollBy({ left: distance, behavior: 'smooth' });
+    } else {
+        container.scrollBy({ left: -distance, behavior: 'smooth' });
+    }
+}
+
 function updateCartBadge() {
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
     const badges = document.querySelectorAll('.cart-count, #cart-badge, #mobile-cart-badge');
@@ -1107,6 +1330,7 @@ function changeQty(index, delta) {
     saveCart();
     updateCartBadge();
     renderCartItems();
+    renderCartPage();
 }
 
 function removeItem(index) {
@@ -1114,33 +1338,147 @@ function removeItem(index) {
     saveCart();
     updateCartBadge();
     renderCartItems();
+    renderCartPage();
 }
 
 // --- Checkout Logic ---
+function getCheckoutPayload() {
+    const name = (document.getElementById('checkout-name') || {}).value?.trim();
+    const email = (document.getElementById('checkout-email') || {}).value?.trim();
+    const phone = (document.getElementById('checkout-phone') || {}).value?.trim();
+    const street = (document.getElementById('checkout-street') || {}).value?.trim();
+    const city = (document.getElementById('checkout-city') || {}).value?.trim();
+    const state = (document.getElementById('checkout-state') || {}).value?.trim();
+    const pin = (document.getElementById('checkout-pin') || {}).value?.trim();
+
+    if (!name || !email || !street || !city || !state || !pin) {
+        return { error: 'Please fill in all required shipping fields.' };
+    }
+
+    return {
+        name,
+        email,
+        phone: phone || '9999999999',
+        shipping_address: { name, email, phone: phone || '9999999999', street, city, state, pin },
+    };
+}
+
 async function completeCheckout() {
-    const email = user?.email || 'guest@hov.com';
-    const name = user?.email ? user.email.split('@')[0] : 'Guest';
+    if (!cart.length) {
+        alert('Your cart is empty. Please add items before checking out.');
+        return;
+    }
+
+    const checkout = getCheckoutPayload();
+    if (checkout.error) {
+        alert(checkout.error);
+        return;
+    }
+
     const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
     const txnid = 'TXN' + Date.now();
-    const orderId = `HOV-${Date.now()}`;
-
-    const newOrder = {
-        id: orderId,
-        txnid,
-        customer: name,
-        total: amount,
-        status: 'Pending',
-        date: new Date().toISOString().split('T')[0],
+    const payload = {
+        user_id: user?.id || null,
         items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size' })),
-        email,
-        shipping_address: { street: 'Default Street', city: 'Default City', state: 'Default State', pin: '000000' }
+        total_amount: amount,
+        shipping_address: checkout.shipping_address,
+        txnid,
+        payment_gateway: 'payu'
     };
 
-    const orders = getStore(STORE_KEYS.orders, []);
-    orders.unshift(newOrder);
-    saveStore(STORE_KEYS.orders, orders);
+    try {
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-    window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&orderId=${orderId}`;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create order');
+        }
+
+        const data = await response.json();
+        const orderId = data.orderId;
+        window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Unable to complete checkout. Please try again later.');
+    }
+}
+
+function renderCartPage() {
+    const container = document.getElementById('cart-page-content');
+    if (!container) return;
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="text-align:center; padding: 50px; border: 4px solid #000; background: #fff;">
+                <i class="fas fa-shopping-bag" style="font-size: 3rem; margin-bottom: 20px; display:block;"></i>
+                <h3>Your bag is empty</h3>
+                <p style="margin: 20px 0; color: #666;">Add items to your cart to view them here.</p>
+                <a href="collections.html" class="btn btn-primary">Continue Shopping</a>
+            </div>
+        `;
+        return;
+    }
+
+    const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const itemsHtml = cart.map((item, index) => `
+        <div class="cart-page-item">
+            <img src="${item.image}" alt="${item.name}">
+            <div class="cart-page-item-info">
+                <h4>${item.name}</h4>
+                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price}</p>
+                <div class="cart-item-qty" style="margin-top:10px;">
+                    <button onclick="changeQty(${index}, -1)"><i class="fas fa-minus"></i></button>
+                    <span>${item.quantity}</span>
+                    <button onclick="changeQty(${index}, 1)"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="cart-page-item-actions">
+                <span class="cart-page-item-total">₹${item.price * item.quantity}</span>
+                <button class="remove-item" onclick="removeItem(${index})"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="cart-page-grid">
+            <div class="cart-page-list">
+                ${itemsHtml}
+            </div>
+            <aside class="cart-page-summary card" style="padding: 30px;">
+                <h3>Shipping Details</h3>
+                <div style="display: grid; gap: 16px; margin-bottom: 20px;">
+                    <input type="text" id="checkout-name" class="brutal-input" placeholder="Full Name" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                    <input type="email" id="checkout-email" class="brutal-input" placeholder="Email" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                    <input type="text" id="checkout-phone" class="brutal-input" placeholder="Phone" style="width: 100%; border: 3px solid #000; padding: 12px;">
+                    <input type="text" id="checkout-street" class="brutal-input" placeholder="Street Address" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                    <input type="text" id="checkout-city" class="brutal-input" placeholder="City" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                    <input type="text" id="checkout-state" class="brutal-input" placeholder="State" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                    <input type="text" id="checkout-pin" class="brutal-input" placeholder="PIN Code" style="width: 100%; border: 3px solid #000; padding: 12px;" required>
+                </div>
+                <h3>Order Summary</h3>
+                <div style="display:flex; justify-content:space-between; margin: 15px 0; font-weight: 700;">
+                    <span>Subtotal</span>
+                    <span>₹${total}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 20px; font-weight: 700;">
+                    <span>Shipping</span>
+                    <span>₹100</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding: 20px; background: var(--accent-yellow); font-size: 1.8rem; font-weight: 900; border: 4px solid #000;">
+                    <span>Total</span>
+                    <span>₹${total + 100}</span>
+                </div>
+                <button class="btn btn-primary" id="cart-page-checkout-btn" style="width:100%; margin-top: 25px;">Proceed to Checkout</button>
+            </aside>
+        </div>
+    `;
+
+    const checkoutBtn = document.getElementById('cart-page-checkout-btn');
+    if (checkoutBtn) checkoutBtn.onclick = completeCheckout;
 }
 
 function showSuccessModal(orderId) {
@@ -1150,10 +1488,15 @@ function showSuccessModal(orderId) {
 
 // --- UI Helpers ---
 window.openCart = function() {
-    document.getElementById('cart-drawer').classList.add('active');
-    document.getElementById('cart-overlay').classList.add('active');
-    document.body.style.overflow = 'hidden';
-    renderCartItems();
+    const drawer = document.getElementById('cart-drawer');
+    if (drawer) {
+        document.getElementById('cart-drawer').classList.add('active');
+        document.getElementById('cart-overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        renderCartItems();
+        return;
+    }
+    window.location.href = 'cart.html';
 }
 
 window.openCheckout = window.openCart;

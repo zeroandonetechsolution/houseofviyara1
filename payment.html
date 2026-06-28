@@ -177,12 +177,38 @@
             const processing = document.getElementById('processing');
             processing.style.display = 'flex';
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            try {
+            const response = await fetch('/api/payments/payu/init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId })
+            });
+            if (!response.ok) {
+                throw new Error('Payment initialization failed');
+            }
 
-            // Simulate payment success in static mode.
+            const { action, params } = await response.json();
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = action;
+            form.style.display = 'none';
+
+            Object.entries(params).forEach(([key, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        } catch (error) {
+            console.error('PayU init error:', error);
             processing.style.display = 'none';
-            window.location.href = `index.html?payment=success&txnid=${txnid}`;
+            alert('Unable to start payment. Please try again later.');
         }
+    }
     </script>
 </body>
 </html>

@@ -247,7 +247,7 @@ function renderProducts() {
               <td>${product.is_trending ? 'Trending' : 'Normal'}</td>
               <td>
           <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openProductForm(${product.id})">Edit</button>
-          <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openSimilarProductForm(${product.id})">Add Similar</button>
+          <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openSimilarProductForm(${product.id})">Add Similar Product</button>
           <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
         </td>
             </tr>
@@ -261,7 +261,7 @@ function openProductForm(id, clone = false) {
   const categories = getStore(CATEGORIES_KEY, []);
   const product = id ? getStore(PRODUCTS_KEY, []).find(p => p.id === id) : {};
   editItemId = id && !clone ? id : null;
-  const heading = clone ? 'Add Product' : id ? 'Edit Product' : 'Add Product';
+  const heading = clone ? 'Add Similar Product' : id ? 'Edit Product' : 'Add Product';
   document.getElementById('admin-content').innerHTML = `
     <div class="admin-section-card">
       <h3>${heading}</h3>
@@ -270,7 +270,9 @@ function openProductForm(id, clone = false) {
         <div class="aform-group"><label>Description</label><textarea class="aform-input" id="pf-desc">${product.description || ''}</textarea></div>
         <div class="aform-row"><div class="aform-group"><label>Price</label><input class="aform-input" id="pf-price" type="number" value="${product.price || ''}"></div><div class="aform-group"><label>Offer Price</label><input class="aform-input" id="pf-offer" type="number" value="${product.offer_price || ''}"></div></div>
         <div class="aform-row"><div class="aform-group"><label>Category</label><select class="aform-input" id="pf-cat">${categories.map(cat => `<option value="${cat.slug}" ${product.category === cat.slug ? 'selected' : ''}>${cat.name}</option>`).join('')}</select></div><div class="aform-group"><label>Default Stock</label><input class="aform-input" id="pf-stock" type="number" value="${product.stock || 10}"></div></div>
+        <div class="aform-group"><label>Sizes (comma separated)</label><input class="aform-input" id="pf-sizes" value="${Array.isArray(product.sizes) ? product.sizes.join(', ') : ''}" placeholder="S, M, L, XL"></div>
         <div class="aform-group"><label>Image URL or File</label><input class="aform-input" id="pf-img" value="${product.image_url || ''}" placeholder="Paste URL or choose file"><input type="file" id="pf-img-file" class="admin-file-input" accept="image/*"></div>
+        <input type="hidden" id="pf-parent-id" value="${clone ? product.id : (product.parent_id || '')}">
         <div class="aform-group"><label>Video URL or File</label><input class="aform-input" id="pf-video" value="${product.video_url || ''}" placeholder="Paste URL or choose file"><input type="file" id="pf-video-file" class="admin-file-input" accept="video/*"></div>
         <div class="aform-group"><label>Gallery Images (comma separated)</label><textarea class="aform-input" id="pf-gallery" placeholder="https://...jpg, https://...jpg">${Array.isArray(product.gallery) ? product.gallery.join(', ') : ''}</textarea></div>
         <div class="aform-group"><label>Variants (color|size|stock|image_url|gallery1,gallery2)</label><textarea class="aform-input" id="pf-variants" placeholder="Red|S|10|https://example.com/red.jpg\nBlue|M|5|https://example.com/blue.jpg|https://example.com/blue1.jpg,https://example.com/blue2.jpg">${Array.isArray(product.variants) ? product.variants.map(v => `${v.color || ''}|${v.size || ''}|${v.stock || 0}${v.image_url ? `|${v.image_url}` : ''}${Array.isArray(v.gallery) && v.gallery.length ? `|${v.gallery.join(',')}` : ''}` ).join('\n') : ''}</textarea></div>
@@ -330,6 +332,8 @@ function saveProduct() {
   const products = getStore(PRODUCTS_KEY, []);
   const defaultStock = Number(document.getElementById('pf-stock').value || 0);
   const gallery = document.getElementById('pf-gallery').value.split(',').map(url => url.trim()).filter(Boolean);
+  const sizes = document.getElementById('pf-sizes').value.split(',').map(size => size.trim()).filter(Boolean);
+  const parentIdValue = document.getElementById('pf-parent-id')?.value;
   const data = {
     id: editItemId || Date.now(),
     name,
@@ -338,8 +342,10 @@ function saveProduct() {
     offer_price: Number(document.getElementById('pf-offer').value || price),
     category: document.getElementById('pf-cat').value,
     stock: defaultStock,
+    sizes: sizes.length ? sizes : undefined,
     image_url,
     video_url: video_url || undefined,
+    parent_id: parentIdValue ? Number(parentIdValue) : undefined,
     gallery: gallery.length ? gallery : [image_url],
     variants: parseProductVariants(document.getElementById('pf-variants').value, defaultStock),
     is_trending: document.getElementById('pf-trending').checked

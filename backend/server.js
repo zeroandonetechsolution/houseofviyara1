@@ -45,11 +45,15 @@ try {
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'lifestyle-secret-2024';
+const PAYU_KEY = process.env.PAYU_MERCHANT_KEY || '';
+const PAYU_SALT = process.env.PAYU_SALT || '';
+const PAYU_URL = process.env.PAYU_ENV === 'production' ? 'https://secure.payu.in/_payment' : 'https://test.payu.in/_payment';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -134,6 +138,8 @@ let db;
             shipping_address TEXT,
             txnid TEXT,
             payment_status TEXT DEFAULT 'Unpaid',
+            payu_response TEXT,
+            payment_gateway TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
@@ -172,6 +178,8 @@ let db;
     const migrations = [
         'ALTER TABLE products ADD COLUMN offer_price REAL',
         'ALTER TABLE products ADD COLUMN is_trending INTEGER DEFAULT 0',
+        'ALTER TABLE orders ADD COLUMN payu_response TEXT',
+        'ALTER TABLE orders ADD COLUMN payment_gateway TEXT'
     ];
     for (const sql of migrations) {
         try { await db.exec(sql); } catch (e) { /* Column already exists */ }
@@ -406,51 +414,131 @@ app.post('/api/admin/upload-image', upload.single('image'), (req, res) => {
 // ─────────────────────────────────────────────
 // PAYMENT ROUTES
 // ─────────────────────────────────────────────
-app.post('/api/payments/razorpay-order', async (req, res) => {
-    if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured' });
-    const { amount, currency = 'INR', receipt } = req.body;
-    try {
-        const order = await razorpay.orders.create({ amount: amount * 100, currency, receipt });
-        res.json(order);
-    } catch (error) {
-        console.error('Razorpay Order Error:', error);
-        res.status(500).json({ error: 'Failed to create Razorpay order' });
+function createPayuHash({ txnid, amount, productinfo, firstname, email, udf1 = '' }) {
+    const hashString = [
+        PAYU_KEY,
+        txnid,
+        amount,
+        productinfo,
+        firstname,
+        email,
+        udf1,
+        '', '', '', '', '', '', '', '', '', '',
+        PAYU_SALT
+    ].join('|');
+    return crypto.createHash('sha512').update(hashString).digest('hex');
+}
+
+app.post('/api/payments/payu/init', async (req, res) => {
+    if (!PAYU_KEY || !PAYU_SALT) {
+        return res.status(503).json({ error: 'PayU gateway not configured' });
     }
+
+    const { orderId } = req.body;
+    if (!orderId) {
+        return res.status(400).json({ error: 'Missing orderId' });
+    }
+
+    const order = await db.get('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const shipping = JSON.parse(order.shipping_address || '{}');
+    const firstname = shipping.name || 'Guest';
+    const email = shipping.email || 'guest@hov.com';
+    const phone = shipping.phone || '9999999999';
+    const txnid = order.txnid;
+    const amount = Number(order.total_amount).toFixed(2);
+    const productinfo = `House Of Viyara Order ${orderId}`;
+    const hash = createPayuHash({ txnid, amount, productinfo, firstname, email, udf1: orderId });
+
+    const params = {
+        key: PAYU_KEY,
+        txnid,
+        amount,
+        productinfo,
+        firstname,
+        email,
+        phone,
+        surl: `${req.protocol}://${req.get('host')}/payu/response`,
+        furl: `${req.protocol}://${req.get('host')}/payu/response`,
+        service_provider: 'payu_paisa',
+        udf1: orderId,
+        hash
+    };
+
+    res.json({ action: PAYU_URL, params });
 });
 
-app.post('/api/payments/verify', async (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, txnid } = req.body;
+app.post('/payu/response', async (req, res) => {
+    const payload = req.body || {};
+    const status = payload.status || '';
+    const orderId = payload.udf1 || '';
+    const txnid = payload.txnid || '';
+    const responseHash = payload.hash || '';
 
-    if (req.body.status === 'success') {
-        await db.run('UPDATE orders SET payment_status = "Paid", status = "Confirmed" WHERE txnid = ?', [txnid]);
-        return res.json({ success: true });
+    const hashString = [
+        PAYU_SALT,
+        status,
+        payload.udf10 || '',
+        payload.udf9 || '',
+        payload.udf8 || '',
+        payload.udf7 || '',
+        payload.udf6 || '',
+        payload.udf5 || '',
+        payload.udf4 || '',
+        payload.udf3 || '',
+        payload.udf2 || '',
+        payload.udf1 || '',
+        payload.email || '',
+        payload.firstname || '',
+        payload.productinfo || '',
+        payload.amount || '',
+        payload.txnid || '',
+        payload.key || ''
+    ].join('|');
+    const expectedHash = crypto.createHash('sha512').update(hashString).digest('hex');
+
+    const order = await db.get('SELECT * FROM orders WHERE id = ? OR txnid = ?', [orderId, txnid]);
+    const orderIdentifier = order ? order.id : orderId || txnid;
+
+    if (!order) {
+        console.warn('PayU response received for unknown order', orderId, txnid);
     }
 
-    if (!razorpay) return res.status(503).json({ error: 'Payment gateway not configured' });
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(body.toString())
-        .digest('hex');
-
-    if (expectedSignature === razorpay_signature) {
-        await db.run('UPDATE orders SET payment_status = "Paid", status = "Confirmed" WHERE txnid = ?', [txnid]);
-        res.json({ success: true });
-    } else {
-        res.status(400).json({ success: false, error: 'Invalid signature' });
+    if (responseHash !== expectedHash) {
+        console.error('PayU hash mismatch', { responseHash, expectedHash, payload });
+        if (order) {
+            await db.run('UPDATE orders SET payment_status = ?, status = ?, payu_response = ? WHERE id = ?', ['Failed', 'Pending', JSON.stringify(payload), order.id]);
+        }
+        return res.send(`<!doctype html><html><body><p>Verification failed. Redirecting...</p><script>window.location='${req.protocol}://${req.get('host')}/index.html?payment=failed&txnid=${encodeURIComponent(txnid)}'</script></body></html>`);
     }
+
+    const paymentStatus = status === 'success' ? 'Paid' : 'Failed';
+    const orderStatus = status === 'success' ? 'Confirmed' : 'Pending';
+    if (order) {
+        await db.run('UPDATE orders SET payment_status = ?, status = ?, payu_response = ? WHERE id = ?', [paymentStatus, orderStatus, JSON.stringify(payload), order.id]);
+    }
+
+    const redirectUrl = `${req.protocol}://${req.get('host')}/index.html?payment=${status === 'success' ? 'success' : 'failed'}&txnid=${encodeURIComponent(txnid)}`;
+    res.send(`<!doctype html><html><body><p>Redirecting to storefront...</p><script>window.location='${redirectUrl}'</script></body></html>`);
 });
 
 // ─────────────────────────────────────────────
 // ORDER ROUTES
 // ─────────────────────────────────────────────
+app.get('/api/orders/txnid/:txnid', async (req, res) => {
+    const order = await db.get('SELECT * FROM orders WHERE txnid = ?', [req.params.txnid]);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    order.items = JSON.parse(order.items || '[]');
+    order.shipping_address = JSON.parse(order.shipping_address || '{}');
+    res.json(order);
+});
 app.post('/api/orders', async (req, res) => {
-    const { user_id, items, total_amount, shipping_address, txnid } = req.body;
+    const { user_id, items, total_amount, shipping_address, txnid, payment_gateway } = req.body;
     const orderId = 'HOV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    await db.run(`INSERT INTO orders (id, user_id, items, total_amount, shipping_address, txnid) VALUES (?, ?, ?, ?, ?, ?)`,
-        [orderId, user_id, JSON.stringify(items), total_amount, JSON.stringify(shipping_address), txnid]);
+    await db.run(`INSERT INTO orders (id, user_id, items, total_amount, shipping_address, txnid, payment_gateway) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [orderId, user_id, JSON.stringify(items), total_amount, JSON.stringify(shipping_address), txnid, payment_gateway || 'payu']);
 
     res.json({ orderId });
 });
