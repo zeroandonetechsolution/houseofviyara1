@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
+console.log('🔧 [BUILD] Generating supabase-config.js...');
+console.log('🔧 [BUILD] SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'NOT SET');
+console.log('🔧 [BUILD] SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
+console.log('🔧 [BUILD] SUPABASE_BUCKET:', process.env.SUPABASE_BUCKET);
+
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'public';
@@ -11,5 +16,7 @@ window.SUPABASE_ANON_KEY = '${SUPABASE_ANON_KEY}';
 window.SUPABASE_BUCKET = '${SUPABASE_BUCKET}';
 `;
 
-fs.writeFileSync(path.join(process.cwd(), 'supabase-config.js'), out);
-console.log('wrote supabase-config.js');
+const configPath = path.join(process.cwd(), 'supabase-config.js');
+fs.writeFileSync(configPath, out);
+console.log('✅ [BUILD] Wrote supabase-config.js to:', configPath);
+console.log('✅ [BUILD] File content:', out);
