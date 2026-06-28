@@ -6,34 +6,8 @@ let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 // Local-only mode: all storefront data is stored in localStorage or seeded from defaults.
 const API_URL = ''; // no backend API calls in static mode
 
-// Mock Data Fallback (to ensure UI works even if server is slow/down)
-// Use local `assets/1.jpeg` .. `assets/22.jpeg` so the site showcases the packaged images
-const MOCK_PRODUCTS = (function(){
-    const cats = ['saree','kurtis','ethnic','party','casual'];
-    const products = [];
-    for (let i = 1; i <= 22; i++) {
-        const id = i;
-        const img = `assets/${i}.jpeg`;
-        const category = cats[(i-1) % cats.length];
-        products.push({
-            id,
-            name: `Product ${i}`,
-            description: `Showcase product ${i} — high quality image from local assets.`,
-            price: Math.round(800 + Math.random() * 5000),
-            offer_price: null,
-            category,
-            image_url: img,
-            rating: (4 + Math.round(Math.random()*10)/10),
-            reviews_count: Math.floor(Math.random()*200),
-            gallery: [img],
-            video_url: "",
-            full_details: `Full details for product ${i}.`,
-            reviews: [] ,
-            is_trending: 1
-        });
-    }
-    return products;
-})();
+// Start with a blank catalog so you can create your own products.
+const MOCK_PRODUCTS = [];
 
 const STORE_KEYS = {
     products: 'hov_products',
@@ -42,18 +16,39 @@ const STORE_KEYS = {
     orders: 'hov_orders'
 };
 
-const defaultCategories = [
-    { id: 1, name: 'Saree', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=900&q=80' },
-    { id: 2, name: 'Kurtis', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=900&q=80' },
-    { id: 3, name: 'Ethnic Wear', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=900&q=80' },
-    { id: 4, name: 'Party Wear', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=900&q=80' },
-    { id: 5, name: 'Casual Wear', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&q=80' }
-];
+const defaultCategories = [];
 
 const defaultBanners = [
-    { id: 1, title: 'New Arrivals', subtitle: 'Discover fresh saree and kurti styles', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1400&q=80', cta_link: 'collections.html', cta_text: 'Shop Now', is_active: true, display_order: 1 },
-    { id: 2, title: 'Party Weekend', subtitle: 'Dress to impress with our party wear', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1400&q=80', cta_link: 'party.html', cta_text: 'Explore', is_active: true, display_order: 2 },
-    { id: 3, title: 'Ethnic Elegance', subtitle: 'Handpicked ethnic wear for every occasion', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1400&q=80', cta_link: 'ethnic.html', cta_text: 'View Collection', is_active: true, display_order: 3 }
+    {
+        id: 1,
+        title: 'New Arrivals',
+        subtitle: 'Fresh styles ready to shine this season',
+        image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1400&q=80',
+        cta_link: 'collections.html',
+        cta_text: 'Shop Now',
+        is_active: true,
+        display_order: 1
+    },
+    {
+        id: 2,
+        title: 'Party Wear',
+        subtitle: 'Elegant outfits for evenings to remember',
+        image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1400&q=80',
+        cta_link: 'party.html',
+        cta_text: 'Explore',
+        is_active: true,
+        display_order: 2
+    },
+    {
+        id: 3,
+        title: 'Ethnic Elegance',
+        subtitle: 'Graceful picks for every special moment',
+        image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1400&q=80',
+        cta_link: 'ethnic.html',
+        cta_text: 'View Collection',
+        is_active: true,
+        display_order: 3
+    }
 ];
 
 function getStore(key, fallback) {
@@ -70,15 +65,44 @@ function saveStore(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
 
+function isLegacySampleProduct(product) {
+    return !!product && (
+        /^Product \d+$/.test(product.name || '') ||
+        /assets\/\d+\.jpeg/.test(product.image_url || '') ||
+        (product.description || '').includes('Showcase product')
+    );
+}
+
+function isLegacySampleCategory(category) {
+    const sampleNames = ['Saree', 'Kurtis', 'Ethnic Wear', 'Party Wear', 'Casual Wear'];
+    const sampleSlugs = ['saree', 'kurtis', 'ethnic', 'party', 'casual'];
+    const name = (category && category.name || '').trim();
+    const slug = (category && category.slug || '').toLowerCase();
+    return sampleNames.includes(name) && sampleSlugs.includes(slug);
+}
+
+function hasLegacySampleCategorySet(categories) {
+    return Array.isArray(categories) && categories.length === 5 && categories.every(isLegacySampleCategory);
+}
+
 function seedStoreData() {
-    if (!localStorage.getItem(STORE_KEYS.categories)) saveStore(STORE_KEYS.categories, defaultCategories);
-    if (!localStorage.getItem(STORE_KEYS.banners)) saveStore(STORE_KEYS.banners, defaultBanners);
-    if (!localStorage.getItem(STORE_KEYS.products)) saveStore(STORE_KEYS.products, MOCK_PRODUCTS.map(p => ({
-        ...p,
-        stock: p.stock || 10,
-        offer_price: p.offer_price || null,
-        description: p.description || `Beautiful ${p.name} for everyday wear.`
-    })));
+    const existingProducts = getStore(STORE_KEYS.products, null);
+    if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct)) {
+        saveStore(STORE_KEYS.products, []);
+    }
+
+    const existingCategories = getStore(STORE_KEYS.categories, null);
+    if (!Array.isArray(existingCategories)) {
+        saveStore(STORE_KEYS.categories, defaultCategories);
+    } else if (hasLegacySampleCategorySet(existingCategories)) {
+        saveStore(STORE_KEYS.categories, []);
+    }
+
+    const existingBanners = getStore(STORE_KEYS.banners, null);
+    if (!Array.isArray(existingBanners) || existingBanners.length === 0) {
+        saveStore(STORE_KEYS.banners, defaultBanners);
+    }
+
     if (!localStorage.getItem(STORE_KEYS.orders)) saveStore(STORE_KEYS.orders, []);
 }
 

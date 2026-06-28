@@ -12,26 +12,14 @@ let currentSection = 'dashboard';
 let editItemId = null;
 
 const defaultData = {
-  categories: [
-    { id: 1, name: 'Saree', slug: 'saree' },
-    { id: 2, name: 'Kurtis', slug: 'kurtis' },
-    { id: 3, name: 'Ethnic', slug: 'ethnic' },
-    { id: 4, name: 'Party', slug: 'party' },
-    { id: 5, name: 'Casual', slug: 'casual' }
-  ],
-  products: [
-    { id: 1, name: 'Banarasi Silk Saree', category: 'saree', price: 4500, offer_price: 3999, stock: 12, image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=80', is_trending: true },
-    { id: 2, name: 'Floral Organza Saree', category: 'saree', price: 2800, offer_price: 2499, stock: 8, image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&q=80', is_trending: false },
-    { id: 3, name: 'Chikankari Cotton Kurti', category: 'kurtis', price: 1800, offer_price: 1599, stock: 20, image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=400&q=80', is_trending: true }
-  ],
+  categories: [],
+  products: [],
   banners: [
-    { id: 1, title: 'New Arrivals', subtitle: 'Latest Saree & Kurti collections', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', cta_link: 'collections.html', is_active: true, display_order: 1 },
-    { id: 2, title: 'Party Season', subtitle: 'Shine with our party wear', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', cta_link: 'party.html', is_active: true, display_order: 2 }
+    { id: 1, title: 'New Arrivals', subtitle: 'Fresh styles ready to shine this season', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', cta_link: 'collections.html', is_active: true, display_order: 1 },
+    { id: 2, title: 'Party Wear', subtitle: 'Elegant outfits for evenings to remember', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', cta_link: 'party.html', is_active: true, display_order: 2 },
+    { id: 3, title: 'Ethnic Elegance', subtitle: 'Graceful picks for every special moment', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', cta_link: 'ethnic.html', is_active: true, display_order: 3 }
   ],
-  orders: [
-    { id: 'HOV-001', customer: 'Riya Sharma', total: 8700, status: 'Pending', date: '2026-06-28', items: [{ name: 'Banarasi Silk Saree', qty: 1 }] },
-    { id: 'HOV-002', customer: 'Anita Rao', total: 3200, status: 'Confirmed', date: '2026-06-27', items: [{ name: 'Chikankari Cotton Kurti', qty: 2 }] }
-  ]
+  orders: []
 };
 
 function getStore(key, fallback) {
@@ -44,11 +32,42 @@ function saveStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function isLegacySampleProduct(product) {
+  return !!product && (
+    /^Product \d+$/.test(product.name || '') ||
+    /assets\/\d+\.jpeg/.test(product.image_url || '') ||
+    (product.description || '').includes('Showcase product')
+  );
+}
+
+function isLegacySampleCategory(category) {
+  const sampleNames = ['Saree', 'Kurtis', 'Ethnic Wear', 'Party Wear', 'Casual Wear'];
+  const sampleSlugs = ['saree', 'kurtis', 'ethnic', 'party', 'casual'];
+  const name = (category && category.name || '').trim();
+  const slug = (category && category.slug || '').toLowerCase();
+  return sampleNames.includes(name) && sampleSlugs.includes(slug);
+}
+
+function hasLegacySampleCategorySet(categories) {
+  return Array.isArray(categories) && categories.length === 5 && categories.every(isLegacySampleCategory);
+}
+
 function seedData() {
-  if (!localStorage.getItem(CATEGORIES_KEY)) saveStore(CATEGORIES_KEY, defaultData.categories);
-  if (!localStorage.getItem(PRODUCTS_KEY)) saveStore(PRODUCTS_KEY, defaultData.products);
-  if (!localStorage.getItem(BANNERS_KEY)) saveStore(BANNERS_KEY, defaultData.banners);
-  if (!localStorage.getItem(ORDERS_KEY)) saveStore(ORDERS_KEY, defaultData.orders);
+  const existingProducts = getStore(PRODUCTS_KEY, null);
+  if (!Array.isArray(existingProducts) || existingProducts.some(isLegacySampleProduct)) {
+    saveStore(PRODUCTS_KEY, defaultData.products);
+  }
+
+  const existingCategories = getStore(CATEGORIES_KEY, null);
+  if (!Array.isArray(existingCategories)) {
+    saveStore(CATEGORIES_KEY, defaultData.categories);
+  } else if (hasLegacySampleCategorySet(existingCategories)) {
+    saveStore(CATEGORIES_KEY, defaultData.categories);
+  }
+
+  const existingBanners = getStore(BANNERS_KEY, null);
+  if (!Array.isArray(existingBanners) || existingBanners.length === 0) saveStore(BANNERS_KEY, defaultData.banners);
+  if (!Array.isArray(getStore(ORDERS_KEY, null))) saveStore(ORDERS_KEY, defaultData.orders);
 }
 
 function showToast(message, type = 'success') {
