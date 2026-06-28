@@ -60,7 +60,12 @@ async function loadSupabaseClient() {
 }
 
 async function setupRealtimeSubscriptions() {
-    if (!USE_SUPABASE || !appSupabase) return;
+    if (!USE_SUPABASE || !appSupabase) {
+        console.warn('⚠️ Skipping Realtime subscriptions: Supabase not ready');
+        return;
+    }
+
+    console.log('📡 Setting up Realtime subscriptions...');
 
     // Subscribe to products changes
     appSupabase
@@ -72,7 +77,9 @@ async function setupRealtimeSubscriptions() {
                 await renderProducts();
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('📡 Products channel status:', status);
+        });
 
     // Subscribe to categories changes
     appSupabase
@@ -85,7 +92,9 @@ async function setupRealtimeSubscriptions() {
                 await renderHeaderNavigation();
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('📡 Categories channel status:', status);
+        });
 
     // Subscribe to banners changes
     appSupabase
@@ -97,7 +106,9 @@ async function setupRealtimeSubscriptions() {
                 await initHeroCarousel();
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('📡 Banners channel status:', status);
+        });
 
     console.log('✅ Realtime subscriptions set up!');
 }
