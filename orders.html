@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <header class="header">
@@ -217,28 +216,51 @@
 
     <script src="app.js" defer></script>
     <script>
-        const socket = io();
-        
-        async function trackOrder() {
-            const orderId = document.getElementById('order-search-input').value.toUpperCase();
-            if (!orderId) return;
+        function updateTrackingTimeline(status) {
+            const steps = [
+                { id: 'timeline-confirmed', active: true },
+                { id: 'timeline-shipped', active: status === 'Shipped' || status === 'Delivered' },
+                { id: 'timeline-delivered', active: status === 'Delivered' }
+            ];
 
-            const res = await fetch(`/api/orders/${orderId}`);
-            if (res.ok) {
-                const order = await res.json();
-                document.getElementById('tracking-result').style.display = 'block';
-                document.getElementById('tracking-status').innerText = `STATUS: ${order.status.toUpperCase()}`;
-                
-                // Join socket room
-                socket.emit('join-order', orderId);
-            } else {
-                alert('Order not found');
-            }
+            steps.forEach(step => {
+                const elem = document.getElementById(step.id);
+                if (elem) {
+                    if (step.active) elem.classList.add('active');
+                    else elem.classList.remove('active');
+                }
+            });
         }
 
-        socket.on('status-update', (data) => {
-            document.getElementById('tracking-status').innerText = `STATUS: ${data.status.toUpperCase()}`;
-        });
+        function trackOrder() {
+            const orderId = document.getElementById('order-search-input').value.trim().toUpperCase();
+            if (!orderId) {
+                alert('Please enter an order ID to search.');
+                return;
+            }
+
+            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            const order = orders.find(o => o.id.toUpperCase() === orderId);
+            if (!order) {
+                alert('Order not found. Make sure you used the exact order ID.');
+                return;
+            }
+
+            document.getElementById('tracking-result').style.display = 'block';
+            document.getElementById('tracking-status').innerText = `STATUS: ${order.status.toUpperCase()}`;
+            updateTrackingTimeline(order.status);
+
+            const details = document.getElementById('tracking-details');
+            if (details) {
+                details.innerHTML = `
+                    <p><strong>Order ID:</strong> ${order.id}</p>
+                    <p><strong>Name:</strong> ${order.customer}</p>
+                    <p><strong>Amount:</strong> ₹${order.total}</p>
+                    <p><strong>Date:</strong> ${order.date}</p>
+                    <p><strong>Payment:</strong> ${order.payment_status || 'Pending'}</p>
+                `;
+            }
+        }
     </script>
 
     <style>

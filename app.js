@@ -3,10 +3,8 @@ let cart = JSON.parse(localStorage.getItem('lifestyle_cart')) || [];
 let wishlist = JSON.parse(localStorage.getItem('lifestyle_wishlist')) || [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 
-// Determine API URL: use explicit override if set, use localhost/192.168.* during local testing, otherwise use current origin for deployed domain
-const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
-    ? `${window.location.protocol}//${window.location.hostname}:3000`
-    : window.location.origin);
+// Local-only mode: all storefront data is stored in localStorage or seeded from defaults.
+const API_URL = ''; // no backend API calls in static mode
 
 // Mock Data Fallback (to ensure UI works even if server is slow/down)
 // Use local `assets/1.jpeg` .. `assets/22.jpeg` so the site showcases the packaged images
@@ -36,6 +34,53 @@ const MOCK_PRODUCTS = (function(){
     }
     return products;
 })();
+
+const STORE_KEYS = {
+    products: 'hov_products',
+    categories: 'hov_categories',
+    banners: 'hov_banners',
+    orders: 'hov_orders'
+};
+
+const defaultCategories = [
+    { id: 1, name: 'Saree', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=900&q=80' },
+    { id: 2, name: 'Kurtis', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=900&q=80' },
+    { id: 3, name: 'Ethnic Wear', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=900&q=80' },
+    { id: 4, name: 'Party Wear', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=900&q=80' },
+    { id: 5, name: 'Casual Wear', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&q=80' }
+];
+
+const defaultBanners = [
+    { id: 1, title: 'New Arrivals', subtitle: 'Discover fresh saree and kurti styles', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1400&q=80', cta_link: 'collections.html', cta_text: 'Shop Now', is_active: true, display_order: 1 },
+    { id: 2, title: 'Party Weekend', subtitle: 'Dress to impress with our party wear', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1400&q=80', cta_link: 'party.html', cta_text: 'Explore', is_active: true, display_order: 2 },
+    { id: 3, title: 'Ethnic Elegance', subtitle: 'Handpicked ethnic wear for every occasion', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1400&q=80', cta_link: 'ethnic.html', cta_text: 'View Collection', is_active: true, display_order: 3 }
+];
+
+function getStore(key, fallback) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function saveStore(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function seedStoreData() {
+    if (!localStorage.getItem(STORE_KEYS.categories)) saveStore(STORE_KEYS.categories, defaultCategories);
+    if (!localStorage.getItem(STORE_KEYS.banners)) saveStore(STORE_KEYS.banners, defaultBanners);
+    if (!localStorage.getItem(STORE_KEYS.products)) saveStore(STORE_KEYS.products, MOCK_PRODUCTS.map(p => ({
+        ...p,
+        stock: p.stock || 10,
+        offer_price: p.offer_price || null,
+        description: p.description || `Beautiful ${p.name} for everyday wear.`
+    })));
+    if (!localStorage.getItem(STORE_KEYS.orders)) saveStore(STORE_KEYS.orders, []);
+}
 
 // Client-side cache for products
 const productCache = new Map();
@@ -70,6 +115,7 @@ let searchTimeout;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    seedStoreData();
     initTheme();
     initAuth();
     updateCartBadge();
@@ -99,62 +145,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Banner Rendering ---
-async function renderBanners() {
+function renderBanners() {
     const bannersSection = document.getElementById('banners-section');
     const bannersCarousel = document.getElementById('banners-carousel');
     if (!bannersSection || !bannersCarousel) return;
 
-    try {
-        const response = await fetchWithTimeout(`${API_URL}/api/banners`, { timeout: 5000 });
-        if (!response.ok) throw new Error('Failed to fetch banners');
-        const banners = await response.json();
-        
-        if (banners.length > 0) {
-            bannersSection.style.display = 'block';
-            bannersCarousel.innerHTML = banners.map(banner => `
-                <a href="${banner.cta_link || '#'}" class="banner-card">
-                    <img src="${banner.image_url}" alt="${banner.title || 'Banner'}" loading="lazy">
-                    <div class="banner-overlay">
-                        ${banner.title ? `<h3 class="banner-title">${banner.title}</h3>` : ''}
-                        ${banner.subtitle ? `<p class="banner-subtitle">${banner.subtitle}</p>` : ''}
-                        <span class="banner-cta">${banner.cta_text || 'SHOP NOW'} <i class="fas fa-arrow-right"></i></span>
-                    </div>
-                </a>
-            `).join('');
-        }
-    } catch (error) {
-        console.warn('Failed to load banners:', error);
+    const banners = getStore(STORE_KEYS.banners, defaultBanners)
+        .filter(b => b.is_active)
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+    if (banners.length === 0) {
+        bannersSection.style.display = 'none';
+        return;
     }
+
+    bannersSection.style.display = 'block';
+    bannersCarousel.innerHTML = banners.map(banner => `
+        <a href="${banner.cta_link || '#'}" class="banner-card">
+            <img src="${banner.image_url}" alt="${banner.title || 'Banner'}" loading="lazy">
+            <div class="banner-overlay">
+                ${banner.title ? `<h3 class="banner-title">${banner.title}</h3>` : ''}
+                ${banner.subtitle ? `<p class="banner-subtitle">${banner.subtitle}</p>` : ''}
+                <span class="banner-cta">${banner.cta_text || 'SHOP NOW'} <i class="fas fa-arrow-right"></i></span>
+            </div>
+        </a>
+    `).join('');
 }
 
 // --- Category Rendering ---
-async function renderCategories() {
+function renderCategories() {
     const categoryGrid = document.getElementById('category-grid');
     if (!categoryGrid) return;
 
-    // Fallback categories
-    const fallbackCategories = [
-        { name: 'SAREE', slug: 'saree', icon: 'fas fa-female', banner_image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60' },
-        { name: 'KURTIS', slug: 'kurtis', icon: 'fas fa-tshirt', banner_image: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=600&q=60' },
-        { name: 'ETHNIC WEAR', slug: 'ethnic', icon: 'fas fa-star', banner_image: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=600&q=60' },
-        { name: 'PARTY WEAR', slug: 'party', icon: 'fas fa-glass-cheers', banner_image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=60' },
-        { name: 'CASUAL WEAR', slug: 'casual', icon: 'fas fa-leaf', banner_image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=60' }
-    ];
-
-    // Render fallback first
-    renderCategoryList(fallbackCategories, categoryGrid);
-
-    try {
-        const response = await fetchWithTimeout(`${API_URL}/api/categories`, { timeout: 5000 });
-        if (!response.ok) throw new Error('Failed to fetch categories');
-        const categories = await response.json();
-        
-        if (categories.length > 0) {
-            renderCategoryList(categories, categoryGrid);
-        }
-    } catch (error) {
-        console.warn('Failed to load categories:', error);
-    }
+    const categories = getStore(STORE_KEYS.categories, defaultCategories);
+    renderCategoryList(categories, categoryGrid);
 }
 
 function renderCategoryList(categories, container) {
@@ -183,20 +207,14 @@ function checkPaymentStatus() {
     const txnid = urlParams.get('txnid');
 
     if (status === 'success') {
-        // Find order ID from backend using txnid
-        fetch(`${API_URL}/api/admin/orders`)
-            .then(res => res.json())
-            .then(orders => {
-                const order = orders.find(o => o.txnid === txnid);
-                if (order) {
-                    showSuccessModal(order.id);
-                    cart = [];
-                    saveCart();
-                    updateCartBadge();
-                }
-            });
-        
-        // Clean URL
+        const orders = getStore(STORE_KEYS.orders, []);
+        const order = orders.find(o => o.txnid === txnid);
+        if (order) {
+            showSuccessModal(order.id);
+            cart = [];
+            saveCart();
+            updateCartBadge();
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (status === 'failed') {
         alert('Payment was cancelled or failed.');
@@ -250,44 +268,45 @@ function initAuth() {
             authBtn.innerHTML = `<i class="fas fa-user"></i>`;
         }
     }
-
-    // Google Sign-In Initialization
-    if (window.google) {
-        google.accounts.id.initialize({
-            client_id: "572682440348-vfaaljc997ee9q3175i3rj3155lvs13t.apps.googleusercontent.com",
-            callback: handleGoogleResponse
-        });
-        
-        // One Tap prompt
-        google.accounts.id.prompt();
-
-        // Handle Custom Google Button Click
-        const customGoogleBtn = document.getElementById('google-auth-btn');
-        if (customGoogleBtn) {
-            customGoogleBtn.onclick = () => {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        console.log('Google prompt not displayed.');
-                    }
-                });
-            };
-        }
-    }
 }
 
 async function handleGoogleResponse(response) {
-    const res = await fetch(`${API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential })
-    });
-    const data = await res.json();
-    if (data.token) {
-        localStorage.setItem('lifestyle_token', data.token);
-        localStorage.setItem('lifestyle_user', JSON.stringify(data.user));
-        user = data.user;
-        location.reload();
+    // Google sign-in is disabled in static mode.
+    console.warn('Google login is disabled in static mode.');
+}
+
+function handleSendOTP() {
+    const input = document.getElementById('auth-email');
+    const value = input ? input.value.trim() : '';
+    if (!value) {
+        alert('Please enter email or phone to login.');
+        return;
     }
+
+    const userData = {
+        id: value,
+        email: value.includes('@') ? value : `${value}@hov.local`,
+        name: value.includes('@') ? value.split('@')[0] : value,
+        loggedInAt: new Date().toISOString()
+    };
+
+    localStorage.setItem('lifestyle_user', JSON.stringify(userData));
+    user = userData;
+
+    const authBtn = document.getElementById('open-auth-btn');
+    if (authBtn) authBtn.innerHTML = `<i class="fas fa-user"></i>`;
+
+    const authModal = document.getElementById('auth-modal');
+    const authOverlay = document.getElementById('auth-overlay');
+    if (authModal) authModal.classList.remove('active');
+    if (authOverlay) authOverlay.classList.remove('active');
+
+    alert(`Logged in as ${userData.name}`);
+}
+
+function closeSuccessModal() {
+    const modal = document.getElementById('success-modal');
+    if (modal) modal.classList.remove('active');
 }
 
 // Logout logic
@@ -323,45 +342,18 @@ async function renderProducts(searchTerm = '') {
 
     const isTrendingSection = productList.closest('#trending') !== null;
 
-    // Step 1: Render Mock Data IMMEDIATELY for instant loading
-    let initialProducts = MOCK_PRODUCTS.filter(p => {
-        if (isTrendingSection) return p.is_trending;
-        return !category || p.category === category;
-    });
-    if (isTrendingSection) initialProducts = initialProducts.slice(0, 4);
-    renderToDOM(initialProducts, productList, category);
+    const products = getStore(STORE_KEYS.products, MOCK_PRODUCTS)
+        .filter(p => {
+            if (isTrendingSection) return p.is_trending;
+            return !category || p.category === category;
+        });
 
-    // Step 2: Try to fetch real products in the background
-    try {
-        let cacheKey = `${category}-${searchTerm}-${isTrendingSection ? 'trending' : 'all'}`;
-        let products;
+    const filteredProducts = isTrendingSection ? products.slice(0, 4) : products;
+    const searchedProducts = searchTerm
+        ? filteredProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.description || '').toLowerCase().includes(searchTerm.toLowerCase()))
+        : filteredProducts;
 
-        if (productCache.has(cacheKey) && (Date.now() - productCache.get(cacheKey).timestamp < CACHE_EXPIRY)) {
-            products = productCache.get(cacheKey).data;
-        } else {
-            const params = new URLSearchParams();
-            if (category) params.append('category', category);
-            if (searchTerm) params.append('search', searchTerm);
-            if (isTrendingSection) params.append('trending', '1');
-            
-            const url = `${API_URL}/api/products${params.toString() ? '?' + params.toString() : ''}`;
-
-            const res = await fetchWithTimeout(url, { timeout: 2000 }); // Even faster timeout
-            if (!res.ok) throw new Error('Failed to fetch');
-            
-            products = await res.json();
-            productCache.set(cacheKey, { data: products, timestamp: Date.now() });
-        }
-
-        if (products && products.length > 0) {
-            if (isTrendingSection) {
-                products = products.slice(0, 4);
-            }
-            renderToDOM(products, productList, category);
-        }
-    } catch (error) {
-        console.warn('Background fetch failed, keeping mock data:', error);
-    }
+    renderToDOM(searchedProducts, productList, category);
 }
 
 function renderToDOM(products, container, category) {
@@ -451,42 +443,30 @@ function renderWishlist() {
 
 // --- Product Details Page Logic (Instant SPA) ---
 window.openProductPage = async function(productId) {
-    if(event) {
+    if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const pdpModal = document.getElementById('pdp-modal');
     const pdpContent = document.getElementById('pdp-content');
-    if (!pdpModal || !pdpContent) return; // Fallback if missing
-    
-    // Update URL to match instantly
+    if (!pdpModal || !pdpContent) return;
+
     window.history.pushState({ productId }, '', `?product=${productId}`);
-    
-    let product = MOCK_PRODUCTS.find(p => p.id === productId);
-    
-    if (!product) {
-        try {
-            const res = await fetch(`${API_URL}/api/products/${productId}`);
-            if (res.ok) product = await res.json();
-        } catch (e) {
-            console.error('Failed to fetch product details', e);
-        }
-    }
+
+    const products = getStore(STORE_KEYS.products, MOCK_PRODUCTS);
+    const product = products.find(p => p.id === productId) || MOCK_PRODUCTS.find(p => p.id === productId);
 
     if (!product) {
         pdpModal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        pdpContent.innerHTML = '<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><button class="btn btn-primary" onclick="closeProductPage()" style="margin-top: 20px;">Return</button></div>';
+        pdpContent.innerHTML = `<div style="padding: 100px 20px; text-align: center;"><h2>Product not found</h2><button class="btn btn-primary" onclick="closeProductPage()" style="margin-top: 20px;">Return</button></div>`;
         return;
     }
 
-    // Render directly without loading screen
     renderProductDetails(product, pdpContent);
-    
-    // Show modal after rendering to prevent empty flash
     pdpModal.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
 }
 
 window.closeProductPage = function() {
@@ -920,42 +900,29 @@ function removeItem(index) {
 
 // --- Checkout Logic ---
 async function completeCheckout() {
-    if (!user) {
-        document.getElementById('cart-drawer').classList.remove('active');
-        document.getElementById('cart-overlay').classList.remove('active');
-        document.getElementById('auth-modal').classList.add('active');
-        document.getElementById('auth-overlay').classList.add('active');
-        alert('Please login to complete your order.');
-        return;
-    }
-
-    const name = user.email.split('@')[0];
-    const email = user.email;
+    const email = user?.email || 'guest@hov.com';
+    const name = user?.email ? user.email.split('@')[0] : 'Guest';
     const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
     const txnid = 'TXN' + Date.now();
+    const orderId = `HOV-${Date.now()}`;
 
-    try {
-        const orderRes = await fetch(`${API_URL}/api/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: user.id,
-                items: cart,
-                total_amount: amount,
-                shipping_address: { street: 'Default Street', city: 'Default City', state: 'Default State', pin: '000000' },
-                txnid
-            })
-        });
-        
-        if (!orderRes.ok) throw new Error('Order creation failed');
+    const newOrder = {
+        id: orderId,
+        txnid,
+        customer: name,
+        total: amount,
+        status: 'Pending',
+        date: new Date().toISOString().split('T')[0],
+        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
+        email,
+        shipping_address: { street: 'Default Street', city: 'Default City', state: 'Default State', pin: '000000' }
+    };
 
-        const orderData = await orderRes.json();
-        window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&orderId=${orderData.orderId}`;
+    const orders = getStore(STORE_KEYS.orders, []);
+    orders.unshift(newOrder);
+    saveStore(STORE_KEYS.orders, orders);
 
-    } catch (error) {
-        console.error('Checkout Error:', error);
-        alert('Checkout failed.');
-    }
+    window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&orderId=${orderId}`;
 }
 
 function showSuccessModal(orderId) {
@@ -970,6 +937,8 @@ window.openCart = function() {
     document.body.style.overflow = 'hidden';
     renderCartItems();
 }
+
+window.openCheckout = window.openCart;
 
 window.closeCart = function() {
     document.getElementById('cart-drawer').classList.remove('active');

@@ -157,7 +157,6 @@
         <p style="font-weight: 700;">Please do not refresh the page or click back.</p>
     </div>
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const txnid = urlParams.get('txnid');
@@ -165,10 +164,9 @@
         const email = urlParams.get('email');
         const name = urlParams.get('name');
         const orderId = urlParams.get('orderId');
-        const API_URL = window.location.port === '3001' ? '' : 'http://localhost:3001';
 
-        document.getElementById('display-txnid').innerText = txnid;
-        document.getElementById('display-amount').innerText = `₹${amount}`;
+        document.getElementById('display-txnid').innerText = txnid || 'N/A';
+        document.getElementById('display-amount').innerText = amount ? `₹${amount}` : '₹0';
 
         function selectMethod(el) {
             document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
@@ -176,66 +174,14 @@
         }
 
         async function processPayment() {
-            document.getElementById('processing').style.display = 'flex';
-            
-            try {
-                // 1. Create Razorpay Order
-                const orderRes = await fetch(`${API_URL}/api/payments/razorpay-order`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: amount, receipt: txnid })
-                });
-                const rzpOrder = await orderRes.json();
+            const processing = document.getElementById('processing');
+            processing.style.display = 'flex';
 
-                const options = {
-                    "key": "rzp_test_SyARSSUgJS6JWc", // Enter the Key ID generated from the Dashboard
-                    "amount": rzpOrder.amount,
-                    "currency": "INR",
-                    "name": "House Of Viyara Luxury",
-                    "description": "Luxury Goods Transaction",
-                    "image": "https://house-of-viyara-gamma.vercel.app/logo.png",
-                    "order_id": rzpOrder.id,
-                    "handler": async function (response) {
-                        // 2. Verify Payment
-                        const verifyRes = await fetch(`${API_URL}/api/payments/verify`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                txnid: txnid
-                            })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (verifyData.success) {
-                            window.location.href = `index.html?payment=success&txnid=${txnid}`;
-                        } else {
-                            alert('Verification Failed');
-                        }
-                    },
-                    "prefill": {
-                        "name": name,
-                        "email": email,
-                        "contact": ""
-                    },
-                    "theme": {
-                        "color": "#FFD100"
-                    },
-                    "modal": {
-                        "ondismiss": function() {
-                            document.getElementById('processing').style.display = 'none';
-                        }
-                    }
-                };
-                const rzp1 = new Razorpay(options);
-                rzp1.open();
-                
-            } catch (error) {
-                console.error('Payment Error:', error);
-                alert('Payment Error. Please check if server is running.');
-                document.getElementById('processing').style.display = 'none';
-            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Simulate payment success in static mode.
+            processing.style.display = 'none';
+            window.location.href = `index.html?payment=success&txnid=${txnid}`;
         }
     </script>
 </body>

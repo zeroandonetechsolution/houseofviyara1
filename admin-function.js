@@ -157,7 +157,19 @@ function renderDashboard() {
   const trending = products.filter(p => p.is_trending).length;
 
   document.getElementById('admin-content').innerHTML = `
+    <div class="admin-dashboard-hero">
+      <div>
+        <div class="admin-eyebrow">Local-only control center</div>
+        <h2>Run your store from one polished dashboard.</h2>
+        <p>Manage products, categories, banners, and orders instantly. Everything stays inside your browser, so the storefront works even without a backend server.</p>
+      </div>
+      <div class="admin-hero-pill">No npm backend</div>
+    </div>
     <div class="admin-section-card">
+      <div class="admin-section-header">
+        <h3>Store Snapshot</h3>
+        <span class="admin-status-badge"><i class="fas fa-bolt"></i> Live locally</span>
+      </div>
       <div class="admin-stats-grid">
         <div class="admin-stat-card"><span>Total Sales</span><strong>₹${totalSales}</strong></div>
         <div class="admin-stat-card"><span>Products</span><strong>${products.length}</strong></div>
@@ -169,7 +181,10 @@ function renderDashboard() {
       </div>
     </div>
     <div class="admin-section-card">
-      <h3>Recent Orders</h3>
+      <div class="admin-section-header">
+        <h3>Recent Orders</h3>
+        <span class="admin-status-badge"><i class="fas fa-shopping-bag"></i> ${orders.length} total</span>
+      </div>
       <div class="admin-table-wrap">
         <table class="admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>
           ${orders.slice(0, 5).map(order => `
