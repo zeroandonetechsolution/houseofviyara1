@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@supabase/server": "^1.2.0",
     "@supabase/supabase-js": "^2.105.4",
     "axios": "^1.16.1",
     "cloudinary": "^1.41.3",

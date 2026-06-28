@@ -7,6 +7,47 @@ const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.l
     : window.location.origin);
 let adminToken = localStorage.getItem('hov_admin_token') || null;
 let currentSection = 'dashboard';
+let supabase = null;
+
+// Load Supabase client
+async function loadSupabaseClient() {
+    if (supabase) return true;
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        try {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = '/supabase-config.js';
+                s.async = true;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('no supabase-config'));
+                document.head.appendChild(s);
+            });
+        } catch (e) {}
+    }
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
+    
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js';
+            s.async = true;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load supabase-js'));
+            document.head.appendChild(s);
+        }).catch(() => null);
+    }
+    
+    try {
+        const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+        if (!createClient) return false;
+        supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        console.log('Supabase client loaded in admin');
+        return true;
+    } catch (e) {
+        console.warn('Supabase init failed in admin', e);
+        return false;
+    }
+}
 
 // ── Fetch helper ──
 async function apiFetch(endpoint, options = {}) {
@@ -234,8 +275,28 @@ function confirmAction(msg, onConfirm) {
 async function renderDashboard() {
     const content = document.getElementById('admin-content');
     try {
-        const stats = await apiFetch('/api/admin/stats');
-        const orders = await apiFetch('/api/admin/orders');
+        await loadSupabaseClient();
+        let stats, orders;
+        if (supabase) {
+            const [productsRes, ordersRes] = await Promise.all([
+                supabase.from('products').select('id, is_trending'),
+                supabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false })
+            ]);
+            if (productsRes.error) throw productsRes.error;
+            if (ordersRes.error) throw ordersRes.error;
+            const products = productsRes.data;
+            orders = ordersRes.data;
+            stats = {
+                totalSales: orders.filter(o => o.payment_status === 'Paid').reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
+                totalOrders: orders.length,
+                pendingOrders: orders.filter(o => o.status === 'Pending').length,
+                totalProducts: products.length,
+                trendingProducts: products.filter(p => p.is_trending).length
+            };
+        } else {
+            stats = await apiFetch('/api/admin/stats');
+            orders = await apiFetch('/api/admin/orders');
+        }
         const recentOrders = orders.slice(0, 8);
 
         content.innerHTML = `
@@ -306,24 +367,31 @@ let productFilter = 'all';
 
 async function renderProducts() {
     document.getElementById('topbar-actions').innerHTML = `
-      <button class="admin-btn admin-btn-primary" onclick="openAddProduct()"><i class="fas fa-plus"></i> Add Product</button>`;
+        <button class="admin-btn admin-btn-primary" onclick="openAddProduct()"><i class="fas fa-plus"></i> Add Product</button>`;
 
     const content = document.getElementById('admin-content');
     try {
-        allProducts = await apiFetch('/api/admin/products');
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            allProducts = data;
+        } else {
+            allProducts = await apiFetch('/api/admin/products');
+        }
 
         content.innerHTML = `
         <div class="admin-filter-bar">
-          <div class="admin-filter-tabs" id="product-filter-tabs">
-            <button class="filter-tab active" onclick="filterProducts('all', this)">All (${allProducts.length})</button>
-            <button class="filter-tab" onclick="filterProducts('trending', this)"><i class="fas fa-fire"></i> Trending (${allProducts.filter(p => p.is_trending).length})</button>
-            <button class="filter-tab" onclick="filterProducts('saree', this)">Saree</button>
-            <button class="filter-tab" onclick="filterProducts('kurtis', this)">Kurtis</button>
-            <button class="filter-tab" onclick="filterProducts('ethnic', this)">Ethnic</button>
-            <button class="filter-tab" onclick="filterProducts('party', this)">Party</button>
-            <button class="filter-tab" onclick="filterProducts('casual', this)">Casual</button>
-          </div>
-          <input class="admin-search-input" type="text" placeholder="Search products..." oninput="searchProducts(this.value)" id="product-search">
+            <div class="admin-filter-tabs" id="product-filter-tabs">
+                <button class="filter-tab active" onclick="filterProducts('all', this)">All (${allProducts.length})</button>
+                <button class="filter-tab" onclick="filterProducts('trending', this)"><i class="fas fa-fire"></i> Trending (${allProducts.filter(p => p.is_trending).length})</button>
+                <button class="filter-tab" onclick="filterProducts('saree', this)">Saree</button>
+                <button class="filter-tab" onclick="filterProducts('kurtis', this)">Kurtis</button>
+                <button class="filter-tab" onclick="filterProducts('ethnic', this)">Ethnic</button>
+                <button class="filter-tab" onclick="filterProducts('party', this)">Party</button>
+                <button class="filter-tab" onclick="filterProducts('casual', this)">Casual</button>
+            </div>
+            <input class="admin-search-input" type="text" placeholder="Search products..." oninput="searchProducts(this.value)" id="product-search">
         </div>
         <div class="admin-products-grid" id="products-grid"></div>`;
 
@@ -384,10 +452,16 @@ function renderProductGrid(products) {
 
 async function toggleTrending(id, newVal) {
     try {
-        await apiFetch(`/api/admin/products/${id}/trending`, {
-            method: 'PATCH',
-            body: JSON.stringify({ is_trending: newVal })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('products').update({ is_trending: newVal }).eq('id', id);
+            if (error) throw error;
+        } else {
+            await apiFetch(`/api/admin/products/${id}/trending`, {
+                method: 'PATCH',
+                body: JSON.stringify({ is_trending: newVal })
+            });
+        }
         showToast(newVal ? '🔥 Product marked as Trending!' : 'Product removed from Trending', 'success');
         renderProducts();
     } catch (e) {
@@ -398,7 +472,13 @@ async function toggleTrending(id, newVal) {
 async function deleteProduct(id, name) {
     confirmAction(`Delete "<strong>${name}</strong>"? This cannot be undone.`, async () => {
         try {
-            await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+            await loadSupabaseClient();
+            if (supabase) {
+                const { error } = await supabase.from('products').delete().eq('id', id);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+            }
             showToast('Product deleted successfully', 'success');
             renderProducts();
         } catch (e) {
@@ -530,7 +610,15 @@ function openAddProduct() {
 
 async function openEditProduct(id) {
     try {
-        const p = await apiFetch(`/api/products/${id}`);
+        let p;
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+            if (error) throw error;
+            p = data;
+        } else {
+            p = await apiFetch(`/api/products/${id}`);
+        }
         openModal(productFormHTML(p));
     } catch (e) {
         showToast('Could not load product', 'error');
@@ -544,9 +632,9 @@ async function handleAddProduct() {
     if (!name || !price || !image_url) return showToast('Name, Price and Image URL are required', 'error');
 
     try {
-        await apiFetch('/api/admin/products', {
-            method: 'POST',
-            body: JSON.stringify({
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('products').insert({
                 name,
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
@@ -556,8 +644,24 @@ async function handleAddProduct() {
                 image_url,
                 video_url: document.getElementById('pf-video').value.trim() || '',
                 is_trending: document.getElementById('pf-trending').checked
-            })
-        });
+            });
+            if (error) throw error;
+        } else {
+            await apiFetch('/api/admin/products', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name,
+                    description: document.getElementById('pf-desc').value,
+                    price: Number(price),
+                    offer_price: Number(document.getElementById('pf-offer').value || price),
+                    category: document.getElementById('pf-cat').value,
+                    stock: Number(document.getElementById('pf-stock').value || 10),
+                    image_url,
+                    video_url: document.getElementById('pf-video').value.trim() || '',
+                    is_trending: document.getElementById('pf-trending').checked
+                })
+            });
+        }
         closeModal();
         showToast('Product added successfully!', 'success');
         renderProducts();
@@ -573,9 +677,9 @@ async function handleEditProduct(id) {
     if (!name || !price || !image_url) return showToast('Name, Price and Image URL are required', 'error');
 
     try {
-        await apiFetch(`/api/admin/products/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('products').update({
                 name,
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
@@ -585,8 +689,24 @@ async function handleEditProduct(id) {
                 image_url,
                 video_url: document.getElementById('pf-video').value.trim() || '',
                 is_trending: document.getElementById('pf-trending').checked
-            })
-        });
+            }).eq('id', id);
+            if (error) throw error;
+        } else {
+            await apiFetch(`/api/admin/products/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name,
+                    description: document.getElementById('pf-desc').value,
+                    price: Number(price),
+                    offer_price: Number(document.getElementById('pf-offer').value || price),
+                    category: document.getElementById('pf-cat').value,
+                    stock: Number(document.getElementById('pf-stock').value || 10),
+                    image_url,
+                    video_url: document.getElementById('pf-video').value.trim() || '',
+                    is_trending: document.getElementById('pf-trending').checked
+                })
+            });
+        }
         closeModal();
         showToast('Product updated successfully!', 'success');
         renderProducts();
@@ -600,41 +720,50 @@ async function handleEditProduct(id) {
 // ═══════════════════════════════════════
 async function renderCategories() {
     document.getElementById('topbar-actions').innerHTML = `
-      <button class="admin-btn admin-btn-primary" onclick="openAddCategory()"><i class="fas fa-plus"></i> Add Category</button>`;
+        <button class="admin-btn admin-btn-primary" onclick="openAddCategory()"><i class="fas fa-plus"></i> Add Category</button>`;
 
     const content = document.getElementById('admin-content');
     try {
-        const categories = await apiFetch('/api/admin/categories');
+        let categories;
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+            if (error) throw error;
+            categories = data;
+        } else {
+            categories = await apiFetch('/api/admin/categories');
+        }
+        
         content.innerHTML = `
         <div class="admin-section-card">
-          <p class="admin-section-hint">Categories define the shopping sections of your store. Each category gets its own page.</p>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>Order</th><th>Icon</th><th>Name</th><th>Slug</th><th>Banner</th><th>Actions</th></tr></thead>
-              <tbody>
-                ${categories.length === 0
-                    ? '<tr><td colspan="6" class="admin-empty">No categories found</td></tr>'
-                    : categories.map(cat => `
-                  <tr>
-                    <td><span class="order-badge">${cat.display_order}</span></td>
-                    <td><i class="${cat.icon || 'fas fa-tag'}" style="font-size:1.2rem;color:#FF007A;"></i></td>
-                    <td><strong>${cat.name}</strong></td>
-                    <td><code class="slug-badge">${cat.slug}</code></td>
-                    <td>
-                      ${cat.banner_image
-                        ? `<img src="${cat.banner_image}" style="width:80px;height:45px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">`
-                        : '<span style="color:#999;font-size:0.8rem;">None</span>'}
-                    </td>
-                    <td>
-                      <div class="table-actions">
-                        <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditCategory(${cat.id})"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteCategory(${cat.id}, ${JSON.stringify(cat.name)})'><i class="fas fa-trash"></i></button>
-                      </div>
-                    </td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
+            <p class="admin-section-hint">Categories define the shopping sections of your store. Each category gets its own page.</p>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Order</th><th>Icon</th><th>Name</th><th>Slug</th><th>Banner</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${categories.length === 0
+                            ? '<tr><td colspan="6" class="admin-empty">No categories found</td></tr>'
+                            : categories.map(cat => `
+                        <tr>
+                            <td><span class="order-badge">${cat.display_order}</span></td>
+                            <td><i class="${cat.icon || 'fas fa-tag'}" style="font-size:1.2rem;color:#FF007A;"></i></td>
+                            <td><strong>${cat.name}</strong></td>
+                            <td><code class="slug-badge">${cat.slug}</code></td>
+                            <td>
+                                ${cat.banner_image
+                                    ? `<img src="${cat.banner_image}" style="width:80px;height:45px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">`
+                                    : '<span style="color:#999;font-size:0.8rem;">None</span>'}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditCategory(${cat.id})"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteCategory(${cat.id}, ${JSON.stringify(cat.name)})'><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
         </div>`;
     } catch (e) {
         content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load categories.</p><code>${e.message}</code></div>`;
@@ -692,8 +821,16 @@ function categoryFormHTML(c = {}) {
 function openAddCategory() { openModal(categoryFormHTML()); }
 async function openEditCategory(id) {
     try {
-        const cats = await apiFetch('/api/admin/categories');
-        const cat = cats.find(c => c.id === id);
+        let cat;
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('categories').select('*').eq('id', id).single();
+            if (error) throw error;
+            cat = data;
+        } else {
+            const cats = await apiFetch('/api/admin/categories');
+            cat = cats.find(c => c.id === id);
+        }
         if (!cat) return showToast('Category not found', 'error');
         openModal(categoryFormHTML(cat));
     } catch (e) { showToast('Could not load category', 'error'); }
@@ -704,10 +841,22 @@ async function handleAddCategory() {
     const slug = document.getElementById('cf-slug').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
-        await apiFetch('/api/admin/categories', {
-            method: 'POST',
-            body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('categories').insert({
+                name,
+                slug,
+                icon: document.getElementById('cf-icon').value,
+                banner_image: document.getElementById('cf-banner').value,
+                display_order: Number(document.getElementById('cf-order').value || 0)
+            });
+            if (error) throw error;
+        } else {
+            await apiFetch('/api/admin/categories', {
+                method: 'POST',
+                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
+            });
+        }
         closeModal(); showToast('Category added!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -717,10 +866,22 @@ async function handleEditCategory(id) {
     const slug = document.getElementById('cf-slug').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
-        await apiFetch(`/api/admin/categories/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('categories').update({
+                name,
+                slug,
+                icon: document.getElementById('cf-icon').value,
+                banner_image: document.getElementById('cf-banner').value,
+                display_order: Number(document.getElementById('cf-order').value || 0)
+            }).eq('id', id);
+            if (error) throw error;
+        } else {
+            await apiFetch(`/api/admin/categories/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
+            });
+        }
         closeModal(); showToast('Category updated!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -728,7 +889,13 @@ async function handleEditCategory(id) {
 async function deleteCategory(id, name) {
     confirmAction(`Delete category "<strong>${name}</strong>"? Products in this category will NOT be deleted.`, async () => {
         try {
-            await apiFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+            await loadSupabaseClient();
+            if (supabase) {
+                const { error } = await supabase.from('categories').delete().eq('id', id);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+            }
             showToast('Category deleted', 'success'); renderCategories();
         } catch (e) { showToast('Failed to delete', 'error'); }
     });
@@ -743,7 +910,16 @@ async function renderBanners() {
 
     const content = document.getElementById('admin-content');
     try {
-        const banners = await apiFetch('/api/admin/banners');
+        let banners;
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('banners').select('*').order('display_order', { ascending: true });
+            if (error) throw error;
+            banners = data;
+        } else {
+            banners = await apiFetch('/api/admin/banners');
+        }
+        
         content.innerHTML = `
         <div class="admin-section-card">
           <p class="admin-section-hint">Banners appear in the homepage hero slider. Toggle active/inactive to control visibility.</p>
@@ -911,7 +1087,15 @@ function bannerFormHTML(b = {}) {
 function openAddBanner() { openModal(bannerFormHTML()); }
 async function openEditBanner(id) {
     try {
-        const banners = await apiFetch('/api/admin/banners');
+        let banners;
+        await loadSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase.from('banners').select('*').eq('id', id);
+            if (error) throw error;
+            banners = data;
+        } else {
+            banners = await apiFetch('/api/admin/banners');
+        }
         const b = banners.find(x => x.id === id);
         if (!b) return showToast('Banner not found', 'error');
         openModal(bannerFormHTML(b));
@@ -922,10 +1106,32 @@ async function handleAddBanner() {
     const image_url = document.getElementById('bf-img').value.trim();
     if (!image_url) return showToast('Image URL is required', 'error');
     try {
-        await apiFetch('/api/admin/banners', {
-            method: 'POST',
-            body: JSON.stringify({ title: document.getElementById('bf-title').value, subtitle: document.getElementById('bf-sub').value, image_url, cta_text: document.getElementById('bf-cta-text').value, cta_link: document.getElementById('bf-cta-link').value, is_active: document.getElementById('bf-active').checked, display_order: Number(document.getElementById('bf-order').value || 0) })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('banners').insert({
+                title: document.getElementById('bf-title').value,
+                subtitle: document.getElementById('bf-sub').value,
+                image_url,
+                cta_text: document.getElementById('bf-cta-text').value,
+                cta_link: document.getElementById('bf-cta-link').value,
+                is_active: document.getElementById('bf-active').checked,
+                display_order: Number(document.getElementById('bf-order').value || 0)
+            });
+            if (error) throw error;
+        } else {
+            await apiFetch('/api/admin/banners', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: document.getElementById('bf-title').value,
+                    subtitle: document.getElementById('bf-sub').value,
+                    image_url,
+                    cta_text: document.getElementById('bf-cta-text').value,
+                    cta_link: document.getElementById('bf-cta-link').value,
+                    is_active: document.getElementById('bf-active').checked,
+                    display_order: Number(document.getElementById('bf-order').value || 0)
+                })
+            });
+        }
         closeModal(); showToast('Banner added!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -934,23 +1140,51 @@ async function handleEditBanner(id) {
     const image_url = document.getElementById('bf-img').value.trim();
     if (!image_url) return showToast('Image URL is required', 'error');
     try {
-        await apiFetch(`/api/admin/banners/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ title: document.getElementById('bf-title').value, subtitle: document.getElementById('bf-sub').value, image_url, cta_text: document.getElementById('bf-cta-text').value, cta_link: document.getElementById('bf-cta-link').value, is_active: document.getElementById('bf-active').checked, display_order: Number(document.getElementById('bf-order').value || 0) })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('banners').update({
+                title: document.getElementById('bf-title').value,
+                subtitle: document.getElementById('bf-sub').value,
+                image_url,
+                cta_text: document.getElementById('bf-cta-text').value,
+                cta_link: document.getElementById('bf-cta-link').value,
+                is_active: document.getElementById('bf-active').checked,
+                display_order: Number(document.getElementById('bf-order').value || 0)
+            }).eq('id', id);
+            if (error) throw error;
+        } else {
+            await apiFetch(`/api/admin/banners/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    title: document.getElementById('bf-title').value,
+                    subtitle: document.getElementById('bf-sub').value,
+                    image_url,
+                    cta_text: document.getElementById('bf-cta-text').value,
+                    cta_link: document.getElementById('bf-cta-link').value,
+                    is_active: document.getElementById('bf-active').checked,
+                    display_order: Number(document.getElementById('bf-order').value || 0)
+                })
+            });
+        }
         closeModal(); showToast('Banner updated!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
 
 async function toggleBannerActive(id, newVal) {
     try {
-        const banners = await apiFetch('/api/admin/banners');
-        const b = banners.find(x => x.id === id);
-        if (!b) return;
-        await apiFetch(`/api/admin/banners/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ ...b, is_active: newVal })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('banners').update({ is_active: newVal }).eq('id', id);
+            if (error) throw error;
+        } else {
+            const banners = await apiFetch('/api/admin/banners');
+            const b = banners.find(x => x.id === id);
+            if (!b) return;
+            await apiFetch(`/api/admin/banners/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ ...b, is_active: newVal })
+            });
+        }
         showToast(newVal ? 'Banner is now active' : 'Banner hidden', 'success');
         renderBanners();
     } catch (e) { showToast('Failed to update banner', 'error'); }
@@ -959,7 +1193,13 @@ async function toggleBannerActive(id, newVal) {
 async function deleteBanner(id, title) {
     confirmAction(`Delete banner "<strong>${title}</strong>"?`, async () => {
         try {
-            await apiFetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
+            await loadSupabaseClient();
+            if (supabase) {
+                const { error } = await supabase.from('banners').delete().eq('id', id);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
+            }
             showToast('Banner deleted', 'success'); renderBanners();
         } catch (e) { showToast('Failed to delete', 'error'); }
     });
@@ -972,7 +1212,19 @@ async function renderOrders() {
     const content = document.getElementById('admin-content');
     document.getElementById('topbar-actions').innerHTML = ``;
     try {
-        const orders = await apiFetch('/api/admin/orders');
+        await loadSupabaseClient();
+        let orders;
+        if (supabase) {
+            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            orders = data.map(o => ({
+                ...o,
+                items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+                shipping_address: typeof o.shipping_address === 'string' ? JSON.parse(o.shipping_address) : o.shipping_address
+            }));
+        } else {
+            orders = await apiFetch('/api/admin/orders');
+        }
         content.innerHTML = `
         <div class="admin-filter-bar">
           <div class="admin-filter-tabs">
@@ -1040,10 +1292,16 @@ function renderOrdersTable(orders) {
 
 async function updateOrderStatus(orderId, status, selectEl) {
     try {
-        await apiFetch('/api/admin/update-order', {
-            method: 'POST',
-            body: JSON.stringify({ orderId, status })
-        });
+        await loadSupabaseClient();
+        if (supabase) {
+            const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+            if (error) throw error;
+        } else {
+            await apiFetch('/api/admin/update-order', {
+                method: 'POST',
+                body: JSON.stringify({ orderId, status })
+            });
+        }
         showToast(`Order ${orderId} → ${status}`, 'success');
         if (selectEl) {
             selectEl.className = `admin-status-select status-select-${status.toLowerCase()}`;

@@ -91,6 +91,38 @@ async function fetchProductByIdPrefer(id) {
     return products.find(p => Number(p.id) === Number(id)) || null;
 }
 
+async function fetchCategoriesPrefer() {
+    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+        try {
+            const { data, error } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+            if (!error && data) return data;
+        } catch (e) { console.warn('supabase categories fetch failed', e); }
+    }
+    if (API_URL) {
+        try {
+            const r = await fetch(API_URL + '/api/categories');
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    return getStore(STORE_KEYS.categories, []);
+}
+
+async function fetchBannersPrefer() {
+    if (await loadSupabaseClient() && USE_SUPABASE && supabase) {
+        try {
+            const { data, error } = await supabase.from('banners').select('*').eq('is_active', true).order('display_order', { ascending: true });
+            if (!error && data) return data;
+        } catch (e) { console.warn('supabase banners fetch failed', e); }
+    }
+    if (API_URL) {
+        try {
+            const r = await fetch(API_URL + '/api/banners');
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    return getStore(STORE_KEYS.banners, []);
+}
+
 const AUTH_KEYS = {
     user: 'lifestyle_user',
     cart: 'lifestyle_cart',
@@ -465,11 +497,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCartPage();
     } else {
         renderProducts();
-        renderCategories();
-        initHeroCarousel();
+        await renderCategories();
+        await initHeroCarousel();
     }
 
-    renderHeaderNavigation();
+    await renderHeaderNavigation();
     
     setupEventListeners();
     setupSearch();
@@ -479,26 +511,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // --- Category Rendering ---
-function renderCategories() {
+async function renderCategories() {
     const categoryGrid = document.getElementById('category-grid');
     if (!categoryGrid) return;
 
-    const categories = getStore(STORE_KEYS.categories, []);
+    const categories = await fetchCategoriesPrefer();
     renderCategoryList(categories, categoryGrid);
 }
 
 let heroCarouselInterval = null;
-function getHeroImages() {
-    return getStore(STORE_KEYS.hero_images, [])
-        .filter(image => image.is_active)
-        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+async function getHeroImages() {
+    return await fetchBannersPrefer();
 }
 
-function initHeroCarousel() {
+async function initHeroCarousel() {
     const heroImage = document.getElementById('hero-image');
     if (!heroImage) return;
 
-    const heroImages = getHeroImages();
+    const heroImages = await getHeroImages();
     if (!heroImages.length) return;
 
     heroImage.src = heroImages[0].image_url || heroImage.src;
@@ -546,8 +576,14 @@ function getCurrentHeaderSlug() {
     return ['saree', 'kurtis', 'ethnic', 'party', 'casual'].find(slug => path.includes(`${slug}.html`)) || '';
 }
 
-function renderHeaderNavigation() {
-    const headerLinks = getStore(STORE_KEYS.header_links, []);
+async function renderHeaderNavigation() {
+    const categories = await fetchCategoriesPrefer();
+    const headerLinks = categories.length ? categories.map(cat => ({
+        id: cat.id,
+        label: cat.name,
+        slug: cat.slug,
+        href: `${cat.slug}.html`
+    })) : getStore(STORE_KEYS.header_links, []);
     const navLinks = headerLinks.length ? headerLinks : [];
     const currentSlug = getCurrentHeaderSlug();
 
