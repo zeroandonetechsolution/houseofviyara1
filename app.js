@@ -696,6 +696,18 @@ async function initHeroCarousel() {
     };
 }
 
+function getCategoryFileName(slug) {
+    // Map slugs to actual file names (with spaces and capitalization)
+    const slugToFile = {
+        'maxis': 'Maxis.html',
+        'cord-sets': 'Cord sets.html',
+        'kurti': 'Kurti.html',
+        'kurti-sets': 'Kurti sets.html'
+    };
+    // Return the mapped file name if it exists, otherwise slug.html (fallback)
+    return slugToFile[slug] || `${slug}.html`;
+}
+
 function renderCategoryList(categories, container) {
     if (!categories.length) {
         container.innerHTML = '<div class="empty-state"><p>No categories found. Add categories from the admin panel.</p></div>';
@@ -703,7 +715,7 @@ function renderCategoryList(categories, container) {
     }
     const categoryItems = categories;
     container.innerHTML = categoryItems.map(cat => `
-        <a href="${cat.slug}.html" class="category-card" style="background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('${cat.banner_image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60'}'); background-size: cover; background-position: center;">
+        <a href="${getCategoryFileName(cat.slug)}" class="category-card" style="background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('${cat.banner_image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60'}'); background-size: cover; background-position: center;">
             <div class="cat-info">
                 <h3>${cat.name.toUpperCase()}</h3>
                 <span>SHOP NOW <i class="fas fa-arrow-right"></i></span>
@@ -718,8 +730,17 @@ async function getCurrentHeaderSlug() {
     if (path.endsWith('collections.html')) return 'all';
     // Try to get categories from Supabase
     const categories = await fetchCategoriesPrefer();
-    const slugs = categories.map(c => c.slug);
-    return slugs.find(slug => path.includes(`${slug}.html`)) || '';
+    // Check both slug.html and mapped file name
+    for (const cat of categories) {
+        const fileName = getCategoryFileName(cat.slug).toLowerCase();
+        if (path.includes(fileName)) {
+            return cat.slug;
+        }
+        if (path.includes(`${cat.slug}.html`)) {
+            return cat.slug;
+        }
+    }
+    return '';
 }
 
 async function renderHeaderNavigation() {
@@ -728,7 +749,7 @@ async function renderHeaderNavigation() {
         id: cat.id,
         label: cat.name,
         slug: cat.slug,
-        href: `${cat.slug}.html`
+        href: getCategoryFileName(cat.slug)
     }));
     const currentSlug = getCurrentHeaderSlug();
 
