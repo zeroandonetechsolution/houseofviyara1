@@ -1068,7 +1068,49 @@ function categoryFormHTML(c = {}) {
     <\/script>`;
 }
 
-function openAddCategory() { openModal(categoryFormHTML()); }
+function setupCategoryForm() {
+    window._cfTempImage = null;
+    const fileInput = document.getElementById('cf-banner-file');
+    const urlInput = document.getElementById('cf-banner');
+    const previewWrap = document.getElementById('cf-preview-wrap');
+    const previewImg = document.getElementById('cf-preview');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(){
+            if (!fileInput.files.length) return;
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    window._cfTempImage = e.target.result;
+                    previewWrap.style.display = 'block';
+                    previewImg.src = e.target.result;
+                    urlInput.value = '';
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } catch (e) {
+                console.error('Upload failed:', e);
+                showToast('Image upload failed', 'error');
+            }
+        });
+    }
+    
+    if (urlInput) {
+        urlInput.addEventListener('input', function(){
+            if (this.value) {
+                previewWrap.style.display = 'block';
+                previewImg.src = this.value;
+                window._cfTempImage = null;
+            } else {
+                previewWrap.style.display = 'none';
+            }
+        });
+    }
+}
+
+function openAddCategory() { 
+    openModal(categoryFormHTML()); 
+    setupCategoryForm();
+}
 async function openEditCategory(id) {
     try {
         let cat;
@@ -1083,6 +1125,7 @@ async function openEditCategory(id) {
         }
         if (!cat) return showToast('Category not found', 'error');
         openModal(categoryFormHTML(cat));
+        setupCategoryForm();
     } catch (e) { showToast('Could not load category', 'error'); }
 }
 
@@ -1336,7 +1379,51 @@ function updateBannerPreview(url) {
 
 
 
-function openAddBanner() { openModal(bannerFormHTML()); }
+function setupBannerForm() {
+    window._bfTempImage = null;
+    const fileInput = document.getElementById('bf-img-file');
+    const urlInput = document.getElementById('bf-img');
+    const previewWrap = document.getElementById('bf-preview-wrap');
+    const previewImg = document.getElementById('bf-preview');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(){
+            if (!fileInput.files.length) return;
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    window._bfTempImage = e.target.result;
+                    previewWrap.style.display = 'block';
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    urlInput.value = '';
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } catch (e) {
+                console.error('Upload failed:', e);
+                showToast('Image upload failed', 'error');
+            }
+        });
+    }
+    
+    if (urlInput) {
+        urlInput.addEventListener('input', function(){
+            if (this.value) {
+                previewWrap.style.display = 'block';
+                previewImg.src = this.value;
+                previewImg.style.display = 'block';
+                window._bfTempImage = null;
+            } else {
+                previewWrap.style.display = 'none';
+            }
+        });
+    }
+}
+
+function openAddBanner() { 
+    openModal(bannerFormHTML()); 
+    setupBannerForm();
+}
 async function openEditBanner(id) {
     try {
         let banners;
@@ -1351,6 +1438,7 @@ async function openEditBanner(id) {
         const b = banners.find(x => x.id === id);
         if (!b) return showToast('Banner not found', 'error');
         openModal(bannerFormHTML(b));
+        setupBannerForm();
     } catch (e) { showToast('Could not load banner', 'error'); }
 }
 
@@ -1943,7 +2031,49 @@ function heroImageFormHTML(img = {}) {
     <\/script>`;
 }
 
-function openAddHeroImage() { openModal(heroImageFormHTML()); }
+function setupHeroImageForm() {
+    window._hiTempImage = null;
+    const fileInput = document.getElementById('hi-img-file');
+    const urlInput = document.getElementById('hi-img');
+    const previewWrap = document.getElementById('hi-preview-wrap');
+    const previewImg = document.getElementById('hi-preview');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(){
+            if (!fileInput.files.length) return;
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    window._hiTempImage = e.target.result;
+                    previewWrap.style.display = 'block';
+                    previewImg.src = e.target.result;
+                    urlInput.value = '';
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } catch (e) {
+                console.error('Upload failed:', e);
+                showToast('Image upload failed', 'error');
+            }
+        });
+    }
+    
+    if (urlInput) {
+        urlInput.addEventListener('input', function(){
+            if (this.value) {
+                previewWrap.style.display = 'block';
+                previewImg.src = this.value;
+                window._hiTempImage = null;
+            } else {
+                previewWrap.style.display = 'none';
+            }
+        });
+    }
+}
+
+function openAddHeroImage() { 
+    openModal(heroImageFormHTML()); 
+    setupHeroImageForm();
+}
 async function openEditHeroImage(id) {
     try {
         let img;
@@ -1957,6 +2087,7 @@ async function openEditHeroImage(id) {
         }
         if (!img) return showToast('Hero image not found', 'error');
         openModal(heroImageFormHTML(img));
+        setupHeroImageForm();
     } catch (e) { showToast('Could not load hero image', 'error'); }
 }
 
