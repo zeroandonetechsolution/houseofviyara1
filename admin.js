@@ -204,6 +204,12 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-banners" onclick="navigateTo('banners')">
             <i class="fas fa-image"></i><span>Banners</span>
           </a>
+          <a class="admin-nav-item" id="nav-header-links" onclick="navigateTo('header-links')">
+            <i class="fas fa-link"></i><span>Nav Bar</span>
+          </a>
+          <a class="admin-nav-item" id="nav-hero-images" onclick="navigateTo('hero-images')">
+            <i class="fas fa-star"></i><span>Hero Section</span>
+          </a>
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
@@ -249,14 +255,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', orders: 'Orders' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'header-links': 'Nav Bar', 'hero-images': 'Hero Section', orders: 'Orders' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, orders: renderOrders };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'header-links': renderHeaderLinks, 'hero-images': renderHeroImages, orders: renderOrders };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -1531,4 +1537,402 @@ async function updateOrderStatus(orderId, status, selectEl) {
     } catch (e) {
         showToast('Failed to update order status', 'error');
     }
+}
+
+// ═══════════════════════════════════════
+// HEADER LINKS (NAV BAR)
+// ═══════════════════════════════════════
+async function renderHeaderLinks() {
+    document.getElementById('topbar-actions').innerHTML = `
+      <button class="admin-btn admin-btn-primary" onclick="openAddHeaderLink()"><i class="fas fa-plus"></i> Add Nav Link</button>`;
+
+    const content = document.getElementById('admin-content');
+    try {
+        let links;
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('header_links').select('*').order('display_order', { ascending: true });
+            if (error) throw error;
+            links = data;
+        } else {
+            links = []; // Fallback if no API yet
+        }
+        
+        content.innerHTML = `
+        <div class="admin-section-card">
+          <p class="admin-section-hint">Manage navigation links for your store header.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Name</th><th>Slug</th><th>Link</th><th>Order</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${links.length === 0 
+                    ? '<tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-link" style="font-size:2rem;color:#ddd;margin-bottom:10px;display:block;"></i><p style="color:#888;margin:0;">No nav links yet!</p></td></tr>' 
+                    : links.map(l => `
+                  <tr>
+                    <td><strong>${l.name}</strong></td>
+                    <td>${l.slug}</td>
+                    <td><code>${l.href}</code></td>
+                    <td>${l.display_order}</td>
+                    <td><span class="status-badge status-${l.is_active ? 'active' : 'inactive'}">${l.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                      <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditHeaderLink(${l.id})"><i class="fas fa-edit"></i></button>
+                      <button class="admin-btn admin-btn-sm ${l.is_active ? 'admin-btn-warning' : 'admin-btn-success'}" onclick="toggleHeaderLinkActive(${l.id}, ${l.is_active ? 0 : 1})">
+                        <i class="fas fa-${l.is_active ? 'eye-slash' : 'eye'}"></i>
+                      </button>
+                      <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteHeaderLink(${l.id}, '${l.name}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    } catch (e) {
+        content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load nav links.</p><code>${e.message}</code></div>`;
+    }
+}
+
+function headerLinkFormHTML(l = {}) {
+    return `
+    <h3>${l.id ? 'Edit Nav Link' : 'Add New Nav Link'}</h3>
+    <div class="admin-form">
+      <div class="aform-group">
+        <label>Name *</label>
+        <input class="aform-input" id="hl-name" value="${l.name || ''}" placeholder="e.g. Sarees">
+      </div>
+      <div class="aform-group">
+        <label>Slug</label>
+        <input class="aform-input" id="hl-slug" value="${l.slug || ''}" placeholder="e.g. sarees" data-edited="${l.id ? '1' : ''}">
+      </div>
+      <div class="aform-group">
+        <label>Link (href) *</label>
+        <input class="aform-input" id="hl-href" value="${l.href || ''}" placeholder="e.g. sarees.html">
+      </div>
+      <div class="aform-group">
+        <label>Display Order</label>
+        <input class="aform-input" type="number" id="hl-order" value="${l.display_order || 0}" placeholder="0">
+      </div>
+      <div class="aform-check">
+        <input type="checkbox" id="hl-active" ${l.is_active ? 'checked' : 'checked'}>
+        <label for="hl-active">Active</label>
+      </div>
+      <div class="aform-actions">
+        <button class="admin-btn admin-btn-primary" onclick="${l.id ? `handleEditHeaderLink(${l.id})` : 'handleAddHeaderLink()'}">
+          <i class="fas fa-save"></i> ${l.id ? 'Update Nav Link' : 'Add Nav Link'}
+        </button>
+        <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+    <script>
+      document.getElementById('hl-name').addEventListener('input', function(){
+        const slugEl = document.getElementById('hl-slug');
+        if(!slugEl.dataset.edited) slugEl.value = this.value.toLowerCase().replace(/\\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      });
+      document.getElementById('hl-slug').addEventListener('input', function(){ this.dataset.edited = '1'; });
+    <\/script>`;
+}
+
+function openAddHeaderLink() { openModal(headerLinkFormHTML()); }
+async function openEditHeaderLink(id) {
+    try {
+        let link;
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('header_links').select('*').eq('id', id).single();
+            if (error) throw error;
+            link = data;
+        } else {
+            link = null;
+        }
+        if (!link) return showToast('Nav link not found', 'error');
+        openModal(headerLinkFormHTML(link));
+    } catch (e) { showToast('Could not load nav link', 'error'); }
+}
+
+async function handleAddHeaderLink() {
+    const name = document.getElementById('hl-name').value.trim();
+    const slug = document.getElementById('hl-slug').value.trim();
+    const href = document.getElementById('hl-href').value.trim();
+    if (!name || !href) return showToast('Name and Link are required', 'error');
+    try {
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('header_links').insert({
+                name,
+                slug: slug || name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+                href,
+                display_order: Number(document.getElementById('hl-order').value || 0),
+                is_active: document.getElementById('hl-active').checked
+            });
+            if (error) throw error;
+        }
+        closeModal(); showToast('Nav link added!', 'success'); renderHeaderLinks();
+    } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function handleEditHeaderLink(id) {
+    const name = document.getElementById('hl-name').value.trim();
+    const slug = document.getElementById('hl-slug').value.trim();
+    const href = document.getElementById('hl-href').value.trim();
+    if (!name || !href) return showToast('Name and Link are required', 'error');
+    try {
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('header_links').update({
+                name,
+                slug,
+                href,
+                display_order: Number(document.getElementById('hl-order').value || 0),
+                is_active: document.getElementById('hl-active').checked
+            }).eq('id', id);
+            if (error) throw error;
+        }
+        closeModal(); showToast('Nav link updated!', 'success'); renderHeaderLinks();
+    } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function toggleHeaderLinkActive(id, newVal) {
+    try {
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('header_links').update({ is_active: newVal }).eq('id', id);
+            if (error) throw error;
+        }
+        showToast(newVal ? 'Nav link is now active' : 'Nav link hidden', 'success');
+        renderHeaderLinks();
+    } catch (e) { showToast('Failed to update nav link', 'error'); }
+}
+
+async function deleteHeaderLink(id, name) {
+    confirmAction(`Delete nav link "<strong>${name}</strong>"?`, async () => {
+        try {
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('header_links').delete().eq('id', id);
+                if (error) throw error;
+            }
+            showToast('Nav link deleted', 'success'); renderHeaderLinks();
+        } catch (e) { showToast('Failed to delete', 'error'); }
+    });
+}
+
+// ═══════════════════════════════════════
+// HERO IMAGES (HERO SECTION)
+// ═══════════════════════════════════════
+async function renderHeroImages() {
+    document.getElementById('topbar-actions').innerHTML = `
+      <button class="admin-btn admin-btn-primary" onclick="openAddHeroImage()"><i class="fas fa-plus"></i> Add Hero Image</button>`;
+
+    const content = document.getElementById('admin-content');
+    try {
+        let images;
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('hero_images').select('*').order('display_order', { ascending: true });
+            if (error) throw error;
+            images = data;
+        } else {
+            images = []; // Fallback if no API yet
+        }
+        
+        content.innerHTML = `
+        <div class="admin-section-card">
+          <p class="admin-section-hint">Manage images for your homepage hero section. Set custom duration per image (in milliseconds).</p>
+          <div class="admin-banners-grid" id="hero-grid">
+            ${images.length === 0
+                ? '<div class="admin-empty-state"><i class="fas fa-star"></i><p>No hero images yet. Add your first image!</p></div>'
+                : images.map(img => `
+              <div class="admin-banner-card ${img.is_active ? '' : 'banner-inactive'}">
+                <div class="abc-img-wrap">
+                  <img src="${img.image_url}" alt="${img.alt || 'Hero Image'}" onerror="this.src='https://via.placeholder.com/600x200?text=No+Image'" loading="lazy">
+                  <div class="abc-overlay">
+                    <div class="abc-title">${img.alt || 'Hero Image'}</div>
+                    <div class="abc-sub">${(img.duration || 3000) / 1000}s</div>
+                  </div>
+                  <div class="abc-status-badge ${img.is_active ? 'badge-active' : 'badge-inactive'}">${img.is_active ? 'Active' : 'Inactive'}</div>
+                </div>
+                <div class="abc-meta">
+                  <span>Order: ${img.display_order}</span>
+                  <span>Duration: ${(img.duration || 3000) / 1000}s</span>
+                </div>
+                <div class="abc-actions">
+                  <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditHeroImage(${img.id})"><i class="fas fa-edit"></i> Edit</button>
+                  <button class="admin-btn admin-btn-sm ${img.is_active ? 'admin-btn-warning' : 'admin-btn-success'}" onclick="toggleHeroImageActive(${img.id}, ${img.is_active ? 0 : 1})">
+                    <i class="fas fa-${img.is_active ? 'eye-slash' : 'eye'}"></i> ${img.is_active ? 'Hide' : 'Show'}
+                  </button>
+                  <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteHeroImage(${img.id}, '${img.alt || 'Hero Image'}')"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    } catch (e) {
+        content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load hero images.</p><code>${e.message}</code></div>`;
+    }
+}
+
+function heroImageFormHTML(img = {}) {
+    return `
+    <h3>${img.id ? 'Edit Hero Image' : 'Add New Hero Image'}</h3>
+    <div class="admin-form">
+      <div class="aform-group">
+        <label>Upload Image</label>
+        <input class="aform-input" id="hi-img-file" type="file" accept="image/*">
+      </div>
+      <div class="aform-group">
+        <label>Image URL *</label>
+        <input class="aform-input" id="hi-img" value="${img.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateHeroPreview(this.value)">
+      </div>
+      <div id="hi-preview-wrap" style="display:${img.image_url ? 'block' : 'none'}">
+        <img id="hi-preview" src="${img.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'">
+      </div>
+      <div class="aform-group">
+        <label>Alt Text</label>
+        <input class="aform-input" id="hi-alt" value="${img.alt || ''}" placeholder="e.g. Premium Sarees Collection">
+      </div>
+      <div class="aform-row">
+        <div class="aform-group">
+          <label>Duration (seconds)</label>
+          <input class="aform-input" type="number" id="hi-duration" value="${(img.duration || 3000) / 1000}" placeholder="3">
+        </div>
+        <div class="aform-group">
+          <label>Display Order</label>
+          <input class="aform-input" type="number" id="hi-order" value="${img.display_order || 0}" placeholder="0">
+        </div>
+      </div>
+      <div class="aform-check">
+        <input type="checkbox" id="hi-active" ${img.is_active ? 'checked' : 'checked'}>
+        <label for="hi-active">Active</label>
+      </div>
+      <div class="aform-actions">
+        <button class="admin-btn admin-btn-primary" onclick="${img.id ? `handleEditHeroImage(${img.id})` : 'handleAddHeroImage()'}">
+          <i class="fas fa-save"></i> ${img.id ? 'Update Hero Image' : 'Add Hero Image'}
+        </button>
+        <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+    <script>
+      document.getElementById('hi-img-file').addEventListener('change', async function(){
+        const fileInput = this;
+        const urlInput = document.getElementById('hi-img');
+        const wrap = document.getElementById('hi-preview-wrap');
+        const imgEl = document.getElementById('hi-preview');
+        if (!fileInput.files.length) return;
+        try {
+          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
+          wrap.style.display = 'block';
+          imgEl.src = uploadedUrl;
+        } catch (e) {
+          console.error('Upload failed:', e);
+          showToast('Image upload failed', 'error');
+        }
+      });
+      document.getElementById('hi-img').addEventListener('input', function(){
+        const wrap = document.getElementById('hi-preview-wrap');
+        const imgEl = document.getElementById('hi-preview');
+        if (this.value) {
+          wrap.style.display = 'block';
+          imgEl.src = this.value;
+        } else {
+          wrap.style.display = 'none';
+        }
+      });
+      function updateHeroPreview(url){
+        const wrap = document.getElementById('hi-preview-wrap');
+        const imgEl = document.getElementById('hi-preview');
+        if(url) { wrap.style.display = 'block'; imgEl.src = url; }
+        else wrap.style.display = 'none';
+      }
+    <\/script>`;
+}
+
+function openAddHeroImage() { openModal(heroImageFormHTML()); }
+async function openEditHeroImage(id) {
+    try {
+        let img;
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('hero_images').select('*').eq('id', id).single();
+            if (error) throw error;
+            img = data;
+        } else {
+            img = null;
+        }
+        if (!img) return showToast('Hero image not found', 'error');
+        openModal(heroImageFormHTML(img));
+    } catch (e) { showToast('Could not load hero image', 'error'); }
+}
+
+async function handleAddHeroImage() {
+    const image_url = document.getElementById('hi-img').value.trim();
+    if (!image_url) return showToast('Image URL is required', 'error');
+    try {
+        await loadSupabaseClient();
+        let finalUrl = image_url;
+        if (adminSupabase && image_url.startsWith('data:')) {
+            finalUrl = await supabaseUploadFile(image_url, 'hero');
+        } else if (!adminSupabase) {
+            // Handle with API if needed
+        }
+        
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('hero_images').insert({
+                image_url: finalUrl,
+                alt: document.getElementById('hi-alt').value,
+                duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
+                display_order: Number(document.getElementById('hi-order').value || 0),
+                is_active: document.getElementById('hi-active').checked
+            });
+            if (error) throw error;
+        }
+        closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
+    } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function handleEditHeroImage(id) {
+    const image_url = document.getElementById('hi-img').value.trim();
+    if (!image_url) return showToast('Image URL is required', 'error');
+    try {
+        await loadSupabaseClient();
+        let finalUrl = image_url;
+        if (adminSupabase && image_url.startsWith('data:')) {
+            finalUrl = await supabaseUploadFile(image_url, 'hero');
+        }
+        
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('hero_images').update({
+                image_url: finalUrl,
+                alt: document.getElementById('hi-alt').value,
+                duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
+                display_order: Number(document.getElementById('hi-order').value || 0),
+                is_active: document.getElementById('hi-active').checked
+            }).eq('id', id);
+            if (error) throw error;
+        }
+        closeModal(); showToast('Hero image updated!', 'success'); renderHeroImages();
+    } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function toggleHeroImageActive(id, newVal) {
+    try {
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { error } = await adminSupabase.from('hero_images').update({ is_active: newVal }).eq('id', id);
+            if (error) throw error;
+        }
+        showToast(newVal ? 'Hero image is now active' : 'Hero image hidden', 'success');
+        renderHeroImages();
+    } catch (e) { showToast('Failed to update hero image', 'error'); }
+}
+
+async function deleteHeroImage(id, altText) {
+    confirmAction(`Delete hero image "<strong>${altText}</strong>"?`, async () => {
+        try {
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('hero_images').delete().eq('id', id);
+                if (error) throw error;
+            }
+            showToast('Hero image deleted', 'success'); renderHeroImages();
+        } catch (e) { showToast('Failed to delete', 'error'); }
+    });
 }

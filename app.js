@@ -197,6 +197,43 @@ async function fetchBannersPrefer() {
     return getStore(STORE_KEYS.banners, []);
 }
 
+async function fetchHeaderLinksPrefer() {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
+        try {
+            const { data, error } = await appSupabase.from('header_links').select('*').eq('is_active', true).order('display_order', { ascending: true });
+            if (!error && data) return data.map(link => ({
+                id: link.id,
+                label: link.name,
+                slug: link.slug,
+                href: link.href
+            }));
+        } catch (e) { console.warn('appSupabase header_links fetch failed', e); }
+    }
+    if (API_URL) {
+        try {
+            const r = await fetch(API_URL + '/api/header-links');
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    return getStore(STORE_KEYS.header_links, []);
+}
+
+async function fetchHeroImagesPrefer() {
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
+        try {
+            const { data, error } = await appSupabase.from('hero_images').select('*').eq('is_active', true).order('display_order', { ascending: true });
+            if (!error && data) return data;
+        } catch (e) { console.warn('appSupabase hero_images fetch failed', e); }
+    }
+    if (API_URL) {
+        try {
+            const r = await fetch(API_URL + '/api/hero-images');
+            if (r.ok) return await r.json();
+        } catch (e) { }
+    }
+    return getStore(STORE_KEYS.hero_images, []);
+}
+
 const AUTH_KEYS = {
     user: 'lifestyle_user',
     cart: 'lifestyle_cart',
@@ -595,7 +632,9 @@ async function renderCategories() {
 
 let heroCarouselInterval = null;
 async function getHeroImages() {
-    return await fetchBannersPrefer();
+    const heroImgs = await fetchHeroImagesPrefer();
+    if (!heroImgs.length) return await fetchBannersPrefer(); // Fallback to banners if no hero images
+    return heroImgs;
 }
 
 async function initHeroCarousel() {
@@ -624,7 +663,18 @@ async function initHeroCarousel() {
     };
 
     if (heroCarouselInterval) clearInterval(heroCarouselInterval);
-    heroCarouselInterval = setInterval(nextImage, 3000);
+    // Use custom duration from hero image, or fallback to 3000ms
+    const currentDuration = heroImages[0].duration ? heroImages[0].duration : 3000;
+    heroCarouselInterval = setInterval(nextImage, currentDuration);
+    
+    // Update interval when image changes to use each image's custom duration
+    const originalChangeHeroImage = changeHeroImage;
+    changeHeroImage = index => {
+        originalChangeHeroImage(index);
+        if (heroCarouselInterval) clearInterval(heroCarouselInterval);
+        const duration = heroImages[index].duration ? heroImages[index].duration : 3000;
+        heroCarouselInterval = setInterval(nextImage, duration);
+    };
 }
 
 function renderCategoryList(categories, container) {
@@ -651,14 +701,13 @@ function getCurrentHeaderSlug() {
 }
 
 async function renderHeaderNavigation() {
-    const categories = await fetchCategoriesPrefer();
-    const headerLinks = categories.length ? categories.map(cat => ({
+    const headerLinks = await fetchHeaderLinksPrefer();
+    const navLinks = headerLinks.length ? headerLinks : (await fetchCategoriesPrefer()).map(cat => ({
         id: cat.id,
         label: cat.name,
         slug: cat.slug,
         href: `${cat.slug}.html`
-    })) : getStore(STORE_KEYS.header_links, []);
-    const navLinks = headerLinks.length ? headerLinks : [];
+    }));
     const currentSlug = getCurrentHeaderSlug();
 
     const headerNavLists = document.querySelectorAll('header .nav-links');
