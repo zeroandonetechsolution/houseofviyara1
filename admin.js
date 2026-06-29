@@ -29,6 +29,7 @@ function dataURLToBlob(dataURL) {
 
 // Upload file to Supabase Storage
 async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
+  console.log('🚀 supabaseUploadFile called');
   if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
   let file = fileOrData;
   if (typeof fileOrData === 'string' && fileOrData.startsWith('data:')) {
@@ -37,31 +38,17 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
   const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
   const bucket = window.SUPABASE_BUCKET || 'public';
+  console.log('📁 Bucket:', bucket);
   const { data, error } = await adminSupabase.storage.from(bucket).upload(filename, file, { upsert: true });
   if (error) {
     console.warn('❌ Supabase storage upload error', error);
     throw error;
   }
   console.log('📤 Uploaded file to path:', data.path);
-  const publicUrlResult = adminSupabase.storage.from(bucket).getPublicUrl(data.path);
-  console.log('🌐 getPublicUrl() full result:', publicUrlResult);
   
-  // Try all possible ways to get public URL
-  let url = null;
-  if (publicUrlResult.data && publicUrlResult.data.publicUrl) {
-    url = publicUrlResult.data.publicUrl;
-  } else if (publicUrlResult.publicURL) {
-    url = publicUrlResult.publicURL;
-  } else if (publicUrlResult.data && publicUrlResult.data.publicURL) {
-    url = publicUrlResult.data.publicURL;
-  } else if (publicUrlResult.publicUrl) {
-    url = publicUrlResult.publicUrl;
-  } else {
-    // If all else fails, construct the URL manually!
-    const baseUrl = window.SUPABASE_URL;
-    url = `${baseUrl}/storage/v1/object/public/${bucket}/${data.path}`;
-  }
-  
+  // ALWAYS CONSTRUCT URL MANUALLY
+  const baseUrl = window.SUPABASE_URL;
+  const url = `${baseUrl}/storage/v1/object/public/${bucket}/${data.path}`;
   console.log('✅ Final uploaded file URL:', url);
   return url;
 }
@@ -2052,6 +2039,7 @@ function heroImageFormHTML(img = {}) {
 }
 
 function setupHeroImageForm() {
+    console.log('🔧 setupHeroImageForm called!');
     window._hiTempImage = null;
     const fileInput = document.getElementById('hi-img-file');
     const urlInput = document.getElementById('hi-img');
