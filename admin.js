@@ -2100,30 +2100,27 @@ async function openEditHeroImage(id) {
 }
 
 async function handleAddHeroImage() {
-    console.log('📝 handleAddHeroImage called');
+    alert('✅ handleAddHeroImage called!');
     const image_url_input = document.getElementById('hi-img').value.trim();
-    console.log('📝 image_url_input:', image_url_input);
-    console.log('📝 window._hiTempImage:', window._hiTempImage ? 'Set' : 'Not set');
+    
     try {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
-        // Check if we have a temporary image from file upload
         if (window._hiTempImage) {
-            console.log('📤 Uploading temp image to Supabase...');
+            alert('📤 Uploading temp image to Supabase...');
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
-                console.log('✅ Got final_image_url:', final_image_url);
+                alert('✅ Got final_image_url: ' + final_image_url);
             }
         }
         
-        // Require at least one of temp image or URL
         if (!final_image_url && !window._hiTempImage) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
         
-        console.log('💾 Inserting into hero_images with image_url:', final_image_url);
         if (adminSupabase) {
+            alert('💾 Inserting into hero_images with image_url: ' + final_image_url);
             const { error } = await adminSupabase.from('hero_images').insert({
                 image_url: final_image_url,
                 alt: document.getElementById('hi-alt').value,
@@ -2133,11 +2130,13 @@ async function handleAddHeroImage() {
             });
             if (error) throw error;
         }
-        // Clear temp image
+        
         window._hiTempImage = null;
-        closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
+        closeModal();
+        showToast('Hero image added!', 'success');
+        renderHeroImages();
     } catch (e) {
-        console.error('❌ handleAddHeroImage error:', e);
+        alert('❌ Error: ' + e.message);
         showToast('Failed: ' + e.message, 'error');
     }
 }
