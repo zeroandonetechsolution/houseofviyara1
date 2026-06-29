@@ -789,6 +789,7 @@ async function handleAddProduct() {
         await loadSupabaseClient();
         let gallery = window.pf_currentGallery || [];
         let videos = window.pf_currentVideos || [];
+        console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
         if (adminSupabase) {
@@ -868,6 +869,7 @@ async function handleEditProduct(id) {
         await loadSupabaseClient();
         let gallery = window.pf_currentGallery || [];
         let videos = window.pf_currentVideos || [];
+        console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
         if (adminSupabase) {
