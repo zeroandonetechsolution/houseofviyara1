@@ -204,12 +204,6 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-banners" onclick="navigateTo('banners')">
             <i class="fas fa-image"></i><span>Banners</span>
           </a>
-          <a class="admin-nav-item" id="nav-header-links" onclick="navigateTo('header-links')">
-            <i class="fas fa-link"></i><span>Nav Bar</span>
-          </a>
-          <a class="admin-nav-item" id="nav-hero-images" onclick="navigateTo('hero-images')">
-            <i class="fas fa-star"></i><span>Hero Section</span>
-          </a>
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
@@ -255,14 +249,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'header-links': 'Nav Bar', 'hero-images': 'Hero Section', orders: 'Orders' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', orders: 'Orders' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'header-links': renderHeaderLinks, 'hero-images': renderHeroImages, orders: renderOrders };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, orders: renderOrders };
     if (sectionMap[section]) sectionMap[section]();
 }
 

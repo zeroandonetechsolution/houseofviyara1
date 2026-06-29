@@ -197,28 +197,20 @@ WHERE (SELECT COUNT(*) FROM banners) < 2;
 
 -- Insert sample header links
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'All', 'all', 'collections.html', 1, true
+SELECT 'Maxis', 'maxis', 'collections.html', 1, true
 WHERE NOT EXISTS (SELECT 1 FROM header_links LIMIT 1);
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Saree', 'saree', 'saree.html', 2, true
+SELECT 'Cord sets', 'cord-sets', 'collections.html', 2, true
 WHERE (SELECT COUNT(*) FROM header_links) < 2;
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Kurtis', 'kurtis', 'kurtis.html', 3, true
+SELECT 'Kurti', 'kurti', 'kurtis.html', 3, true
 WHERE (SELECT COUNT(*) FROM header_links) < 3;
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Ethnic Wear', 'ethnic', 'ethnic.html', 4, true
+SELECT 'Kurti sets', 'kurti-sets', 'collections.html', 4, true
 WHERE (SELECT COUNT(*) FROM header_links) < 4;
-
-INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Party Wear', 'party', 'party.html', 5, true
-WHERE (SELECT COUNT(*) FROM header_links) < 5;
-
-INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Casual Wear', 'casual', 'casual.html', 6, true
-WHERE (SELECT COUNT(*) FROM header_links) < 6;
 
 -- Insert sample hero images
 INSERT INTO hero_images (image_url, alt, display_order, is_active, duration)
