@@ -220,3 +220,35 @@ WHERE (SELECT COUNT(*) FROM hero_images) < 2;
 INSERT INTO hero_images (image_url, alt, display_order, is_active, duration)
 SELECT 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1200&q=80', 'Party Wear Gowns', 3, true, 3000
 WHERE (SELECT COUNT(*) FROM hero_images) < 3;
+
+-- Storage Setup
+-- Create storage bucket if it doesn't exist (run in Supabase SQL Editor or use Dashboard)
+-- Note: The following SQL requires the 'storage' schema, which is available in Supabase projects
+-- For bucket creation, use the Supabase Dashboard or enable the storage API first
+-- Alternatively, create the bucket manually in Supabase Dashboard > Storage
+
+-- Create RLS policies for storage bucket (adjust bucket name to match yours)
+-- First, create the bucket (you can also do this via Supabase Dashboard)
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('HOVB', 'HOVB', true)
+-- ON CONFLICT (id) DO NOTHING;
+
+-- Allow public read access to the bucket
+CREATE POLICY "Allow public read access to HOVB bucket"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'HOVB');
+
+-- Allow public upload access to the bucket
+CREATE POLICY "Allow public upload access to HOVB bucket"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'HOVB');
+
+-- Allow public update access to the bucket
+CREATE POLICY "Allow public update access to HOVB bucket"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'HOVB');
+
+-- Allow public delete access to the bucket
+CREATE POLICY "Allow public delete access to HOVB bucket"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'HOVB');
