@@ -127,44 +127,44 @@ alter publication supabase_realtime add table header_links;
 alter publication supabase_realtime add table hero_images;
 
 -- Insert sample data (10 products)
-INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
-SELECT 'Floral Maxi Dress', 'Elegant floor-length maxi with delicate floral print.', 4500, 3999, 'maxis', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', NULL, true
+INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, gallery, videos, is_trending)
+SELECT 'Floral Maxi Dress', 'Elegant floor-length maxi with delicate floral print.', 4500, 3999, 'maxis', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', NULL, ARRAY['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80'], ARRAY[]::TEXT[], true
 WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
 
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Satin Evening Maxi', 'Luxurious satin maxi perfect for special occasions.', 6200, 'maxis', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', false
+INSERT INTO products (name, description, price, category, image_url, gallery, is_trending)
+SELECT 'Satin Evening Maxi', 'Luxurious satin maxi perfect for special occasions.', 6200, 'maxis', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 2;
 
-INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
-SELECT 'Cord Set - Pastel', 'Comfortable two-piece cord set in soft pastel colors.', 1299, 999, 'cord-sets', 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80', false
+INSERT INTO products (name, description, price, offer_price, category, image_url, gallery, is_trending)
+SELECT 'Cord Set - Pastel', 'Comfortable two-piece cord set in soft pastel colors.', 1299, 999, 'cord-sets', 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 3;
 
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Chikankari Cotton Kurti', 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', 2499, 'kurti', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', true
+INSERT INTO products (name, description, price, category, image_url, gallery, is_trending)
+SELECT 'Chikankari Cotton Kurti', 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', 2499, 'kurti', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80'], true
 WHERE (SELECT COUNT(*) FROM products) < 4;
 
-INSERT INTO products (name, description, price, category, image_url, video_url, is_trending)
-SELECT 'Kurti Set with Dupatta', 'Complete kurti set with matching dupatta and bottoms.', 4500, 'kurti-sets', 'https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80', 'https://www.w3schools.com/html/mov_bbb.mp4', true
+INSERT INTO products (name, description, price, category, image_url, video_url, gallery, videos, is_trending)
+SELECT 'Kurti Set with Dupatta', 'Complete kurti set with matching dupatta and bottoms.', 4500, 'kurti-sets', 'https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80', 'https://www.w3schools.com/html/mov_bbb.mp4', ARRAY['https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80'], ARRAY['https://www.w3schools.com/html/mov_bbb.mp4'], true
 WHERE (SELECT COUNT(*) FROM products) < 5;
 
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'A-Line Rayon Kurti', 'Comfortable straight-cut daily wear rayon kurti.', 1899, 'kurti', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80', false
+INSERT INTO products (name, description, price, category, image_url, gallery, is_trending)
+SELECT 'A-Line Rayon Kurti', 'Comfortable straight-cut daily wear rayon kurti.', 1899, 'kurti', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 6;
 
-INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
-SELECT 'Bohemian Maxi', 'Free-spirited bohemian style maxi dress.', 3500, 2999, 'maxis', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', 'https://www.w3schools.com/html/movie.mp4', true
+INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, gallery, videos, is_trending)
+SELECT 'Bohemian Maxi', 'Free-spirited bohemian style maxi dress.', 3500, 2999, 'maxis', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', 'https://www.w3schools.com/html/movie.mp4', ARRAY['https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80'], ARRAY['https://www.w3schools.com/html/movie.mp4'], true
 WHERE (SELECT COUNT(*) FROM products) < 7;
 
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Cord Set - Printed', 'Trendy printed cord set for casual outings.', 1999, 'cord-sets', 'https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80', false
+INSERT INTO products (name, description, price, category, image_url, gallery, is_trending)
+SELECT 'Cord Set - Printed', 'Trendy printed cord set for casual outings.', 1999, 'cord-sets', 'https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 8;
 
-INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
-SELECT 'Party Wear Kurti Set', 'Glitzy kurti set perfect for parties and celebrations.', 5200, 4499, 'kurti-sets', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80', false
+INSERT INTO products (name, description, price, offer_price, category, image_url, gallery, is_trending)
+SELECT 'Party Wear Kurti Set', 'Glitzy kurti set perfect for parties and celebrations.', 5200, 4499, 'kurti-sets', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 9;
 
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Pastel Georgette Kurti', 'Elegant long kurti with bell sleeves and side slit.', 1600, 'kurti', 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80', false
+INSERT INTO products (name, description, price, category, image_url, gallery, is_trending)
+SELECT 'Pastel Georgette Kurti', 'Elegant long kurti with bell sleeves and side slit.', 1600, 'kurti', 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80', ARRAY['https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80'], false
 WHERE (SELECT COUNT(*) FROM products) < 10;
 
 INSERT INTO categories (name, slug, icon, display_order)
