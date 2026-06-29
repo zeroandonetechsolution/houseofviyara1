@@ -21,7 +21,7 @@ CREATE TABLE products (
     image_url TEXT,
     video_url TEXT,
     gallery TEXT[] DEFAULT '{}',
-    videos TEXT[] DEFAULT '{}'
+    videos TEXT[] DEFAULT '{}',
     stock INTEGER DEFAULT 10,
     rating NUMERIC DEFAULT 4.5,
     is_trending BOOLEAN DEFAULT false NOT NULL,
