@@ -126,6 +126,20 @@ async function setupRealtimeSubscriptions() {
             console.log('📡 Banners channel status:', status);
         });
 
+    // Subscribe to hero_images changes
+    appSupabase
+        .channel('hero-images-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'hero_images' },
+            async (payload) => {
+                console.log('🔄 Hero image changed:', payload);
+                await initHeroCarousel();
+            }
+        )
+        .subscribe((status) => {
+            console.log('📡 Hero images channel status:', status);
+        });
+
     console.log('✅ Realtime subscriptions set up!');
 }
 
@@ -222,7 +236,10 @@ async function fetchHeroImagesPrefer() {
     if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
             const { data, error } = await appSupabase.from('hero_images').select('*').eq('is_active', true).order('display_order', { ascending: true });
-            if (!error && data) return data;
+            if (!error && data) {
+                console.log('📸 Loaded hero images from Supabase:', data);
+                return data;
+            }
         } catch (e) { console.warn('appSupabase hero_images fetch failed', e); }
     }
     if (API_URL) {
@@ -527,7 +544,9 @@ function seedStoreData() {
     }
 
     const existingHeroImages = getStore(STORE_KEYS.hero_images, null);
-    if (!Array.isArray(existingHeroImages)) {
+    // Only use default hero images if we don't have Supabase or if existing is not array
+    const isDefaultHeroImages = Array.isArray(existingHeroImages) && existingHeroImages.every(img => img.image_url?.startsWith('assets/'));
+    if (!Array.isArray(existingHeroImages) || isDefaultHeroImages) {
         saveStore(STORE_KEYS.hero_images, defaultHeroImages);
     }
 
