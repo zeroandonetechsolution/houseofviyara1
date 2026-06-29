@@ -411,6 +411,7 @@ async function renderDashboard() {
 // ═══════════════════════════════════════
 let allProducts = [];
 let productFilter = 'all';
+let allCategories = []; // Store categories here
 
 async function renderProducts() {
     document.getElementById('topbar-actions').innerHTML = `
@@ -420,23 +421,33 @@ async function renderProducts() {
     try {
         await loadSupabaseClient();
         if (adminSupabase) {
-            const { data, error } = await adminSupabase.from('products').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-            allProducts = data;
+            const [productsRes, categoriesRes] = await Promise.all([
+                adminSupabase.from('products').select('*').order('created_at', { ascending: false }),
+                adminSupabase.from('categories').select('*').order('display_order', { ascending: true })
+            ]);
+            if (productsRes.error) throw productsRes.error;
+            if (categoriesRes.error) throw categoriesRes.error;
+            allProducts = productsRes.data;
+            allCategories = categoriesRes.data || [];
         } else {
             allProducts = await apiFetch('/api/admin/products');
+            allCategories = await apiFetch('/api/categories');
         }
+
+        // Build filter tabs HTML
+        let filterTabsHTML = `
+            <button class="filter-tab active" onclick="filterProducts('all', this)">All (${allProducts.length})</button>
+            <button class="filter-tab" onclick="filterProducts('trending', this)"><i class="fas fa-fire"></i> Trending (${allProducts.filter(p => p.is_trending).length})</button>
+        `;
+        allCategories.forEach(cat => {
+            const count = allProducts.filter(p => p.category === cat.slug).length;
+            filterTabsHTML += `<button class="filter-tab" onclick="filterProducts('${cat.slug}', this)">${cat.name} (${count})</button>`;
+        });
 
         content.innerHTML = `
         <div class="admin-filter-bar">
             <div class="admin-filter-tabs" id="product-filter-tabs">
-                <button class="filter-tab active" onclick="filterProducts('all', this)">All (${allProducts.length})</button>
-                <button class="filter-tab" onclick="filterProducts('trending', this)"><i class="fas fa-fire"></i> Trending (${allProducts.filter(p => p.is_trending).length})</button>
-                <button class="filter-tab" onclick="filterProducts('saree', this)">Saree</button>
-                <button class="filter-tab" onclick="filterProducts('kurtis', this)">Kurtis</button>
-                <button class="filter-tab" onclick="filterProducts('ethnic', this)">Ethnic</button>
-                <button class="filter-tab" onclick="filterProducts('party', this)">Party</button>
-                <button class="filter-tab" onclick="filterProducts('casual', this)">Casual</button>
+                ${filterTabsHTML}
             </div>
             <input class="admin-search-input" type="text" placeholder="Search products..." oninput="searchProducts(this.value)" id="product-search">
         </div>
@@ -453,8 +464,11 @@ function filterProducts(filter, btn) {
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     let filtered = allProducts;
-    if (filter === 'trending') filtered = allProducts.filter(p => p.is_trending);
-    else if (filter !== 'all') filtered = allProducts.filter(p => p.category === filter);
+    if (filter === 'trending') {
+        filtered = allProducts.filter(p => p.is_trending);
+    } else if (filter !== 'all') {
+        filtered = allProducts.filter(p => p.category === filter);
+    }
     renderProductGrid(filtered);
 }
 
