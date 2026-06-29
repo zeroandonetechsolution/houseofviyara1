@@ -204,6 +204,9 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-banners" onclick="navigateTo('banners')">
             <i class="fas fa-image"></i><span>Banners</span>
           </a>
+          <a class="admin-nav-item" id="nav-hero-images" onclick="navigateTo('hero-images')">
+            <i class="fas fa-star"></i><span>Hero Section</span>
+          </a>
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
@@ -249,14 +252,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', orders: 'Orders' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, orders: renderOrders };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -998,6 +1001,9 @@ function categoryFormHTML(c = {}) {
       </div>
     </div>
     <script>
+      // Store temporary image data URL here
+      window._cfTempImage = null;
+      
       document.getElementById('cf-name').addEventListener('input', function(){
         const slugEl = document.getElementById('cf-slug');
         if(!slugEl.dataset.edited) slugEl.value = this.value.toLowerCase().replace(/\\s+/g,'-').replace(/[^a-z0-9-]/g,'');
@@ -1012,9 +1018,16 @@ function categoryFormHTML(c = {}) {
         const img = document.getElementById('cf-preview');
         if (!fileInput.files.length) return;
         try {
-          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
-          wrap.style.display = 'block';
-          img.src = uploadedUrl;
+          // Read file as data URL for preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            window._cfTempImage = e.target.result;
+            wrap.style.display = 'block';
+            img.src = e.target.result;
+            // Clear the URL input since we're using a file
+            urlInput.value = '';
+          };
+          reader.readAsDataURL(fileInput.files[0]);
         } catch (e) {
           console.error('Upload failed:', e);
           showToast('Image upload failed', 'error');
@@ -1028,6 +1041,8 @@ function categoryFormHTML(c = {}) {
         if (this.value) {
           wrap.style.display = 'block';
           img.src = this.value;
+          // Clear temp image since we're using a URL
+          window._cfTempImage = null;
         } else {
           wrap.style.display = 'none';
         }
@@ -1056,24 +1071,36 @@ async function openEditCategory(id) {
 async function handleAddCategory() {
     const name = document.getElementById('cf-name').value.trim();
     const slug = document.getElementById('cf-slug').value.trim();
+    const banner_url_input = document.getElementById('cf-banner').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
         await loadSupabaseClient();
+        let final_banner_url = banner_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._cfTempImage) {
+            if (adminSupabase) {
+                final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
+            }
+        }
+        
         if (adminSupabase) {
             const { error } = await adminSupabase.from('categories').insert({
                 name,
                 slug,
                 icon: document.getElementById('cf-icon').value,
-                banner_image: document.getElementById('cf-banner').value,
+                banner_image: final_banner_url,
                 display_order: Number(document.getElementById('cf-order').value || 0)
             });
             if (error) throw error;
         } else {
             await apiFetch('/api/admin/categories', {
                 method: 'POST',
-                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
+                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
             });
         }
+        // Clear temp image
+        window._cfTempImage = null;
         closeModal(); showToast('Category added!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1081,24 +1108,36 @@ async function handleAddCategory() {
 async function handleEditCategory(id) {
     const name = document.getElementById('cf-name').value.trim();
     const slug = document.getElementById('cf-slug').value.trim();
+    const banner_url_input = document.getElementById('cf-banner').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
         await loadSupabaseClient();
+        let final_banner_url = banner_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._cfTempImage) {
+            if (adminSupabase) {
+                final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
+            }
+        }
+        
         if (adminSupabase) {
             const { error } = await adminSupabase.from('categories').update({
                 name,
                 slug,
                 icon: document.getElementById('cf-icon').value,
-                banner_image: document.getElementById('cf-banner').value,
+                banner_image: final_banner_url,
                 display_order: Number(document.getElementById('cf-order').value || 0)
             }).eq('id', id);
             if (error) throw error;
         } else {
             await apiFetch(`/api/admin/categories/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: document.getElementById('cf-banner').value, display_order: Number(document.getElementById('cf-order').value || 0) })
+                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
             });
         }
+        // Clear temp image
+        window._cfTempImage = null;
         closeModal(); showToast('Category updated!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1182,66 +1221,7 @@ function bannerFormHTML(b = {}) {
         <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
       </div>
       <div class="aform-group">
-        <label>Image URL *</label>
-        <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
-      </div>
-      <div id="bf-preview-wrap" style="display:${b.image_url ? 'block' : 'none'}">
-        <img id="bf-preview" src="${b.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'">
-      </div>
-      <div class="aform-row">
-        <div class="aform-group">
-          <label>Title</label>
-          <input class="aform-input" id="bf-title" value="${b.title || ''}" placeholder="e.g. New Arrivals">
-        </div>
-        <div class="aform-group">
-          <label>Display Order</label>
-          <input class="aform-input" id="bf-order" type="number" value="${b.display_order || 0}" placeholder="1">
-        </div>
-      </div>
-      <div class="aform-group">
-        <label>Subtitle</label>
-        <input class="aform-input" id="bf-sub" value="${b.subtitle || ''}" placeholder="e.g. Discover the latest collection">
-      </div>
-      <div class="aform-row">
-        <div class="aform-group">
-          <label>Button Text</label>
-          <input class="aform-input" id="bf-cta-text" value="${b.cta_text || 'Shop Now'}" placeholder="Shop Now">
-        </div>
-        <div class="aform-group">
-          <label>Button Link</label>
-          <input class="aform-input" id="bf-cta-link" value="${b.cta_link || 'collections.html'}" placeholder="collections.html">
-        </div>
-      </div>
-      <div class="aform-check">
-        <input type="checkbox" id="bf-active" ${b.id === undefined || b.is_active ? 'checked' : ''}>
-        <label for="bf-active">Active (show on homepage)</label>
-      </div>
-      <div class="aform-actions">
-        <button class="admin-btn admin-btn-primary" onclick="${b.id ? `handleEditBanner(${b.id})` : 'handleAddBanner()'}">
-          <i class="fas fa-save"></i> ${b.id ? 'Update Banner' : 'Add Banner'}
-        </button>
-        <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Cancel</button>
-      </div>
-    </div>`;
-}
-
-function updateBannerPreview(url) {
-    const wrap = document.getElementById('bf-preview-wrap');
-    const img = document.getElementById('bf-preview');
-    if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = 'block'; }
-    else { wrap.style.display = 'none'; }
-}
-
-function bannerFormHTML(b = {}) {
-    return `
-    <h3>${b.id ? 'Edit Banner' : 'Add New Banner'}</h3>
-    <div class="admin-form">
-      <div class="aform-group">
-        <label>Upload Image</label>
-        <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
-      </div>
-      <div class="aform-group">
-        <label>Image URL *</label>
+        <label>Image URL</label>
         <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
       </div>
       <div id="bf-preview-wrap" style="display:${b.image_url ? 'block' : 'none'}">
@@ -1283,6 +1263,9 @@ function bannerFormHTML(b = {}) {
       </div>
     </div>
     <script>
+      // Store temporary image data URL here
+      window._bfTempImage = null;
+      
       document.getElementById('bf-img-file').addEventListener('change', async function(){
         const fileInput = this;
         const urlInput = document.getElementById('bf-img');
@@ -1290,16 +1273,32 @@ function bannerFormHTML(b = {}) {
         const img = document.getElementById('bf-preview');
         if (!fileInput.files.length) return;
         try {
-          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
-          wrap.style.display = 'block';
-          img.src = uploadedUrl;
-          img.style.display = 'block';
+          // Read file as data URL for preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            window._bfTempImage = e.target.result;
+            wrap.style.display = 'block';
+            img.src = e.target.result;
+            img.style.display = 'block';
+            // Clear the URL input since we're using a file
+            urlInput.value = '';
+          };
+          reader.readAsDataURL(fileInput.files[0]);
         } catch (err) {
           showToast('Upload failed: ' + err.message, 'error');
         }
       });
     <\/script>`;
 }
+
+function updateBannerPreview(url) {
+    const wrap = document.getElementById('bf-preview-wrap');
+    const img = document.getElementById('bf-preview');
+    if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = 'block'; }
+    else { wrap.style.display = 'none'; }
+}
+
+
 
 function openAddBanner() { openModal(bannerFormHTML()); }
 async function openEditBanner(id) {
@@ -1320,15 +1319,28 @@ async function openEditBanner(id) {
 }
 
 async function handleAddBanner() {
-    const image_url = document.getElementById('bf-img').value.trim();
-    if (!image_url) return showToast('Image URL is required', 'error');
+    const image_url_input = document.getElementById('bf-img').value.trim();
     try {
         await loadSupabaseClient();
+        let final_image_url = image_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._bfTempImage) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
+            }
+        }
+        
+        // Require at least one of temp image or URL
+        if (!final_image_url && !window._bfTempImage) {
+            return showToast('Please upload an image or enter an image URL', 'error');
+        }
+        
         if (adminSupabase) {
             const { error } = await adminSupabase.from('banners').insert({
                 title: document.getElementById('bf-title').value,
                 subtitle: document.getElementById('bf-sub').value,
-                image_url,
+                image_url: final_image_url,
                 cta_text: document.getElementById('bf-cta-text').value,
                 cta_link: document.getElementById('bf-cta-link').value,
                 is_active: document.getElementById('bf-active').checked,
@@ -1341,7 +1353,7 @@ async function handleAddBanner() {
                 body: JSON.stringify({
                     title: document.getElementById('bf-title').value,
                     subtitle: document.getElementById('bf-sub').value,
-                    image_url,
+                    image_url: final_image_url,
                     cta_text: document.getElementById('bf-cta-text').value,
                     cta_link: document.getElementById('bf-cta-link').value,
                     is_active: document.getElementById('bf-active').checked,
@@ -1349,20 +1361,44 @@ async function handleAddBanner() {
                 })
             });
         }
+        // Clear temp image
+        window._bfTempImage = null;
         closeModal(); showToast('Banner added!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
 
 async function handleEditBanner(id) {
-    const image_url = document.getElementById('bf-img').value.trim();
-    if (!image_url) return showToast('Image URL is required', 'error');
+    const image_url_input = document.getElementById('bf-img').value.trim();
     try {
         await loadSupabaseClient();
+        let final_image_url = image_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._bfTempImage) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
+            }
+        }
+        
+        // Require at least one of temp image, URL, or existing image
+        if (!final_image_url && !window._bfTempImage) {
+            // Get existing banner to check if it has an image
+            if (adminSupabase) {
+                const { data: existingBanner } = await adminSupabase.from('banners').select('image_url').eq('id', id).single();
+                if (!existingBanner || !existingBanner.image_url) {
+                    return showToast('Please upload an image or enter an image URL', 'error');
+                }
+                final_image_url = existingBanner.image_url;
+            } else {
+                return showToast('Please upload an image or enter an image URL', 'error');
+            }
+        }
+        
         if (adminSupabase) {
             const { error } = await adminSupabase.from('banners').update({
                 title: document.getElementById('bf-title').value,
                 subtitle: document.getElementById('bf-sub').value,
-                image_url,
+                image_url: final_image_url,
                 cta_text: document.getElementById('bf-cta-text').value,
                 cta_link: document.getElementById('bf-cta-link').value,
                 is_active: document.getElementById('bf-active').checked,
@@ -1375,7 +1411,7 @@ async function handleEditBanner(id) {
                 body: JSON.stringify({
                     title: document.getElementById('bf-title').value,
                     subtitle: document.getElementById('bf-sub').value,
-                    image_url,
+                    image_url: final_image_url,
                     cta_text: document.getElementById('bf-cta-text').value,
                     cta_link: document.getElementById('bf-cta-link').value,
                     is_active: document.getElementById('bf-active').checked,
@@ -1383,6 +1419,8 @@ async function handleEditBanner(id) {
                 })
             });
         }
+        // Clear temp image
+        window._bfTempImage = null;
         closeModal(); showToast('Banner updated!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1773,7 +1811,7 @@ function heroImageFormHTML(img = {}) {
         <input class="aform-input" id="hi-img-file" type="file" accept="image/*">
       </div>
       <div class="aform-group">
-        <label>Image URL *</label>
+        <label>Image URL</label>
         <input class="aform-input" id="hi-img" value="${img.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateHeroPreview(this.value)">
       </div>
       <div id="hi-preview-wrap" style="display:${img.image_url ? 'block' : 'none'}">
@@ -1805,6 +1843,9 @@ function heroImageFormHTML(img = {}) {
       </div>
     </div>
     <script>
+      // Store temporary image data URL here
+      window._hiTempImage = null;
+      
       document.getElementById('hi-img-file').addEventListener('change', async function(){
         const fileInput = this;
         const urlInput = document.getElementById('hi-img');
@@ -1812,9 +1853,16 @@ function heroImageFormHTML(img = {}) {
         const imgEl = document.getElementById('hi-preview');
         if (!fileInput.files.length) return;
         try {
-          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
-          wrap.style.display = 'block';
-          imgEl.src = uploadedUrl;
+          // Read file as data URL for preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            window._hiTempImage = e.target.result;
+            wrap.style.display = 'block';
+            imgEl.src = e.target.result;
+            // Clear the URL input since we're using a file
+            urlInput.value = '';
+          };
+          reader.readAsDataURL(fileInput.files[0]);
         } catch (e) {
           console.error('Upload failed:', e);
           showToast('Image upload failed', 'error');
@@ -1826,6 +1874,8 @@ function heroImageFormHTML(img = {}) {
         if (this.value) {
           wrap.style.display = 'block';
           imgEl.src = this.value;
+          // Clear temp image since we're using a URL
+          window._hiTempImage = null;
         } else {
           wrap.style.display = 'none';
         }
@@ -1857,20 +1907,26 @@ async function openEditHeroImage(id) {
 }
 
 async function handleAddHeroImage() {
-    const image_url = document.getElementById('hi-img').value.trim();
-    if (!image_url) return showToast('Image URL is required', 'error');
+    const image_url_input = document.getElementById('hi-img').value.trim();
     try {
         await loadSupabaseClient();
-        let finalUrl = image_url;
-        if (adminSupabase && image_url.startsWith('data:')) {
-            finalUrl = await supabaseUploadFile(image_url, 'hero');
-        } else if (!adminSupabase) {
-            // Handle with API if needed
+        let final_image_url = image_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._hiTempImage) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
+            }
+        }
+        
+        // Require at least one of temp image or URL
+        if (!final_image_url && !window._hiTempImage) {
+            return showToast('Please upload an image or enter an image URL', 'error');
         }
         
         if (adminSupabase) {
             const { error } = await adminSupabase.from('hero_images').insert({
-                image_url: finalUrl,
+                image_url: final_image_url,
                 alt: document.getElementById('hi-alt').value,
                 duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
                 display_order: Number(document.getElementById('hi-order').value || 0),
@@ -1878,23 +1934,42 @@ async function handleAddHeroImage() {
             });
             if (error) throw error;
         }
+        // Clear temp image
+        window._hiTempImage = null;
         closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
 
 async function handleEditHeroImage(id) {
-    const image_url = document.getElementById('hi-img').value.trim();
-    if (!image_url) return showToast('Image URL is required', 'error');
+    const image_url_input = document.getElementById('hi-img').value.trim();
     try {
         await loadSupabaseClient();
-        let finalUrl = image_url;
-        if (adminSupabase && image_url.startsWith('data:')) {
-            finalUrl = await supabaseUploadFile(image_url, 'hero');
+        let final_image_url = image_url_input;
+        
+        // Check if we have a temporary image from file upload
+        if (window._hiTempImage) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
+            }
+        }
+        
+        // Require at least one of temp image, URL, or existing image
+        if (!final_image_url && !window._hiTempImage) {
+            // Get existing hero image to check if it has an image
+            if (adminSupabase) {
+                const { data: existingHero } = await adminSupabase.from('hero_images').select('image_url').eq('id', id).single();
+                if (!existingHero || !existingHero.image_url) {
+                    return showToast('Please upload an image or enter an image URL', 'error');
+                }
+                final_image_url = existingHero.image_url;
+            } else {
+                return showToast('Please upload an image or enter an image URL', 'error');
+            }
         }
         
         if (adminSupabase) {
             const { error } = await adminSupabase.from('hero_images').update({
-                image_url: finalUrl,
+                image_url: final_image_url,
                 alt: document.getElementById('hi-alt').value,
                 duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
                 display_order: Number(document.getElementById('hi-order').value || 0),
@@ -1902,6 +1977,8 @@ async function handleEditHeroImage(id) {
             }).eq('id', id);
             if (error) throw error;
         }
+        // Clear temp image
+        window._hiTempImage = null;
         closeModal(); showToast('Hero image updated!', 'success'); renderHeroImages();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }

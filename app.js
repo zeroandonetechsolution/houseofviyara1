@@ -369,31 +369,23 @@ const API_URL = ''; // no backend API calls in static mode
 
 // Default product catalog for local mode.
 const DEFAULT_PRODUCTS = [
-    { id: 1, name: 'Banarasi Silk Saree', description: 'Elegant gold zari border with premium silk fabric.', price: 4500, offer_price: 4500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true },
-    { id: 2, name: 'Kanjeevaram Saree', description: 'Pure mulberry silk with traditional temple patterns.', price: 6200, offer_price: 6200, category: 'saree', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
-    { id: 3, name: 'Floral Organza Saree', description: 'Lightweight organza saree with delicate floral print.', price: 2800, offer_price: 2800, category: 'saree', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false },
-    { id: 4, name: 'Georgette Designer Saree', description: 'Glamorous saree with sequin work, perfect for cocktails.', price: 3500, offer_price: 3500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true },
-    { id: 5, name: 'Cotton Handloom Saree', description: 'Comfortable and breathable handwoven cotton saree.', price: 1999, offer_price: 1999, category: 'saree', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false },
-    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true },
-    { id: 7, name: 'Floral Anarkali Kurta', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false },
-    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false },
-    { id: 9, name: 'Embroidered Silk Kurta', description: 'Festive wear silk kurta with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false },
-    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true },
-    { id: 11, name: 'Velvet Lehenga Choli', description: 'Heavy embroidered velvet lehenga set for bridal wear.', price: 8900, offer_price: 8900, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true },
-    { id: 12, name: 'Anarkali Suit Set', description: 'Traditional 3-piece georgette anarkali with net dupatta.', price: 4200, offer_price: 4200, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false },
-    { id: 13, name: 'Sharara Suit Set', description: 'Trendy sharara bottom with short kurti and matching dupatta.', price: 3800, offer_price: 3800, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
-    { id: 14, name: 'Palazzo Suit Set', description: 'Comfortable straight kurta with wide-leg printed palazzos.', price: 2600, offer_price: 2600, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false },
-    { id: 15, name: 'Banarasi Brocade Suit', description: 'Rich Banarasi brocade fabric with elegant design and details.', price: 5500, offer_price: 5500, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false },
-    { id: 16, name: 'Satin Evening Gown', description: 'Sleek and luxurious satin gown with cowl neck.', price: 7500, offer_price: 7500, category: 'party', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true },
-    { id: 17, name: 'Sequin Bodycon Dress', description: 'Sparkling sequin party dress for clubbing and night events.', price: 4800, offer_price: 4800, category: 'party', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false },
-    { id: 18, name: 'Off-Shoulder Velvet Dress', description: 'Classic luxury velvet dress with off-shoulder design.', price: 3900, offer_price: 3900, category: 'party', image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80', is_trending: true },
-    { id: 19, name: 'Chiffon Cocktail Dress', description: 'Flowy knee-length designer cocktail dress.', price: 3200, offer_price: 3200, category: 'party', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80', is_trending: false },
-    { id: 20, name: 'Embroidered Party Gown', description: 'Floor-length net gown with gorgeous embellishments.', price: 6800, offer_price: 6800, category: 'party', image_url: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=800&q=80', is_trending: false },
-    { id: 21, name: 'Linen Summer Dress', description: 'Lightweight breathable linen dress for sunny days.', price: 2200, offer_price: 2200, category: 'casual', image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80', is_trending: false },
-    { id: 22, name: 'Denim Dungaree Set', description: 'Stylish classic blue denim dungarees with cotton inner.', price: 2600, offer_price: 2600, category: 'casual', image_url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80', is_trending: false },
-    { id: 23, name: 'Oversized Cotton Tee', description: 'Casual everyday oversized tee made of organic cotton.', price: 999, offer_price: 999, category: 'casual', image_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', is_trending: false },
-    { id: 24, name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, offer_price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: true },
-    { id: 25, name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, offer_price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: false }
+    { id: 1, name: 'Floral Maxi Dress', description: 'Elegant floor-length maxi with delicate floral print.', price: 4500, offer_price: 4500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true },
+    { id: 2, name: 'Satin Evening Maxi', description: 'Luxurious satin maxi perfect for special occasions.', price: 6200, offer_price: 6200, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
+    { id: 3, name: 'Cotton Summer Maxi', description: 'Lightweight breathable cotton maxi for sunny days.', price: 2800, offer_price: 2800, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false },
+    { id: 4, name: 'Cord Set - Pastel', description: 'Comfortable two-piece cord set in soft pastel colors.', price: 3500, offer_price: 3500, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true },
+    { id: 5, name: 'Cord Set - Printed', description: 'Trendy printed cord set for casual outings.', price: 1999, offer_price: 1999, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false },
+    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true },
+    { id: 7, name: 'Floral Anarkali Kurti', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false },
+    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false },
+    { id: 9, name: 'Embroidered Silk Kurti', description: 'Festive wear silk kurti with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false },
+    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true },
+    { id: 11, name: 'Kurti Set with Dupatta', description: 'Complete kurti set with matching dupatta and bottoms.', price: 4500, offer_price: 4500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true },
+    { id: 12, name: 'Party Wear Kurti Set', description: 'Glitzy kurti set perfect for parties and celebrations.', price: 5200, offer_price: 5200, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false },
+    { id: 13, name: 'Cotton Kurti Set', description: 'Breathable cotton kurti set for daily wear.', price: 2800, offer_price: 2800, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
+    { id: 14, name: 'Printed Kurti Set', description: 'Vibrant printed kurti set with contrasting dupatta.', price: 3600, offer_price: 3600, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false },
+    { id: 15, name: 'Embroidered Kurti Set', description: 'Premium kurti set with intricate embroidery work.', price: 6500, offer_price: 6500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false },
+    { id: 16, name: 'Bohemian Maxi', description: 'Free-spirited bohemian style maxi dress.', price: 3500, offer_price: 3500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true },
+    { id: 17, name: 'Cord Set - Neon', description: 'Bold neon cord set for a fun, trendy look.', price: 2800, offer_price: 2800, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false }
 ];
 const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
 
@@ -407,20 +399,17 @@ const STORE_KEYS = {
 };
 
 const defaultCategories = [
-    { id: 1, name: 'Saree', slug: 'saree' },
-    { id: 2, name: 'Kurtis', slug: 'kurtis' },
-    { id: 3, name: 'Ethnic Wear', slug: 'ethnic' },
-    { id: 4, name: 'Party Wear', slug: 'party' },
-    { id: 5, name: 'Casual Wear', slug: 'casual' }
+    { id: 1, name: 'Maxis', slug: 'maxis' },
+    { id: 2, name: 'Cord sets', slug: 'cord-sets' },
+    { id: 3, name: 'Kurti', slug: 'kurti' },
+    { id: 4, name: 'Kurti sets', slug: 'kurti-sets' }
 ];
 
 const defaultHeaderLinks = [
-    { id: 1, label: 'All', slug: 'all', href: 'collections.html' },
-    { id: 2, label: 'Saree', slug: 'saree', href: 'saree.html' },
-    { id: 3, label: 'Kurtis', slug: 'kurtis', href: 'kurtis.html' },
-    { id: 4, label: 'Ethnic Wear', slug: 'ethnic', href: 'ethnic.html' },
-    { id: 5, label: 'Party Wear', slug: 'party', href: 'party.html' },
-    { id: 6, label: 'Casual Wear', slug: 'casual', href: 'casual.html' }
+    { id: 1, label: 'Maxis', slug: 'maxis', href: 'Maxis.html' },
+    { id: 2, label: 'Cord sets', slug: 'cord-sets', href: 'Cord sets.html' },
+    { id: 3, label: 'Kurti', slug: 'kurti', href: 'Kurti.html' },
+    { id: 4, label: 'Kurti sets', slug: 'kurti-sets', href: 'Kurti sets.html' }
 ];
 
 const defaultBanners = [

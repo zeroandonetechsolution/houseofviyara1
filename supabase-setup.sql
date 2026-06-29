@@ -128,88 +128,84 @@ alter publication supabase_realtime add table hero_images;
 
 -- Insert sample data (10 products)
 INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
-SELECT 'Banarasi Silk Saree', 'Elegant gold zari border with premium silk fabric.', 4500, 3999, 'saree', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', NULL, true
+SELECT 'Floral Maxi Dress', 'Elegant floor-length maxi with delicate floral print.', 4500, 3999, 'maxis', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', NULL, true
 WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Kanjeevaram Saree', 'Pure mulberry silk with traditional temple patterns.', 6200, 'saree', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', false
+SELECT 'Satin Evening Maxi', 'Luxurious satin maxi perfect for special occasions.', 6200, 'maxis', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 2;
 
 INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
-SELECT 'Floral Print Kurti', 'Soft cotton with vibrant floral prints.', 1299, 999, 'kurtis', 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80', false
+SELECT 'Cord Set - Pastel', 'Comfortable two-piece cord set in soft pastel colors.', 1299, 999, 'cord-sets', 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 3;
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Embroidered Kurti Set', 'Heavy thread work kurti with dupatta.', 2499, 'kurtis', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', true
+SELECT 'Chikankari Cotton Kurti', 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', 2499, 'kurti', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', true
 WHERE (SELECT COUNT(*) FROM products) < 4;
 
 INSERT INTO products (name, description, price, category, image_url, video_url, is_trending)
-SELECT 'Lehenga Choli Set', 'Bridal lehenga with intricate embroidery.', 15999, 'ethnic', 'https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80', 'https://www.w3schools.com/html/mov_bbb.mp4', true
+SELECT 'Kurti Set with Dupatta', 'Complete kurti set with matching dupatta and bottoms.', 4500, 'kurti-sets', 'https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80', 'https://www.w3schools.com/html/mov_bbb.mp4', true
 WHERE (SELECT COUNT(*) FROM products) < 5;
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Salwar Kameez', 'Comfortable cotton salwar suit.', 1899, 'ethnic', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80', false
+SELECT 'A-Line Rayon Kurti', 'Comfortable straight-cut daily wear rayon kurti.', 1899, 'kurti', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 6;
 
 INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
-SELECT 'Party Wear Gown', 'Sequined evening gown for special occasions.', 7999, 6499, 'party', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', 'https://www.w3schools.com/html/movie.mp4', true
+SELECT 'Bohemian Maxi', 'Free-spirited bohemian style maxi dress.', 3500, 2999, 'maxis', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', 'https://www.w3schools.com/html/movie.mp4', true
 WHERE (SELECT COUNT(*) FROM products) < 7;
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Cocktail Dress', 'Satin cocktail dress in deep red.', 4999, 'party', 'https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80', false
+SELECT 'Cord Set - Printed', 'Trendy printed cord set for casual outings.', 1999, 'cord-sets', 'https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 8;
 
 INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
-SELECT 'Casual T-Shirt', 'Soft cotton t-shirt for daily wear.', 599, 399, 'casual', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80', false
+SELECT 'Party Wear Kurti Set', 'Glitzy kurti set perfect for parties and celebrations.', 5200, 4499, 'kurti-sets', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 9;
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Denim Jeans', 'Comfort-fit blue denim jeans.', 1499, 'casual', 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80', false
+SELECT 'Pastel Georgette Kurti', 'Elegant long kurti with bell sleeves and side slit.', 1600, 'kurti', 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 10;
 
 INSERT INTO categories (name, slug, icon, display_order)
-SELECT 'Saree', 'saree', 'fas fa-female', 1
+SELECT 'Maxis', 'maxis', 'fas fa-female', 1
 WHERE NOT EXISTS (SELECT 1 FROM categories LIMIT 1);
 
 INSERT INTO categories (name, slug, icon, display_order)
-SELECT 'Kurtis', 'kurtis', 'fas fa-tshirt', 2
+SELECT 'Cord sets', 'cord-sets', 'fas fa-tshirt', 2
 WHERE (SELECT COUNT(*) FROM categories) < 2;
 
 INSERT INTO categories (name, slug, icon, display_order)
-SELECT 'Ethnic Wear', 'ethnic', 'fas fa-star', 3
+SELECT 'Kurti', 'kurti', 'fas fa-star', 3
 WHERE (SELECT COUNT(*) FROM categories) < 3;
 
 INSERT INTO categories (name, slug, icon, display_order)
-SELECT 'Party Wear', 'party', 'fas fa-glass-cheers', 4
+SELECT 'Kurti sets', 'kurti-sets', 'fas fa-glass-cheers', 4
 WHERE (SELECT COUNT(*) FROM categories) < 4;
 
-INSERT INTO categories (name, slug, icon, display_order)
-SELECT 'Casual Wear', 'casual', 'fas fa-leaf', 5
-WHERE (SELECT COUNT(*) FROM categories) < 5;
-
 INSERT INTO banners (title, subtitle, image_url, cta_link, cta_text, is_active, display_order)
-SELECT 'Saree Spotlight', 'Handpicked premium sarees for every occasion', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&q=80', 'saree.html', 'Explore Sarees', true, 1
+SELECT 'Maxis Collection', 'Elegant maxi dresses for every occasion', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&q=80', 'Maxis.html', 'Explore Maxis', true, 1
 WHERE NOT EXISTS (SELECT 1 FROM banners LIMIT 1);
 
 INSERT INTO banners (title, subtitle, image_url, cta_link, cta_text, is_active, display_order)
-SELECT 'Kurtis Collection', 'Soft prints and rich embroidery for daily wear', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=1200&q=80', 'kurtis.html', 'Shop Kurtis', true, 2
+SELECT 'Kurti Collection', 'Soft prints and rich embroidery for daily wear', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=1200&q=80', 'Kurti.html', 'Shop Kurtis', true, 2
 WHERE (SELECT COUNT(*) FROM banners) < 2;
 
 -- Insert sample header links
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Maxis', 'maxis', 'collections.html', 1, true
+SELECT 'Maxis', 'maxis', 'Maxis.html', 1, true
 WHERE NOT EXISTS (SELECT 1 FROM header_links LIMIT 1);
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Cord sets', 'cord-sets', 'collections.html', 2, true
+SELECT 'Cord sets', 'cord-sets', 'Cord sets.html', 2, true
 WHERE (SELECT COUNT(*) FROM header_links) < 2;
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Kurti', 'kurti', 'kurtis.html', 3, true
+SELECT 'Kurti', 'kurti', 'Kurti.html', 3, true
 WHERE (SELECT COUNT(*) FROM header_links) < 3;
 
 INSERT INTO header_links (name, slug, href, display_order, is_active)
-SELECT 'Kurti sets', 'kurti-sets', 'collections.html', 4, true
+SELECT 'Kurti sets', 'kurti-sets', 'Kurti sets.html', 4, true
 WHERE (SELECT COUNT(*) FROM header_links) < 4;
 
 -- Insert sample hero images
