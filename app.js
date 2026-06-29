@@ -712,11 +712,14 @@ function renderCategoryList(categories, container) {
     `).join('');
 }
 
-function getCurrentHeaderSlug() {
+async function getCurrentHeaderSlug() {
     if (window.category) return window.category;
     const path = window.location.pathname.toLowerCase();
     if (path.endsWith('collections.html')) return 'all';
-    return ['saree', 'kurtis', 'ethnic', 'party', 'casual'].find(slug => path.includes(`${slug}.html`)) || '';
+    // Try to get categories from Supabase
+    const categories = await fetchCategoriesPrefer();
+    const slugs = categories.map(c => c.slug);
+    return slugs.find(slug => path.includes(`${slug}.html`)) || '';
 }
 
 async function renderHeaderNavigation() {

@@ -534,9 +534,7 @@ async function deleteProduct(id, name) {
     });
 }
 
-function productFormHTML(p = {}) {
-    const cats = ['saree', 'kurtis', 'ethnic', 'party', 'casual'];
-    const catLabels = { saree: 'Saree', kurtis: 'Kurtis', ethnic: 'Ethnic Wear', party: 'Party Wear', casual: 'Casual Wear' };
+function productFormHTML(p = {}, categories = []) {
     const gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
     const videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
     return `
@@ -564,7 +562,7 @@ function productFormHTML(p = {}) {
         <div class="aform-group">
           <label>Category *</label>
           <select class="aform-input" id="pf-cat">
-            ${cats.map(c => `<option value="${c}" ${p.category === c ? 'selected' : ''}>${catLabels[c]}</option>`).join('')}
+            ${categories.map(c => `<option value="${c.slug}" ${p.category === c.slug ? 'selected' : ''}>${c.name}</option>`).join('')}
           </select>
         </div>
         <div class="aform-group">
@@ -727,22 +725,42 @@ function productFormHTML(p = {}) {
     <\/script>`;
 }
 
-function openAddProduct() {
-    openModal(productFormHTML());
+async function openAddProduct() {
+    try {
+        await loadSupabaseClient();
+        let categories = [];
+        if (adminSupabase) {
+            const { data, error } = await adminSupabase.from('categories').select('*').order('display_order', { ascending: true });
+            if (error) throw error;
+            categories = data || [];
+        } else {
+            categories = await apiFetch('/api/categories');
+        }
+        openModal(productFormHTML({}, categories));
+    } catch (e) {
+        showToast('Could not load categories', 'error');
+    }
 }
 
 async function openEditProduct(id) {
     try {
         let p;
+        let categories = [];
         await loadSupabaseClient();
         if (adminSupabase) {
-            const { data, error } = await adminSupabase.from('products').select('*').eq('id', id).single();
-            if (error) throw error;
-            p = data;
+            const [productResult, catResult] = await Promise.all([
+                adminSupabase.from('products').select('*').eq('id', id).single(),
+                adminSupabase.from('categories').select('*').order('display_order', { ascending: true })
+            ]);
+            if (productResult.error) throw productResult.error;
+            if (catResult.error) throw catResult.error;
+            p = productResult.data;
+            categories = catResult.data || [];
         } else {
             p = await apiFetch(`/api/products/${id}`);
+            categories = await apiFetch('/api/categories');
         }
-        openModal(productFormHTML(p));
+        openModal(productFormHTML(p, categories));
     } catch (e) {
         showToast('Could not load product', 'error');
     }
@@ -2100,27 +2118,24 @@ async function openEditHeroImage(id) {
 }
 
 async function handleAddHeroImage() {
-    alert('✅ handleAddHeroImage called!');
     const image_url_input = document.getElementById('hi-img').value.trim();
-    
     try {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
+        // Check if we have a temporary image from file upload
         if (window._hiTempImage) {
-            alert('📤 Uploading temp image to Supabase...');
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
-                alert('✅ Got final_image_url: ' + final_image_url);
             }
         }
         
+        // Require at least one of temp image or URL
         if (!final_image_url && !window._hiTempImage) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
         
         if (adminSupabase) {
-            alert('💾 Inserting into hero_images with image_url: ' + final_image_url);
             const { error } = await adminSupabase.from('hero_images').insert({
                 image_url: final_image_url,
                 alt: document.getElementById('hi-alt').value,
@@ -2130,13 +2145,11 @@ async function handleAddHeroImage() {
             });
             if (error) throw error;
         }
-        
+        // Clear temp image
         window._hiTempImage = null;
-        closeModal();
-        showToast('Hero image added!', 'success');
-        renderHeroImages();
+        closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
     } catch (e) {
-        alert('❌ Error: ' + e.message);
+        console.error('❌ handleAddHeroImage error:', e);
         showToast('Failed: ' + e.message, 'error');
     }
 }
