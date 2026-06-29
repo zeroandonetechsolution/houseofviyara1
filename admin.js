@@ -981,15 +981,33 @@ function categoryFormHTML(c = {}) {
           <input class="aform-input" id="cf-order" type="number" value="${c.display_order || 0}" placeholder="1">
         </div>
       </div>
+      
       <div class="aform-group">
-        <label>Upload Banner Image</label>
-        <input class="aform-input" id="cf-banner-file" type="file" accept="image/*">
-        <small class="admin-form-hint">Choose a local file to upload and populate the Banner Image URL automatically.</small>
+        <label style="font-weight:bold;">Choose Banner Image Source <span style="color:#999;font-weight:normal;">(Select one: upload OR URL)</span></label>
       </div>
-      <div class="aform-group">
-        <label>Banner Image URL</label>
-        <input class="aform-input" id="cf-banner" value="${c.banner_image || ''}" placeholder="https://images.unsplash.com/...">
+      
+      <div style="display:flex;gap:15px;align-items:flex-start;margin-bottom:15px;">
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
+            </label>
+            <input class="aform-input" id="cf-banner-file" type="file" accept="image/*">
+          </div>
+        </div>
+        
+        <div style="display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:18px;font-weight:bold;color:#999;">OR</div>
+        
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-link" style="color:#FF007A;"></i> Enter Banner URL
+            </label>
+            <input class="aform-input" id="cf-banner" value="${c.banner_image || ''}" placeholder="https://images.unsplash.com/...">
+          </div>
+        </div>
       </div>
+      
       <div id="cf-preview-wrap" style="display:${c.banner_image ? 'block' : 'none'}">
         <img id="cf-preview" src="${c.banner_image || ''}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:15px;" onerror="this.style.display='none'">
       </div>
@@ -1217,13 +1235,31 @@ function bannerFormHTML(b = {}) {
     <h3>${b.id ? 'Edit Banner' : 'Add New Banner'}</h3>
     <div class="admin-form">
       <div class="aform-group">
-        <label>Upload Image</label>
-        <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
+        <label style="font-weight:bold;">Choose Image Source <span style="color:#999;font-weight:normal;">(Select one: upload OR URL)</span></label>
       </div>
-      <div class="aform-group">
-        <label>Image URL</label>
-        <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
+      
+      <div style="display:flex;gap:15px;align-items:flex-start;margin-bottom:15px;">
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
+            </label>
+            <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
+          </div>
+        </div>
+        
+        <div style="display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:18px;font-weight:bold;color:#999;">OR</div>
+        
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-link" style="color:#FF007A;"></i> Enter Image URL
+            </label>
+            <input class="aform-input" id="bf-img" value="${b.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateBannerPreview(this.value)">
+          </div>
+        </div>
       </div>
+      
       <div id="bf-preview-wrap" style="display:${b.image_url ? 'block' : 'none'}">
         <img id="bf-preview" src="${b.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'">
       </div>
@@ -1807,13 +1843,31 @@ function heroImageFormHTML(img = {}) {
     <h3>${img.id ? 'Edit Hero Image' : 'Add New Hero Image'}</h3>
     <div class="admin-form">
       <div class="aform-group">
-        <label>Upload Image</label>
-        <input class="aform-input" id="hi-img-file" type="file" accept="image/*">
+        <label style="font-weight:bold;">Choose Image Source <span style="color:#999;font-weight:normal;">(Select one: upload OR URL)</span></label>
       </div>
-      <div class="aform-group">
-        <label>Image URL</label>
-        <input class="aform-input" id="hi-img" value="${img.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateHeroPreview(this.value)">
+      
+      <div style="display:flex;gap:15px;align-items:flex-start;margin-bottom:15px;">
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
+            </label>
+            <input class="aform-input" id="hi-img-file" type="file" accept="image/*">
+          </div>
+        </div>
+        
+        <div style="display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:18px;font-weight:bold;color:#999;">OR</div>
+        
+        <div style="flex:1;">
+          <div class="aform-group" style="margin-bottom:0;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-link" style="color:#FF007A;"></i> Enter Image URL
+            </label>
+            <input class="aform-input" id="hi-img" value="${img.image_url || ''}" placeholder="https://images.unsplash.com/..." oninput="updateHeroPreview(this.value)">
+          </div>
+        </div>
       </div>
+      
       <div id="hi-preview-wrap" style="display:${img.image_url ? 'block' : 'none'}">
         <img id="hi-preview" src="${img.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;margin-bottom:15px;" onerror="this.style.display='none'">
       </div>
