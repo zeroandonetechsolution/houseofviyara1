@@ -1311,10 +1311,22 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
         </div>
     `;
 
-    // Get similar products (same category, exclude current product)
-    let similarProducts = allProducts
-        .filter(p => p.id !== product.id && p.category === product.category)
-        .slice(0, 4); // Show up to 4 similar products
+    // Get similar products: first try using similar_products field, then fall back to category matches
+    let similarProducts = [];
+    if (Array.isArray(product.similar_products) && product.similar_products.length > 0) {
+        // Find products by IDs in similar_products
+        similarProducts = product.similar_products
+            .map(id => allProducts.find(p => p.id === id))
+            .filter(Boolean) // Remove any undefined products
+            .slice(0, 4);
+    } 
+    
+    // If no similar products from field, fall back to category matches
+    if (similarProducts.length === 0) {
+        similarProducts = allProducts
+            .filter(p => p.id !== product.id && p.category === product.category)
+            .slice(0, 4);
+    }
 
     // Render similar products as full product cards
     const similarProductsHtml = similarProducts.length > 0 ? similarProducts.map((p, idx) => {

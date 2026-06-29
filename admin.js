@@ -413,8 +413,9 @@ let allProducts = [];
 let productFilter = 'all';
 let allCategories = []; // Store categories here
 let tempProductData = { // Temp storage for product form
-  gallery: [],
-  videos: []
+    gallery: [],
+    videos: [],
+    variants: [] // Each variant: {id?, color, size, price, image_url, stock}
 };
 
 async function renderProducts() {
@@ -552,9 +553,11 @@ async function deleteProduct(id, name) {
     });
 }
 
-function productFormHTML(p = {}, categories = []) {
+function productFormHTML(p = {}, categories = [], allProducts = []) {
     const gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
     const videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
+    // Filter out current product from similar products list
+    const availableProducts = allProducts.filter(prod => prod.id !== p.id);
     return `
     <h3>${p.id ? 'Edit Product' : 'Add New Product'}</h3>
     <div class="admin-form">
@@ -611,6 +614,43 @@ function productFormHTML(p = {}, categories = []) {
         </div>
         <small class="admin-form-hint">Add up to 5 videos (upload files or paste URLs)</small>
       </div>
+      <!-- Product Variants Section -->
+      <div class="aform-group">
+        <label>Product Variants</label>
+        <small class="admin-form-hint" style="margin-bottom:10px;display:block;">Add different options (colors, sizes, etc.) for this product</small>
+        <div id="pf-variants-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;"></div>
+
+        <!-- Add New Variant Form -->
+        <div style="border:2px dashed #aaa;padding:15px;border-radius:8px;background:#f9f9f9;">
+          <h4 style="margin:0 0 15px 0;"><i class="fas fa-plus-circle"></i> Add New Variant</h4>
+          <div class="aform-row">
+            <div class="aform-group" style="flex:1;">
+              <label>Color</label>
+              <input class="aform-input" id="pf-variant-color" placeholder="e.g. Red, Blue">
+            </div>
+            <div class="aform-group" style="width:150px;">
+              <label>Size</label>
+              <input class="aform-input" id="pf-variant-size" placeholder="e.g. S, M, L, XL">
+            </div>
+          </div>
+          <div class="aform-row">
+            <div class="aform-group" style="flex:1;">
+              <label>Variant Price (₹)</label>
+              <input class="aform-input" id="pf-variant-price" type="number" placeholder="Leave blank to use main product price">
+            </div>
+            <div class="aform-group" style="width:150px;">
+              <label>Stock</label>
+              <input class="aform-input" id="pf-variant-stock" type="number" value="10">
+            </div>
+          </div>
+          <div class="aform-group">
+            <label>Variant Image</label>
+            <input type="file" id="pf-variant-image-file" accept="image/*" style="margin-bottom:5px;">
+            <input class="aform-input" id="pf-variant-image-url" placeholder="Or paste image URL...">
+          </div>
+          <button type="button" class="admin-btn admin-btn-primary" id="pf-add-variant" style="width:100%;">Add Variant</button>
+        </div>
+      </div>
       <div class="aform-check">
         <input type="checkbox" id="pf-trending" ${p.is_trending ? 'checked' : ''}>
         <label for="pf-trending"><i class="fas fa-fire" style="color:#FF6B35"></i> Mark as Trending</label>
@@ -661,6 +701,59 @@ function pf_renderVideos() {
             tempProductData.videos.splice(idx, 1);
             pf_renderVideos();
         });
+    });
+}
+
+// Render product variants
+function pf_renderVariants() {
+    const container = document.getElementById('pf-variants-container');
+    if (!container) return;
+
+    container.innerHTML = tempProductData.variants.map((variant, idx) => `
+        <div class="variant-tag" style="display:flex;flex-direction:column;gap:2px;padding:10px;border:2px solid #FF007A;border-radius:8px;background:#fff;">
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="font-weight:700;">${variant.color || 'Default'}</span>
+                <span style="background:#ddd;padding:2px 8px;border-radius:4px;font-size:0.85rem;">${variant.size || 'One Size'}</span>
+                <button type="button" class="pf-remove-variant-btn" data-index="${idx}" style="margin-left:auto;background:none;border:none;color:#FF007A;cursor:pointer;font-size:18px;line-height:1;">×</button>
+            </div>
+            ${variant.price ? `<span style="font-size:0.85rem;">₹${variant.price}</span>` : ''}
+            ${variant.image_url ? `<img src="${variant.image_url}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin-top:5px;">` : ''}
+        </div>
+    `).join('');
+
+    // Update add variant button state based on limit
+    const addVariantBtn = document.getElementById('pf-add-variant');
+    if (addVariantBtn) {
+        if (tempProductData.variants.length >= 15) {
+            addVariantBtn.disabled = true;
+            addVariantBtn.innerHTML = 'Limit Reached (15)';
+            addVariantBtn.style.opacity = '0.5';
+            addVariantBtn.style.cursor = 'not-allowed';
+        } else {
+            addVariantBtn.disabled = false;
+            addVariantBtn.innerHTML = 'Add Variant';
+            addVariantBtn.style.opacity = '1';
+            addVariantBtn.style.cursor = 'pointer';
+        }
+    }
+
+    // Reattach remove event listeners
+    document.querySelectorAll('.pf-remove-variant-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.index);
+            tempProductData.variants.splice(idx, 1);
+            pf_renderVariants();
+        });
+    });
+}
+
+// Helper to read file as data URL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
     });
 }
 
@@ -730,6 +823,79 @@ function setupProductForm() {
         }
     });
 
+    // Setup add variant button
+    const addVariantBtn = document.getElementById('pf-add-variant');
+    if (addVariantBtn) {
+        addVariantBtn.addEventListener('click', async () => {
+            // Check variant limit first
+            if (tempProductData.variants.length >= 15) {
+                alert('You can only add up to 15 variants per product!');
+                return;
+            }
+
+            // Get form values
+            const color = document.getElementById('pf-variant-color').value.trim();
+            const size = document.getElementById('pf-variant-size').value.trim();
+            const price = document.getElementById('pf-variant-price').value;
+            const stock = document.getElementById('pf-variant-stock').value || 10;
+            const imageFile = document.getElementById('pf-variant-image-file').files[0];
+            const imageUrlInput = document.getElementById('pf-variant-image-url').value.trim();
+
+            if (!color && !size) {
+                alert('Please enter at least a Color or Size for the variant!');
+                return;
+            }
+
+            // Show loading state on button
+            addVariantBtn.disabled = true;
+            addVariantBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+            try {
+                let finalImageUrl = '';
+
+                // Upload image if file is selected
+                if (imageFile) {
+                    const dataUrl = await readFileAsDataURL(imageFile);
+                    finalImageUrl = await supabaseUploadFile(dataUrl, 'products');
+                } else if (imageUrlInput) {
+                    finalImageUrl = imageUrlInput;
+                }
+
+                // Create new variant object
+                const newVariant = {
+                    id: Date.now(), // Temp ID for UI
+                    color: color || '',
+                    size: size || '',
+                    price: price ? Number(price) : null,
+                    stock: Number(stock),
+                    image_url: finalImageUrl || ''
+                };
+
+                // Add to variants list
+                tempProductData.variants.push(newVariant);
+                pf_renderVariants();
+
+                // Reset form fields
+                document.getElementById('pf-variant-color').value = '';
+                document.getElementById('pf-variant-size').value = '';
+                document.getElementById('pf-variant-price').value = '';
+                document.getElementById('pf-variant-stock').value = '10';
+                document.getElementById('pf-variant-image-file').value = '';
+                document.getElementById('pf-variant-image-url').value = '';
+
+                showToast('Variant added!', 'success');
+
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to add variant: ' + (err.message || 'Unknown error'), 'error');
+            } finally {
+                // Restore button state
+                addVariantBtn.disabled = false;
+                addVariantBtn.innerHTML = 'Add Variant';
+            }
+        });
+    }
+
     // Setup save button
     document.getElementById('pf-save-btn').addEventListener('click', async () => {
         const id = document.getElementById('pf-save-btn').dataset.id;
@@ -740,9 +906,10 @@ function setupProductForm() {
         }
     });
 
-    // Render initial gallery/videos
+    // Render initial gallery/videos/variants
     pf_renderGallery();
     pf_renderVideos();
+    pf_renderVariants();
 }
 
 async function openAddProduct() {
@@ -759,6 +926,7 @@ async function openAddProduct() {
         // Reset temp data
         tempProductData.gallery = [];
         tempProductData.videos = [];
+        tempProductData.variants = [];
         openModal(productFormHTML({}, categories));
         setupProductForm();
     } catch (e) {
@@ -787,6 +955,7 @@ async function openEditProduct(id) {
         // Set temp data
         tempProductData.gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
         tempProductData.videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
+        tempProductData.variants = Array.isArray(p.variants) ? p.variants : [];
         openModal(productFormHTML(p, categories));
         setupProductForm();
     } catch (e) {
@@ -803,7 +972,8 @@ async function handleAddProduct() {
         await loadSupabaseClient();
         let gallery = tempProductData.gallery || [];
         let videos = tempProductData.videos || [];
-        console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos);
+        let variants = tempProductData.variants || [];
+        console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
         if (adminSupabase) {
@@ -828,6 +998,13 @@ async function handleAddProduct() {
                 }
             }
             videos = uploadedVideos;
+
+            // Also upload variant images if they are data URLs
+            for (const variant of variants) {
+                if (variant.image_url && variant.image_url.startsWith('data:')) {
+                    variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                }
+            }
         }
 
         const image_url = gallery.length > 0 ? gallery[0] : '';
@@ -845,6 +1022,7 @@ async function handleAddProduct() {
                 video_url,
                 gallery,
                 videos,
+                variants,
                 is_trending: document.getElementById('pf-trending').checked
             });
             if (error) throw error;
@@ -862,6 +1040,7 @@ async function handleAddProduct() {
                     video_url,
                     gallery,
                     videos,
+                    variants,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });
@@ -883,7 +1062,8 @@ async function handleEditProduct(id) {
         await loadSupabaseClient();
         let gallery = tempProductData.gallery || [];
         let videos = tempProductData.videos || [];
-        console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos);
+        let variants = tempProductData.variants || [];
+        console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
         if (adminSupabase) {
@@ -908,6 +1088,13 @@ async function handleEditProduct(id) {
                 }
             }
             videos = uploadedVideos;
+
+            // Also upload variant images if they are data URLs
+            for (const variant of variants) {
+                if (variant.image_url && variant.image_url.startsWith('data:')) {
+                    variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                }
+            }
         }
 
         const image_url = gallery.length > 0 ? gallery[0] : '';
@@ -925,6 +1112,7 @@ async function handleEditProduct(id) {
                 video_url,
                 gallery,
                 videos,
+                variants,
                 is_trending: document.getElementById('pf-trending').checked
             }).eq('id', id);
             if (error) throw error;
@@ -942,6 +1130,7 @@ async function handleEditProduct(id) {
                     video_url,
                     gallery,
                     videos,
+                    variants,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });
