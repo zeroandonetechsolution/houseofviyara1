@@ -650,29 +650,40 @@ async function initHeroCarousel() {
     if (!heroImage) return;
 
     const heroImages = await getHeroImages();
+    console.log('🎠 Hero images to display:', heroImages);
     if (!heroImages.length) return;
 
-    heroImage.src = heroImages[0].image_url || heroImage.src;
+    // Filter out hero images without an image_url
+    const validHeroImages = heroImages.filter(img => img.image_url && img.image_url.trim() !== '');
+    console.log('✅ Valid hero images:', validHeroImages);
+    if (!validHeroImages.length) return;
+
+    // Set initial image
+    const initialImage = validHeroImages[0].image_url;
+    console.log('📸 Initial hero image:', initialImage);
+    heroImage.src = initialImage;
     let currentIndex = 0;
     let changeHeroImage = index => {
-        if (!heroImage || !heroImages[index]) return;
-        if (heroImage.src.endsWith(heroImages[index].image_url)) return;
+        if (!heroImage || !validHeroImages[index]) return;
+        const targetUrl = validHeroImages[index].image_url;
+        console.log('🔄 Changing to hero image:', targetUrl);
+        if (heroImage.src.endsWith(targetUrl)) return;
         heroImage.classList.add('fade-out');
         setTimeout(() => {
-            heroImage.src = heroImages[index].image_url;
+            heroImage.src = targetUrl;
             heroImage.classList.remove('fade-out');
         }, 300);
         currentIndex = index;
     };
 
     const nextImage = () => {
-        const nextIndex = (currentIndex + 1) % heroImages.length;
+        const nextIndex = (currentIndex + 1) % validHeroImages.length;
         changeHeroImage(nextIndex);
     };
 
     if (heroCarouselInterval) clearInterval(heroCarouselInterval);
     // Use custom duration from hero image, or fallback to 3000ms
-    const currentDuration = heroImages[0].duration ? heroImages[0].duration : 3000;
+    const currentDuration = validHeroImages[0].duration ? validHeroImages[0].duration : 3000;
     heroCarouselInterval = setInterval(nextImage, currentDuration);
     
     // Update interval when image changes to use each image's custom duration
@@ -680,7 +691,7 @@ async function initHeroCarousel() {
     changeHeroImage = index => {
         originalChangeHeroImage(index);
         if (heroCarouselInterval) clearInterval(heroCarouselInterval);
-        const duration = heroImages[index].duration ? heroImages[index].duration : 3000;
+        const duration = validHeroImages[index].duration ? validHeroImages[index].duration : 3000;
         heroCarouselInterval = setInterval(nextImage, duration);
     };
 }

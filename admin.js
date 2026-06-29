@@ -39,10 +39,30 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   const bucket = window.SUPABASE_BUCKET || 'public';
   const { data, error } = await adminSupabase.storage.from(bucket).upload(filename, file, { upsert: true });
   if (error) {
-    console.warn('Supabase storage upload error', error);
+    console.warn('❌ Supabase storage upload error', error);
     throw error;
   }
-  const url = adminSupabase.storage.from(bucket).getPublicUrl(data.path).publicURL;
+  console.log('📤 Uploaded file to path:', data.path);
+  const publicUrlResult = adminSupabase.storage.from(bucket).getPublicUrl(data.path);
+  console.log('🌐 getPublicUrl() full result:', publicUrlResult);
+  
+  // Try all possible ways to get public URL
+  let url = null;
+  if (publicUrlResult.data && publicUrlResult.data.publicUrl) {
+    url = publicUrlResult.data.publicUrl;
+  } else if (publicUrlResult.publicURL) {
+    url = publicUrlResult.publicURL;
+  } else if (publicUrlResult.data && publicUrlResult.data.publicURL) {
+    url = publicUrlResult.data.publicURL;
+  } else if (publicUrlResult.publicUrl) {
+    url = publicUrlResult.publicUrl;
+  } else {
+    // If all else fails, construct the URL manually!
+    const baseUrl = window.SUPABASE_URL;
+    url = `${baseUrl}/storage/v1/object/public/${bucket}/${data.path}`;
+  }
+  
+  console.log('✅ Final uploaded file URL:', url);
   return url;
 }
 
@@ -2092,15 +2112,20 @@ async function openEditHeroImage(id) {
 }
 
 async function handleAddHeroImage() {
+    console.log('📝 handleAddHeroImage called');
     const image_url_input = document.getElementById('hi-img').value.trim();
+    console.log('📝 image_url_input:', image_url_input);
+    console.log('📝 window._hiTempImage:', window._hiTempImage ? 'Set' : 'Not set');
     try {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
         // Check if we have a temporary image from file upload
         if (window._hiTempImage) {
+            console.log('📤 Uploading temp image to Supabase...');
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
+                console.log('✅ Got final_image_url:', final_image_url);
             }
         }
         
@@ -2109,6 +2134,7 @@ async function handleAddHeroImage() {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
         
+        console.log('💾 Inserting into hero_images with image_url:', final_image_url);
         if (adminSupabase) {
             const { error } = await adminSupabase.from('hero_images').insert({
                 image_url: final_image_url,
@@ -2122,7 +2148,10 @@ async function handleAddHeroImage() {
         // Clear temp image
         window._hiTempImage = null;
         closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
-    } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+    } catch (e) {
+        console.error('❌ handleAddHeroImage error:', e);
+        showToast('Failed: ' + e.message, 'error');
+    }
 }
 
 async function handleEditHeroImage(id) {
