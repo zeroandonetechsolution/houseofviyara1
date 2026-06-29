@@ -1235,10 +1235,12 @@ async function initProductDetails() {
         return;
     }
 
-    renderProductDetails(product, container);
+    // Fetch all products to get similar products
+    const allProducts = await fetchProductsPrefer();
+    renderProductDetails(product, container, allProducts);
 }
 
-function renderProductDetails(product, targetContainer) {
+function renderProductDetails(product, targetContainer, allProducts = []) {
     // Generate Stars
     const fullStars = Math.floor(product.rating || 5);
     const halfStar = (product.rating || 5) % 1 >= 0.5 ? 1 : 0;
@@ -1309,19 +1311,43 @@ function renderProductDetails(product, targetContainer) {
         </div>
     `;
 
-    const allProducts = getStore(STORE_KEYS.products, []);
-    let relatedProducts = allProducts.filter(p => p.parent_id === product.id);
-    if (!relatedProducts.length) {
-        relatedProducts = allProducts
-            .filter(p => p.id !== product.id && p.category === product.category && p.parent_id == null)
-            .slice(0, 8);
-    }
+    // Get similar products (same category, exclude current product)
+    let similarProducts = allProducts
+        .filter(p => p.id !== product.id && p.category === product.category)
+        .slice(0, 4); // Show up to 4 similar products
 
-    const relatedThumbsHtml = relatedProducts.slice(0, 4).map(r => `
-        <div class="related-thumb" onclick="openProductPage(${r.id})">
-            <img src="${optimizeImg(r.image_url, 120, 120)}" alt="${r.name}" />
+    // Render similar products as full product cards
+    const similarProductsHtml = similarProducts.length > 0 ? similarProducts.map((p, idx) => {
+        const optimizedImg = optimizeImg(p.image_url, 400, 60);
+        const thumbImg = optimizeImg(p.image_url, 40, 30);
+        const eager = idx < 2 ? 'eager' : 'lazy';
+        const imgAttrs = eager === 'lazy'
+            ? `src="${thumbImg}" data-src="${optimizedImg}" class="lazy-loading" loading="lazy"`
+            : `src="${optimizedImg}" loading="eager"`;
+        
+        const isInWishlist = wishlist.some(item => item.id === p.id);
+        
+        return `
+        <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor: pointer;">
+            <div class="product-img" style="position: relative;">
+                <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
+                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
+                    ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
+                </button>
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                    <i class="fas fa-plus"></i> ADD TO BAG
+                </button>
+            </div>
+            <div class="product-info">
+                <h3>${p.name}</h3>
+                <p>${p.description}</p>
+                <div class="product-price">
+                    <span class="current-price">₹${p.offer_price || p.price}</span>
+                    ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
+                </div>
+            </div>
         </div>
-    `).join('');
+    `}).join('') : '';
 
     // Generate Gallery — first image eager, rest lazy; video deferred until selected
     const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length ? selectedVariant.gallery : Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url];
@@ -1387,10 +1413,6 @@ function renderProductDetails(product, targetContainer) {
                 </div>
                 <div class="pdp-gallery-nav">
                     ${galleryDots}
-                </div>
-                <div class="pdp-similar-label">Similar Products</div>
-                <div class="pdp-related-thumbs">
-                    ${relatedThumbsHtml}
                 </div>
             </div>
 
@@ -1487,6 +1509,16 @@ function renderProductDetails(product, targetContainer) {
                 ${reviewsHtml}
             </div>
         </div>
+
+        <!-- Similar Products Section -->
+        ${similarProductsHtml ? `
+        <div class="similar-products-section" style="max-width: 1400px; margin: 60px auto; padding: 0 20px;">
+            <h2 style="font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 30px; text-align: center;">YOU MAY ALSO LIKE</h2>
+            <div class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                ${similarProductsHtml}
+            </div>
+        </div>
+        ` : ''}
     `;
 
     if (targetContainer) {
