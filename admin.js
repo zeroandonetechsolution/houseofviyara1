@@ -412,6 +412,10 @@ async function renderDashboard() {
 let allProducts = [];
 let productFilter = 'all';
 let allCategories = []; // Store categories here
+let tempProductData = { // Temp storage for product form
+  gallery: [],
+  videos: []
+};
 
 async function renderProducts() {
     document.getElementById('topbar-actions').innerHTML = `
@@ -587,18 +591,11 @@ function productFormHTML(p = {}, categories = []) {
       <!-- Gallery Images Section -->
       <div class="aform-group">
         <label>Product Gallery Images (up to 10)</label>
-        <div id="pf-gallery-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-            ${gallery.map((img, idx) => `
-                <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-                    <img src="${img}" style="width:100%;height:100px;object-fit:cover;">
-                    <button type="button" onclick="window.pf_removeGalleryItem(${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
-                </div>
-            `).join('')}
-        </div>
+        <div id="pf-gallery-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="pf-gallery-files" accept="image/*" multiple style="flex:1;">
             <input type="text" id="pf-gallery-url" placeholder="Or paste an image URL" style="flex:1;">
-            <button type="button" class="admin-btn admin-btn-sm" onclick="window.pf_addGalleryUrl()">Add URL</button>
+            <button type="button" class="admin-btn admin-btn-sm" id="pf-add-gallery-url">Add URL</button>
         </div>
         <small class="admin-form-hint">Add up to 10 images (upload files or paste URLs)</small>
       </div>
@@ -606,18 +603,11 @@ function productFormHTML(p = {}, categories = []) {
       <!-- Videos Section -->
       <div class="aform-group">
         <label>Product Videos (up to 5)</label>
-        <div id="pf-videos-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-            ${videos.map((vid, idx) => `
-                <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-                    <video src="${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
-                    <button type="button" onclick="window.pf_removeVideoItem(${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
-                </div>
-            `).join('')}
-        </div>
+        <div id="pf-videos-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="pf-video-files" accept="video/*" multiple style="flex:1;">
             <input type="text" id="pf-video-url" placeholder="Or paste a video URL" style="flex:1;">
-            <button type="button" class="admin-btn admin-btn-sm" onclick="window.pf_addVideoUrl()">Add URL</button>
+            <button type="button" class="admin-btn admin-btn-sm" id="pf-add-video-url">Add URL</button>
         </div>
         <small class="admin-form-hint">Add up to 5 videos (upload files or paste URLs)</small>
       </div>
@@ -626,117 +616,133 @@ function productFormHTML(p = {}, categories = []) {
         <label for="pf-trending"><i class="fas fa-fire" style="color:#FF6B35"></i> Mark as Trending</label>
       </div>
       <div class="aform-actions">
-        <button class="admin-btn admin-btn-primary" onclick="${p.id ? `handleEditProduct(${p.id})` : 'handleAddProduct()'}">
+        <button class="admin-btn admin-btn-primary" id="pf-save-btn" data-id="${p.id || ''}">
           <i class="fas fa-save"></i> ${p.id ? 'Update Product' : 'Add Product'}
         </button>
         <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Cancel</button>
       </div>
-    </div>
-    <script>
-      // Store gallery and videos state on window
-      window.pf_currentGallery = ${JSON.stringify(gallery)};
-      window.pf_currentVideos = ${JSON.stringify(videos)};
+    </div>`;
+}
 
-      // Render gallery container
-      window.pf_renderGallery = function() {
-        const container = document.getElementById('pf-gallery-container');
-        container.innerHTML = window.pf_currentGallery.map((img, idx) => \`
-          <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-            <img src="\${img}" style="width:100%;height:100px;object-fit:cover;">
-            <button type="button" onclick="window.pf_removeGalleryItem(\${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
-          </div>
-        \`).join('');
-      };
+// Render gallery items
+function pf_renderGallery() {
+    const container = document.getElementById('pf-gallery-container');
+    if (!container) return;
+    container.innerHTML = tempProductData.gallery.map((img, idx) => `
+      <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+        <img src="${img}" style="width:100%;height:100px;object-fit:cover;">
+        <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+    `).join('');
+    // Reattach event listeners
+    document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.index);
+            tempProductData.gallery.splice(idx, 1);
+            pf_renderGallery();
+        });
+    });
+}
 
-      // Render videos container
-      window.pf_renderVideos = function() {
-        const container = document.getElementById('pf-videos-container');
-        container.innerHTML = window.pf_currentVideos.map((vid, idx) => \`
-          <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-            <video src="\${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
-            <button type="button" onclick="window.pf_removeVideoItem(\${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
-          </div>
-        \`).join('');
-      };
+// Render video items
+function pf_renderVideos() {
+    const container = document.getElementById('pf-videos-container');
+    if (!container) return;
+    container.innerHTML = tempProductData.videos.map((vid, idx) => `
+      <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+        <video src="${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
+        <button type="button" class="pf-remove-video-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+    `).join('');
+    // Reattach event listeners
+    document.querySelectorAll('.pf-remove-video-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.index);
+            tempProductData.videos.splice(idx, 1);
+            pf_renderVideos();
+        });
+    });
+}
 
-      // Remove gallery item
-      window.pf_removeGalleryItem = function(idx) {
-        window.pf_currentGallery.splice(idx, 1);
-        window.pf_renderGallery();
-      };
-
-      // Remove video item
-      window.pf_removeVideoItem = function(idx) {
-        window.pf_currentVideos.splice(idx, 1);
-        window.pf_renderVideos();
-      };
-
-      // Add gallery URL
-      window.pf_addGalleryUrl = function() {
+// Setup product form
+function setupProductForm() {
+    // Setup add gallery URL button
+    document.getElementById('pf-add-gallery-url').addEventListener('click', () => {
         const urlInput = document.getElementById('pf-gallery-url');
         const url = urlInput.value.trim();
-        if (url && window.pf_currentGallery.length < 10) {
-          window.pf_currentGallery.push(url);
-          window.pf_renderGallery();
-          urlInput.value = '';
-        } else if (window.pf_currentGallery.length >= 10) {
-          alert('Maximum 10 images allowed');
+        if (url && tempProductData.gallery.length < 10) {
+            tempProductData.gallery.push(url);
+            pf_renderGallery();
+            urlInput.value = '';
+        } else if (tempProductData.gallery.length >= 10) {
+            alert('Maximum 10 images allowed');
         }
-      };
+    });
 
-      // Add video URL
-      window.pf_addVideoUrl = function() {
+    // Setup add video URL button
+    document.getElementById('pf-add-video-url').addEventListener('click', () => {
         const urlInput = document.getElementById('pf-video-url');
         const url = urlInput.value.trim();
-        if (url && window.pf_currentVideos.length < 5) {
-          window.pf_currentVideos.push(url);
-          window.pf_renderVideos();
-          urlInput.value = '';
-        } else if (window.pf_currentVideos.length >= 5) {
-          alert('Maximum 5 videos allowed');
+        if (url && tempProductData.videos.length < 5) {
+            tempProductData.videos.push(url);
+            pf_renderVideos();
+            urlInput.value = '';
+        } else if (tempProductData.videos.length >= 5) {
+            alert('Maximum 5 videos allowed');
         }
-      };
+    });
 
-      // Handle gallery file selection
-      document.getElementById('pf-gallery-files').addEventListener('change', async function(e) {
+    // Setup gallery file input
+    document.getElementById('pf-gallery-files').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
         for (const file of files) {
-          if (window.pf_currentGallery.length >= 10) break;
-          try {
-            // Read as data URL and add to gallery temporarily - we'll upload on save
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              window.pf_currentGallery.push(event.target.result);
-              window.pf_renderGallery();
-            };
-            reader.readAsDataURL(file);
-          } catch (err) {
-            console.error('File read error', err);
-          }
+            if (tempProductData.gallery.length >= 10) break;
+            try {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    tempProductData.gallery.push(event.target.result);
+                    pf_renderGallery();
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error('File read error', err);
+            }
         }
-      });
+    });
 
-      // Handle video file selection
-      document.getElementById('pf-video-files').addEventListener('change', async function(e) {
+    // Setup video file input
+    document.getElementById('pf-video-files').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
         for (const file of files) {
-          if (window.pf_currentVideos.length >= 5) break;
-          try {
-            // Read as data URL and add to videos temporarily - we'll upload on save
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              window.pf_currentVideos.push(event.target.result);
-              window.pf_renderVideos();
-            };
-            reader.readAsDataURL(file);
-          } catch (err) {
-            console.error('File read error', err);
-          }
+            if (tempProductData.videos.length >= 5) break;
+            try {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    tempProductData.videos.push(event.target.result);
+                    pf_renderVideos();
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error('File read error', err);
+            }
         }
-      });
-    <\/script>`;
+    });
+
+    // Setup save button
+    document.getElementById('pf-save-btn').addEventListener('click', async () => {
+        const id = document.getElementById('pf-save-btn').dataset.id;
+        if (id) {
+            await handleEditProduct(parseInt(id));
+        } else {
+            await handleAddProduct();
+        }
+    });
+
+    // Render initial gallery/videos
+    pf_renderGallery();
+    pf_renderVideos();
 }
 
 async function openAddProduct() {
@@ -750,7 +756,11 @@ async function openAddProduct() {
         } else {
             categories = await apiFetch('/api/categories');
         }
+        // Reset temp data
+        tempProductData.gallery = [];
+        tempProductData.videos = [];
         openModal(productFormHTML({}, categories));
+        setupProductForm();
     } catch (e) {
         showToast('Could not load categories', 'error');
     }
@@ -774,7 +784,11 @@ async function openEditProduct(id) {
             p = await apiFetch(`/api/products/${id}`);
             categories = await apiFetch('/api/categories');
         }
+        // Set temp data
+        tempProductData.gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
+        tempProductData.videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
         openModal(productFormHTML(p, categories));
+        setupProductForm();
     } catch (e) {
         showToast('Could not load product', 'error');
     }
@@ -787,8 +801,8 @@ async function handleAddProduct() {
 
     try {
         await loadSupabaseClient();
-        let gallery = window.pf_currentGallery || [];
-        let videos = window.pf_currentVideos || [];
+        let gallery = tempProductData.gallery || [];
+        let videos = tempProductData.videos || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
@@ -816,8 +830,8 @@ async function handleAddProduct() {
             videos = uploadedVideos;
         }
 
-        const image_url = gallery.length > 0 ? gallery[0] : (document.getElementById('pf-img') ? document.getElementById('pf-img').value.trim() : '');
-        const video_url = videos.length > 0 ? videos[0] : (document.getElementById('pf-video') ? document.getElementById('pf-video').value.trim() : '');
+        const image_url = gallery.length > 0 ? gallery[0] : '';
+        const video_url = videos.length > 0 ? videos[0] : '';
 
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').insert({
@@ -867,8 +881,8 @@ async function handleEditProduct(id) {
 
     try {
         await loadSupabaseClient();
-        let gallery = window.pf_currentGallery || [];
-        let videos = window.pf_currentVideos || [];
+        let gallery = tempProductData.gallery || [];
+        let videos = tempProductData.videos || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos);
 
         // Upload any data URLs (from file inputs) to Supabase Storage
@@ -896,8 +910,8 @@ async function handleEditProduct(id) {
             videos = uploadedVideos;
         }
 
-        const image_url = gallery.length > 0 ? gallery[0] : (document.getElementById('pf-img') ? document.getElementById('pf-img').value.trim() : '');
-        const video_url = videos.length > 0 ? videos[0] : (document.getElementById('pf-video') ? document.getElementById('pf-video').value.trim() : '');
+        const image_url = gallery.length > 0 ? gallery[0] : '';
+        const video_url = videos.length > 0 ? videos[0] : '';
 
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').update({
