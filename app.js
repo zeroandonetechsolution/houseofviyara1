@@ -654,7 +654,7 @@ async function initHeroCarousel() {
 
     heroImage.src = heroImages[0].image_url || heroImage.src;
     let currentIndex = 0;
-    const changeHeroImage = index => {
+    let changeHeroImage = index => {
         if (!heroImage || !heroImages[index]) return;
         if (heroImage.src.endsWith(heroImages[index].image_url)) return;
         heroImage.classList.add('fade-out');
