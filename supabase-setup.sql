@@ -20,6 +20,8 @@ CREATE TABLE products (
     category TEXT,
     image_url TEXT,
     video_url TEXT,
+    gallery TEXT[] DEFAULT '{}',
+    videos TEXT[] DEFAULT '{}'
     stock INTEGER DEFAULT 10,
     rating NUMERIC DEFAULT 4.5,
     is_trending BOOLEAN DEFAULT false NOT NULL,
@@ -90,14 +92,46 @@ alter publication supabase_realtime add table categories;
 alter publication supabase_realtime add table banners;
 alter publication supabase_realtime add table orders;
 
--- Insert sample data
-INSERT INTO products (name, description, price, category, image_url, is_trending)
-SELECT 'Banarasi Silk Saree', 'Elegant gold zari border with premium silk fabric.', 4500, 'saree', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', true
+-- Insert sample data (10 products)
+INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
+SELECT 'Banarasi Silk Saree', 'Elegant gold zari border with premium silk fabric.', 4500, 3999, 'saree', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', NULL, true
 WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
 
 INSERT INTO products (name, description, price, category, image_url, is_trending)
 SELECT 'Kanjeevaram Saree', 'Pure mulberry silk with traditional temple patterns.', 6200, 'saree', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', false
 WHERE (SELECT COUNT(*) FROM products) < 2;
+
+INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
+SELECT 'Floral Print Kurti', 'Soft cotton with vibrant floral prints.', 1299, 999, 'kurtis', 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&q=80', false
+WHERE (SELECT COUNT(*) FROM products) < 3;
+
+INSERT INTO products (name, description, price, category, image_url, is_trending)
+SELECT 'Embroidered Kurti Set', 'Heavy thread work kurti with dupatta.', 2499, 'kurtis', 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', true
+WHERE (SELECT COUNT(*) FROM products) < 4;
+
+INSERT INTO products (name, description, price, category, image_url, video_url, is_trending)
+SELECT 'Lehenga Choli Set', 'Bridal lehenga with intricate embroidery.', 15999, 'ethnic', 'https://images.unsplash.com/photo-1613376023733-0a7331569763?w=800&q=80', 'https://www.w3schools.com/html/mov_bbb.mp4', true
+WHERE (SELECT COUNT(*) FROM products) < 5;
+
+INSERT INTO products (name, description, price, category, image_url, is_trending)
+SELECT 'Salwar Kameez', 'Comfortable cotton salwar suit.', 1899, 'ethnic', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&q=80', false
+WHERE (SELECT COUNT(*) FROM products) < 6;
+
+INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, is_trending)
+SELECT 'Party Wear Gown', 'Sequined evening gown for special occasions.', 7999, 6499, 'party', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', 'https://www.w3schools.com/html/movie.mp4', true
+WHERE (SELECT COUNT(*) FROM products) < 7;
+
+INSERT INTO products (name, description, price, category, image_url, is_trending)
+SELECT 'Cocktail Dress', 'Satin cocktail dress in deep red.', 4999, 'party', 'https://images.unsplash.com/photo-1515372039744-b8f02a3434b8?w=800&q=80', false
+WHERE (SELECT COUNT(*) FROM products) < 8;
+
+INSERT INTO products (name, description, price, offer_price, category, image_url, is_trending)
+SELECT 'Casual T-Shirt', 'Soft cotton t-shirt for daily wear.', 599, 399, 'casual', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80', false
+WHERE (SELECT COUNT(*) FROM products) < 9;
+
+INSERT INTO products (name, description, price, category, image_url, is_trending)
+SELECT 'Denim Jeans', 'Comfort-fit blue denim jeans.', 1499, 'casual', 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80', false
+WHERE (SELECT COUNT(*) FROM products) < 10;
 
 INSERT INTO categories (name, slug, icon, display_order)
 SELECT 'Saree', 'saree', 'fas fa-female', 1

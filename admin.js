@@ -14,44 +14,76 @@ let adminToken = localStorage.getItem('hov_admin_token') || null;
 let currentSection = 'dashboard';
 let adminSupabase = null;
 
+// Convert dataURL to Blob
+function dataURLToBlob(dataURL) {
+  const parts = dataURL.split(',');
+  const meta = parts[0];
+  const base64 = parts[1];
+  const mime = meta.match(/:(.*?);/)[1];
+  const binary = atob(base64);
+  const len = binary.length;
+  const u8 = new Uint8Array(len);
+  for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+  return new Blob([u8], { type: mime });
+}
+
+// Upload file to Supabase Storage
+async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
+  if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
+  let file = fileOrData;
+  if (typeof fileOrData === 'string' && fileOrData.startsWith('data:')) {
+    file = dataURLToBlob(fileOrData);
+  }
+  if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
+  const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+  const bucket = window.SUPABASE_BUCKET || 'public';
+  const { data, error } = await adminSupabase.storage.from(bucket).upload(filename, file, { upsert: true });
+  if (error) {
+    console.warn('Supabase storage upload error', error);
+    throw error;
+  }
+  const url = adminSupabase.storage.from(bucket).getPublicUrl(data.path).publicURL;
+  return url;
+}
+
 // Load Supabase client
 async function loadSupabaseClient() {
-    if (adminSupabase) return true;
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-        try {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = '/supabase-config.js';
-                s.async = true;
-                s.onload = resolve;
-                s.onerror = () => reject(new Error('no supabase-config'));
-                document.head.appendChild(s);
-            });
-        } catch (e) {}
-    }
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
-    
-    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
-        await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js';
-            s.async = true;
-            s.onload = resolve;
-            s.onerror = () => reject(new Error('Failed to load supabase-js'));
-            document.head.appendChild(s);
-        }).catch(() => null);
-    }
-    
+  if (adminSupabase) return true;
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     try {
-        const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
-        if (!createClient) return false;
-        adminSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-        console.log('Supabase client loaded in admin');
-        return true;
-    } catch (e) {
-        console.warn('Supabase init failed in admin', e);
-        return false;
-    }
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/supabase-config.js';
+        s.async = true;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('no supabase-config'));
+        document.head.appendChild(s);
+      });
+    } catch (e) {}
+  }
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
+  
+  if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js';
+      s.async = true;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load supabase-js'));
+      document.head.appendChild(s);
+    }).catch(() => null);
+  }
+  
+  try {
+    const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+    if (!createClient) return false;
+    adminSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    console.log('Supabase client loaded in admin');
+    return true;
+  } catch (e) {
+    console.warn('Supabase init failed in admin', e);
+    return false;
+  }
 }
 
 // ── Fetch helper ──
@@ -495,6 +527,8 @@ async function deleteProduct(id, name) {
 function productFormHTML(p = {}) {
     const cats = ['saree', 'kurtis', 'ethnic', 'party', 'casual'];
     const catLabels = { saree: 'Saree', kurtis: 'Kurtis', ethnic: 'Ethnic Wear', party: 'Party Wear', casual: 'Casual Wear' };
+    const gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
+    const videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
     return `
     <h3>${p.id ? 'Edit Product' : 'Add New Product'}</h3>
     <div class="admin-form">
@@ -528,29 +562,42 @@ function productFormHTML(p = {}) {
           <input class="aform-input" id="pf-stock" type="number" value="${p.stock || 10}" placeholder="10">
         </div>
       </div>
+      <!-- Gallery Images Section -->
       <div class="aform-group">
-        <label>Upload Image</label>
-        <input class="aform-input" id="pf-img-file" type="file" accept="image/*">
-        <small class="admin-form-hint">Choose a local file to upload and populate the Image URL automatically.</small>
+        <label>Product Gallery Images (up to 10)</label>
+        <div id="pf-gallery-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+            ${gallery.map((img, idx) => `
+                <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+                    <img src="${img}" style="width:100%;height:100px;object-fit:cover;">
+                    <button type="button" onclick="window.pf_removeGalleryItem(${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+                </div>
+            `).join('')}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="pf-gallery-files" accept="image/*" multiple style="flex:1;">
+            <input type="text" id="pf-gallery-url" placeholder="Or paste an image URL" style="flex:1;">
+            <button type="button" class="admin-btn admin-btn-sm" onclick="window.pf_addGalleryUrl()">Add URL</button>
+        </div>
+        <small class="admin-form-hint">Add up to 10 images (upload files or paste URLs)</small>
       </div>
+
+      <!-- Videos Section -->
       <div class="aform-group">
-        <label>Image URL *</label>
-        <input class="aform-input" id="pf-img" value="${p.image_url || ''}" placeholder="https://images.unsplash.com/...">
-      </div>
-      <div class="aform-group" id="pf-img-preview-wrap" style="display:${p.image_url ? 'block' : 'none'}">
-        <img id="pf-img-preview" src="${p.image_url || ''}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid #eee;" onerror="this.style.display='none'">
-      </div>
-      <div class="aform-group">
-        <label>Upload Video (optional)</label>
-        <input class="aform-input" id="pf-video-file" type="file" accept="video/*">
-        <small class="admin-form-hint">Choose a local video file to upload and populate the Video URL automatically.</small>
-      </div>
-      <div class="aform-group">
-        <label>Video URL</label>
-        <input class="aform-input" id="pf-video" value="${p.video_url || ''}" placeholder="https://...mp4">
-      </div>
-      <div class="aform-group" id="pf-video-preview-wrap" style="display:${p.video_url ? 'block' : 'none'}">
-        <video id="pf-video-preview" src="${p.video_url || ''}" style="width:100%;max-height:200px;border-radius:8px;border:2px solid #eee;" controls onerror="this.style.display='none'"></video>
+        <label>Product Videos (up to 5)</label>
+        <div id="pf-videos-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+            ${videos.map((vid, idx) => `
+                <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+                    <video src="${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
+                    <button type="button" onclick="window.pf_removeVideoItem(${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+                </div>
+            `).join('')}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="pf-video-files" accept="video/*" multiple style="flex:1;">
+            <input type="text" id="pf-video-url" placeholder="Or paste a video URL" style="flex:1;">
+            <button type="button" class="admin-btn admin-btn-sm" onclick="window.pf_addVideoUrl()">Add URL</button>
+        </div>
+        <small class="admin-form-hint">Add up to 5 videos (upload files or paste URLs)</small>
       </div>
       <div class="aform-check">
         <input type="checkbox" id="pf-trending" ${p.is_trending ? 'checked' : ''}>
@@ -564,47 +611,108 @@ function productFormHTML(p = {}) {
       </div>
     </div>
     <script>
-      document.getElementById('pf-img-file').addEventListener('change', async function(){
-        const fileInput = this;
-        const urlInput = document.getElementById('pf-img');
-        const wrap = document.getElementById('pf-img-preview-wrap');
-        const img = document.getElementById('pf-img-preview');
-        if (!fileInput.files.length) return;
-        try {
-          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
-          wrap.style.display = 'block';
-          img.src = uploadedUrl;
-          img.style.display = 'block';
-        } catch (err) {
-          showToast('Upload failed: ' + err.message, 'error');
+      // Store gallery and videos state on window
+      window.pf_currentGallery = ${JSON.stringify(gallery)};
+      window.pf_currentVideos = ${JSON.stringify(videos)};
+
+      // Render gallery container
+      window.pf_renderGallery = function() {
+        const container = document.getElementById('pf-gallery-container');
+        container.innerHTML = window.pf_currentGallery.map((img, idx) => \`
+          <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+            <img src="\${img}" style="width:100%;height:100px;object-fit:cover;">
+            <button type="button" onclick="window.pf_removeGalleryItem(\${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+          </div>
+        \`).join('');
+      };
+
+      // Render videos container
+      window.pf_renderVideos = function() {
+        const container = document.getElementById('pf-videos-container');
+        container.innerHTML = window.pf_currentVideos.map((vid, idx) => \`
+          <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
+            <video src="\${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
+            <button type="button" onclick="window.pf_removeVideoItem(\${idx})" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+          </div>
+        \`).join('');
+      };
+
+      // Remove gallery item
+      window.pf_removeGalleryItem = function(idx) {
+        window.pf_currentGallery.splice(idx, 1);
+        window.pf_renderGallery();
+      };
+
+      // Remove video item
+      window.pf_removeVideoItem = function(idx) {
+        window.pf_currentVideos.splice(idx, 1);
+        window.pf_renderVideos();
+      };
+
+      // Add gallery URL
+      window.pf_addGalleryUrl = function() {
+        const urlInput = document.getElementById('pf-gallery-url');
+        const url = urlInput.value.trim();
+        if (url && window.pf_currentGallery.length < 10) {
+          window.pf_currentGallery.push(url);
+          window.pf_renderGallery();
+          urlInput.value = '';
+        } else if (window.pf_currentGallery.length >= 10) {
+          alert('Maximum 10 images allowed');
+        }
+      };
+
+      // Add video URL
+      window.pf_addVideoUrl = function() {
+        const urlInput = document.getElementById('pf-video-url');
+        const url = urlInput.value.trim();
+        if (url && window.pf_currentVideos.length < 5) {
+          window.pf_currentVideos.push(url);
+          window.pf_renderVideos();
+          urlInput.value = '';
+        } else if (window.pf_currentVideos.length >= 5) {
+          alert('Maximum 5 videos allowed');
+        }
+      };
+
+      // Handle gallery file selection
+      document.getElementById('pf-gallery-files').addEventListener('change', async function(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        for (const file of files) {
+          if (window.pf_currentGallery.length >= 10) break;
+          try {
+            // Read as data URL and add to gallery temporarily - we'll upload on save
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              window.pf_currentGallery.push(event.target.result);
+              window.pf_renderGallery();
+            };
+            reader.readAsDataURL(file);
+          } catch (err) {
+            console.error('File read error', err);
+          }
         }
       });
-      document.getElementById('pf-video-file').addEventListener('change', async function(){
-        const fileInput = this;
-        const urlInput = document.getElementById('pf-video');
-        const wrap = document.getElementById('pf-video-preview-wrap');
-        const video = document.getElementById('pf-video-preview');
-        if (!fileInput.files.length) return;
-        try {
-          const uploadedUrl = await uploadAdminImage(fileInput, urlInput);
-          wrap.style.display = 'block';
-          video.src = uploadedUrl;
-          video.style.display = 'block';
-        } catch (err) {
-          showToast('Upload failed: ' + err.message, 'error');
+
+      // Handle video file selection
+      document.getElementById('pf-video-files').addEventListener('change', async function(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        for (const file of files) {
+          if (window.pf_currentVideos.length >= 5) break;
+          try {
+            // Read as data URL and add to videos temporarily - we'll upload on save
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              window.pf_currentVideos.push(event.target.result);
+              window.pf_renderVideos();
+            };
+            reader.readAsDataURL(file);
+          } catch (err) {
+            console.error('File read error', err);
+          }
         }
-      });
-      document.getElementById('pf-img').addEventListener('input', function(){
-        const w = document.getElementById('pf-img-preview-wrap');
-        const img = document.getElementById('pf-img-preview');
-        if(this.value){ w.style.display='block'; img.src=this.value; img.style.display='block'; }
-        else { w.style.display='none'; }
-      });
-      document.getElementById('pf-video').addEventListener('input', function(){
-        const w = document.getElementById('pf-video-preview-wrap');
-        const video = document.getElementById('pf-video-preview');
-        if (this.value) { w.style.display = 'block'; video.src = this.value; video.style.display = 'block'; }
-        else { w.style.display = 'none'; }
       });
     <\/script>`;
 }
@@ -633,11 +741,41 @@ async function openEditProduct(id) {
 async function handleAddProduct() {
     const name = document.getElementById('pf-name').value.trim();
     const price = document.getElementById('pf-price').value;
-    const image_url = document.getElementById('pf-img').value.trim();
-    if (!name || !price || !image_url) return showToast('Name, Price and Image URL are required', 'error');
+    if (!name || !price) return showToast('Name and Price are required', 'error');
 
     try {
         await loadSupabaseClient();
+        let gallery = window.pf_currentGallery || [];
+        let videos = window.pf_currentVideos || [];
+
+        // Upload any data URLs (from file inputs) to Supabase Storage
+        if (adminSupabase) {
+            const uploadedGallery = [];
+            for (const img of gallery) {
+                if (img.startsWith('data:')) {
+                    const url = await supabaseUploadFile(img, 'products');
+                    uploadedGallery.push(url);
+                } else {
+                    uploadedGallery.push(img);
+                }
+            }
+            gallery = uploadedGallery;
+
+            const uploadedVideos = [];
+            for (const vid of videos) {
+                if (vid.startsWith('data:')) {
+                    const url = await supabaseUploadFile(vid, 'products');
+                    uploadedVideos.push(url);
+                } else {
+                    uploadedVideos.push(vid);
+                }
+            }
+            videos = uploadedVideos;
+        }
+
+        const image_url = gallery.length > 0 ? gallery[0] : (document.getElementById('pf-img') ? document.getElementById('pf-img').value.trim() : '');
+        const video_url = videos.length > 0 ? videos[0] : (document.getElementById('pf-video') ? document.getElementById('pf-video').value.trim() : '');
+
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').insert({
                 name,
@@ -647,7 +785,9 @@ async function handleAddProduct() {
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
-                video_url: document.getElementById('pf-video').value.trim() || '',
+                video_url,
+                gallery,
+                videos,
                 is_trending: document.getElementById('pf-trending').checked
             });
             if (error) throw error;
@@ -662,7 +802,9 @@ async function handleAddProduct() {
                     category: document.getElementById('pf-cat').value,
                     stock: Number(document.getElementById('pf-stock').value || 10),
                     image_url,
-                    video_url: document.getElementById('pf-video').value.trim() || '',
+                    video_url,
+                    gallery,
+                    videos,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });
@@ -678,11 +820,41 @@ async function handleAddProduct() {
 async function handleEditProduct(id) {
     const name = document.getElementById('pf-name').value.trim();
     const price = document.getElementById('pf-price').value;
-    const image_url = document.getElementById('pf-img').value.trim();
-    if (!name || !price || !image_url) return showToast('Name, Price and Image URL are required', 'error');
+    if (!name || !price) return showToast('Name and Price are required', 'error');
 
     try {
         await loadSupabaseClient();
+        let gallery = window.pf_currentGallery || [];
+        let videos = window.pf_currentVideos || [];
+
+        // Upload any data URLs (from file inputs) to Supabase Storage
+        if (adminSupabase) {
+            const uploadedGallery = [];
+            for (const img of gallery) {
+                if (img.startsWith('data:')) {
+                    const url = await supabaseUploadFile(img, 'products');
+                    uploadedGallery.push(url);
+                } else {
+                    uploadedGallery.push(img);
+                }
+            }
+            gallery = uploadedGallery;
+
+            const uploadedVideos = [];
+            for (const vid of videos) {
+                if (vid.startsWith('data:')) {
+                    const url = await supabaseUploadFile(vid, 'products');
+                    uploadedVideos.push(url);
+                } else {
+                    uploadedVideos.push(vid);
+                }
+            }
+            videos = uploadedVideos;
+        }
+
+        const image_url = gallery.length > 0 ? gallery[0] : (document.getElementById('pf-img') ? document.getElementById('pf-img').value.trim() : '');
+        const video_url = videos.length > 0 ? videos[0] : (document.getElementById('pf-video') ? document.getElementById('pf-video').value.trim() : '');
+
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').update({
                 name,
@@ -692,7 +864,9 @@ async function handleEditProduct(id) {
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
-                video_url: document.getElementById('pf-video').value.trim() || '',
+                video_url,
+                gallery,
+                videos,
                 is_trending: document.getElementById('pf-trending').checked
             }).eq('id', id);
             if (error) throw error;
@@ -707,7 +881,9 @@ async function handleEditProduct(id) {
                     category: document.getElementById('pf-cat').value,
                     stock: Number(document.getElementById('pf-stock').value || 10),
                     image_url,
-                    video_url: document.getElementById('pf-video').value.trim() || '',
+                    video_url,
+                    gallery,
+                    videos,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });

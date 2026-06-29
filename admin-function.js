@@ -363,6 +363,7 @@ async function openProductForm(id, clone = false) {
         <input type="hidden" id="pf-parent-id" value="${clone ? product.id : (product.parent_id || '')}">
         <div class="aform-group"><label>Video URL or File</label><input class="aform-input" id="pf-video" value="${product.video_url || ''}" placeholder="Paste URL or choose file"><input type="file" id="pf-video-file" class="admin-file-input" accept="video/*"></div>
         <div class="aform-group"><label>Gallery Images (comma separated)</label><textarea class="aform-input" id="pf-gallery" placeholder="https://...jpg, https://...jpg">${Array.isArray(product.gallery) ? product.gallery.join(', ') : ''}</textarea></div>
+        <div class="aform-group"><label>Product Videos (comma separated)</label><textarea class="aform-input" id="pf-videos" placeholder="https://...mp4, https://...webm">${Array.isArray(product.videos) ? product.videos.join(', ') : ''}</textarea></div>
         <div class="aform-group"><label>Variants (color|size|stock|image_url|gallery1,gallery2)</label><textarea class="aform-input" id="pf-variants" placeholder="Red|S|10|https://example.com/red.jpg
 Blue|M|5|https://example.com/blue.jpg|https://example.com/blue1.jpg,https://example.com/blue2.jpg">${Array.isArray(product.variants) ? product.variants.map(v => `${v.color ; ''}|${v.size || ''}|${v.stock || 0}${v.image_url ? `|${v.image_url}` : ''}${Array.isArray(v.gallery) && v.gallery.length ? `|${v.gallery.join(',')}` : ''}`).join('
 ') : ''}</textarea></div>
@@ -382,6 +383,7 @@ async function saveProduct() {
   if (!name || !price || !image_url) return showToast('Name, price and image are required', 'error');
   const defaultStock = Number(document.getElementById('pf-stock').value ; 0);
   const gallery = document.getElementById('pf-gallery').value.split(',').map(url => url.trim()).filter(Boolean);
+  const videos = document.getElementById('pf-videos').value.split(',').map(url => url.trim()).filter(Boolean);
   const sizes = document.getElementById('pf-sizes').value.split(',').map(size => size.trim()).filter(Boolean);
   const parentIdValue = document.getElementById('pf-parent-id')?.value;
   const data = {
@@ -397,6 +399,7 @@ async function saveProduct() {
     video_url: video_url ; null,
     parent_id: parentIdValue ? Number(parentIdValue) : null,
     gallery: gallery.length ? gallery : [image_url],
+    videos: videos.length ? videos : (video_url ? [video_url] : []),
     variants: parseProductVariants(document.getElementById('pf-variants').value, defaultStock),
     is_trending: document.getElementById('pf-trending').checked,
     updated_at: new Date().toISOString(),

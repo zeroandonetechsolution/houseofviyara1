@@ -1271,16 +1271,19 @@ function renderProductDetails(product, targetContainer) {
         }
     });
     
-    if (product.video_url) {
+    // Add all product videos
+    const productVideos = Array.isArray(product.videos) && product.videos.length ? product.videos : (product.video_url ? [product.video_url] : []);
+    productVideos.forEach((videoUrl, videoIndex) => {
+        const idx = gallery.length + videoIndex;
         mediaHtml += `
-            <div class="gallery-item video-placeholder" id="gallery-img-${gallery.length}" data-video-src="${product.video_url}" onclick="loadGalleryVideo(${gallery.length})">
+            <div class="gallery-item video-placeholder" id="gallery-img-${idx}" data-video-src="${videoUrl}" onclick="loadGalleryVideo(${idx})">
                 <i class="fas fa-play"></i>
             </div>
-            <video class="gallery-item" id="gallery-video-${gallery.length}" controls preload="none" playsinline style="display:none">
+            <video class="gallery-item" id="gallery-video-${idx}" controls preload="none" playsinline style="display:none">
             </video>
         `;
-        galleryDots += `<div class="gallery-dot video-dot" onclick="changeGalleryImage(${gallery.length})"><i class="fas fa-play"></i></div>`;
-    }
+        galleryDots += `<div class="gallery-dot video-dot" onclick="changeGalleryImage(${idx})"><i class="fas fa-play"></i></div>`;
+    });
 
     // Generate Reviews
     let reviewsHtml = '';
