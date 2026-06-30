@@ -160,26 +160,16 @@ async function convertWithLibheif(file) {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     
-    // Create a promise for decoding
+    // Use the correct libheif display method
+    const rgbaData = new Uint8ClampedArray(width * height * 4);
     await new Promise((resolve, reject) => {
-        image.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (displayResult) => {
-            if (displayResult === window.libheif.heif_error_code.Ok) {
-                // Now we need to get the image data properly!
-                // Create ImageData
-                const imgData = ctx.createImageData(width, height);
-                // Wait, maybe we need to use a different method? Let's use the ispe libheif example approach!
-                const rgbaData = new Uint8ClampedArray(width * height * 4);
-                image.display(rgbaData, (result) => {
-                    if (result === window.libheif.heif_error_code.Ok) {
-                        const imgData2 = new ImageData(rgbaData, width, height);
-                        ctx.putImageData(imgData2, 0, 0);
-                        resolve();
-                    } else {
-                        reject(new Error(`libheif display failed: ${result}`));
-                    }
-                });
+        image.display(rgbaData, (result) => {
+            if (result === window.libheif.heif_error_code.Ok) {
+                const imgData = new ImageData(rgbaData, width, height);
+                ctx.putImageData(imgData, 0, 0);
+                resolve();
             } else {
-                reject(new Error(`libheif init failed: ${displayResult}`));
+                reject(new Error(`libheif display failed: ${result}`));
             }
         });
     });
@@ -195,7 +185,6 @@ async function convertHeicToJpeg(file) {
     
     // FIRST: Create a preview immediately using object URL!
     const originalPreview = URL.createObjectURL(file);
-    const originalDataURL = await fileToDataURL(file);
     
     if (!isHeic) {
         return { file: file, preview: originalPreview };
@@ -203,16 +192,28 @@ async function convertHeicToJpeg(file) {
     
     // Try conversion!
     try {
-        // Try heic2any FIRST
+        // Try libheif-js FIRST! (It's already loaded in admin.html!
+        if (typeof window.libheif !== 'undefined') {
+            try {
+                const jpegBlob = await convertWithLibheif(file);
+                const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                const jpegPreview = URL.createObjectURL(jpegBlob);
+                console.log('✅ libheif-js conversion successful!');
+                URL.revokeObjectURL(originalPreview);
+                return { file: jpegFile, preview: jpegPreview };
+            } catch (err) {
+                console.warn('⚠️ libheif-js failed:', err);
+            }
+        }
+        
+        // Try heic2any
         let heic2anyLoaded = !!window.heic2any;
         if (!heic2anyLoaded) {
             const loadPromise = new Promise(resolve => {
                 const script = document.createElement('script');
-                // Try unpkg first, then jsdelivr, then cdnjs
                 script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js';
                 script.onload = () => resolve(true);
                 script.onerror = () => {
-                    // Fallback to jsdelivr if unpkg fails
                     script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
                     script.onerror = () => resolve(false);
                 };
@@ -234,7 +235,6 @@ async function convertHeicToJpeg(file) {
                 const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
                 const jpegPreview = URL.createObjectURL(finalBlob);
                 console.log('✅ heic2any conversion successful!');
-                // Revoke original object URL to free memory
                 URL.revokeObjectURL(originalPreview);
                 return { file: jpegFile, preview: jpegPreview };
             } catch (err) {
