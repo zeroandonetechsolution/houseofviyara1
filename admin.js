@@ -64,22 +64,14 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   }
   if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
 
-  // --- TRY EDGE FUNCTION FIRST FOR HEIC/HEIF! ---
+  // --- Use client-side conversion for HEIC/HEIF! ---
   if (isHeicFile(file)) {
-    console.log('📦 HEIC/HEIF detected, trying Edge Function first!');
-    try {
-      return await uploadViaBackend(file, pathPrefix);
-    } catch (edgeError) {
-      console.warn('⚠️ Edge Function failed, falling back to client-side conversion:', edgeError);
-      // If Edge Function fails, fall back to client-side conversion
-      const converted = await convertHeicToJpeg(file);
-      file = converted.file;
-    }
-  } else {
-    // For non-HEIC files, check if we're on localhost and maybe use backend, but default to direct upload
+    console.log('📦 HEIC/HEIF detected, converting client-side!');
+    const converted = await convertHeicToJpeg(file);
+    file = converted.file;
   }
   
-  // Upload to Supabase directly if we didn't use Edge Function!
+  // Upload to Supabase directly!
   if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
   const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
   const bucket = window.SUPABASE_BUCKET || 'public';
