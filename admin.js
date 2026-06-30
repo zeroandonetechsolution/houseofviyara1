@@ -705,9 +705,20 @@ function pf_renderGallery() {
     if (!container) return;
     container.innerHTML = tempProductData.gallery.map((item, idx) => {
         const preview = typeof item === 'string' ? item : item.preview;
+        const fileName = item.file ? item.file.name : '';
+        const isHeic = item.file && isHeicFile(item.file);
+        
+        // For HEIC files, if preview fails, use a custom placeholder
+        const placeholderText = isHeic ? 
+            `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:#f5f5f5;color:#666;font-size:10px;text-align:center;padding:5px;">
+                <i class="fas fa-image" style="font-size:24px;margin-bottom:4px;"></i>
+                <div style="word-break:break-all;overflow:hidden;max-height:40px;">${fileName}</div>
+            </div>` 
+            : `<img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.outerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#f5f5f5;color:#666;font-size:12px;\\'><i class=\\'fas fa-image\\'></i></div>'">
+        
         return `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Image'">
+        ${isHeic && !preview.startsWith('data') ? placeholderText : `<img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.outerHTML='<div style=\\'display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:#f5f5f5;color:#666;font-size:10px;text-align:center;padding:5px;\\'><i class=\\'fas fa-image\\' style=\\'font-size:24px;margin-bottom:4px;\\'></i><div style=\\'word-break:break-all;overflow:hidden;max-height:40px;\\'>${fileName}</div></div>'">`}
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
     `}).join('');
@@ -717,7 +728,7 @@ function pf_renderGallery() {
             const idx = parseInt(btn.dataset.index);
             const removedItem = tempProductData.gallery.splice(idx, 1)[0];
             // Release object URL to avoid memory leak
-            if (removedItem && removedItem.preview && typeof removedItem.preview !== 'string') {
+            if (removedItem && removedItem.preview && typeof removedItem.preview !== 'string' && removedItem.preview.startsWith('blob:')) {
                 URL.revokeObjectURL(removedItem.preview);
             }
             pf_renderGallery();
@@ -812,46 +823,84 @@ function isHeicFile(file) {
     );
 }
 
-// Load heic2any library
-function loadHeic2Any() {
-    if (window.heic2any) return Promise.resolve(window.heic2any);
-    return new Promise((resolve, reject) => {
+// Load libheif-js library
+let libheifLoadingPromise = null;
+function loadLibheif() {
+    if (window.libheif) return Promise.resolve(window.libheif);
+    if (libheifLoadingPromise) return libheifLoadingPromise;
+    
+    libheifLoadingPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.min.js';
         script.async = true;
         script.onload = () => {
-            if (window.heic2any) return resolve(window.heic2any);
-            reject(new Error('heic2any library not available'));
+            if (window.libheif) return resolve(window.libheif);
+            reject(new Error('libheif-js library not available'));
         };
-        script.onerror = () => reject(new Error('Failed to load heic2any library'));
+        script.onerror = () => reject(new Error('Failed to load libheif-js library'));
         document.head.appendChild(script);
     });
+    return libheifLoadingPromise;
 }
 
-// Convert HEIC file to JPEG data URL
+// Convert HEIC file to JPEG data URL using libheif-js
 async function convertHeicToJpeg(file) {
+    console.log('🚀 Starting HEIC conversion with libheif for file:', file.name);
     try {
-        await loadHeic2Any();
-        console.log('Starting HEIC conversion for file:', file.name);
-        const convertedBlob = await window.heic2any({
-            blob: file,
-            toType: 'image/jpeg',
-            quality: 0.9
-        });
-        console.log('heic2any returned:', convertedBlob);
-        // Handle case where heic2any returns array (for burst shots)
-        const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        await loadLibheif();
+        const heif = new window.libheif.HeifDecoder();
         
-        // Convert blob to data URL
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blobToUse);
-        });
+        // Read file as ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        
+        // Decode image
+        const images = heif.decode(data);
+        if (!images || images.length === 0) {
+            throw new Error('Failed to decode HEIC image');
+        }
+        
+        const image = images[0];
+        
+        // Create canvas and draw image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = image.get_width();
+        canvas.height = image.get_height();
+        
+        // Display the image
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        image.display(imageData.data, canvas.width, canvas.height, imageData.width * 4, window.libheif.heif_colorspace_RGB, window.libheif.heif_chroma_interleaved_RGBA);
+        ctx.putImageData(imageData, 0, 0);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        console.log('✅ libheif conversion successful!');
+        return dataUrl;
     } catch (err) {
-        console.warn('HEIC conversion failed:', err);
-        throw err;
+        console.warn('❌ libheif conversion failed:', err);
+        // Try ImageDecoder API as fallback
+        try {
+            console.log('🔄 Trying native ImageDecoder...');
+            const arrayBuffer = await file.arrayBuffer();
+            const decoder = new ImageDecoder({
+                data: arrayBuffer,
+                type: file.type || 'image/heic'
+            });
+            const result = await decoder.decode();
+            const imageBitmap = result.image;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = imageBitmap.width;
+            canvas.height = imageBitmap.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imageBitmap, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            console.log('✅ ImageDecoder fallback successful!');
+            return dataUrl;
+        } catch (decoderErr) {
+            console.warn('❌ ImageDecoder also failed:', decoderErr);
+            throw decoderErr;
+        }
     }
 }
 
@@ -861,8 +910,7 @@ async function readImageFileAsDataURL(file) {
         try {
             return await convertHeicToJpeg(file);
         } catch (err) {
-            console.warn('HEIC conversion failed, falling back to object URL preview:', err);
-            // For preview, we can still use object URL, but when uploading we'll convert later? Wait, no—let's just upload the original file if conversion fails
+            console.warn('⚠️ All conversion methods failed for HEIC file');
         }
     }
     // For non-HEIC or failed conversion, return data URL
@@ -909,22 +957,26 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                // First try to convert HEIC
+                let previewUrl = URL.createObjectURL(file);
+                let dataUrl = null;
+                
+                // Try to convert HEIC files to JPEG
                 if (isHeicFile(file)) {
                     try {
-                        const dataUrl = await readImageFileAsDataURL(file);
-                        tempProductData.gallery.push(dataUrl);
-                        pf_renderGallery();
-                        continue;
+                        dataUrl = await readImageFileAsDataURL(file);
+                        // If conversion worked, use data URL as preview
+                        if (dataUrl && dataUrl.startsWith('data:')) {
+                            previewUrl = dataUrl;
+                        }
                     } catch (err) {
-                        console.warn('HEIC conversion failed, using original file:', err);
+                        console.warn('⚠️ HEIC conversion failed, using original file:', err);
                     }
                 }
-                // Fallback to original file with object URL preview
-                const previewUrl = URL.createObjectURL(file);
+                
                 tempProductData.gallery.push({
                     file: file,
-                    preview: previewUrl
+                    preview: previewUrl,
+                    dataUrl: dataUrl // Store converted data URL if available
                 });
                 pf_renderGallery();
             } catch (err) {
@@ -1106,12 +1158,21 @@ async function handleAddProduct() {
         if (adminSupabase) {
             const uploadedGallery = [];
             for (const item of gallery) {
-                if (typeof item === 'object' && item.file) {
-                    // Upload original File directly!
-                    const url = await supabaseUploadFile(item.file, 'products');
+                if (typeof item === 'object' && item.dataUrl) {
+                    // Use converted JPEG data URL first
+                    const url = await supabaseUploadFile(item.dataUrl, 'products');
                     uploadedGallery.push(url);
                     // Release object URL now that we're done with it
-                    if (item.preview) URL.revokeObjectURL(item.preview);
+                    if (item.preview && item.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(item.preview);
+                    }
+                } else if (typeof item === 'object' && item.file) {
+                    // Fallback to original File
+                    const url = await supabaseUploadFile(item.file, 'products');
+                    uploadedGallery.push(url);
+                    if (item.preview && item.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(item.preview);
+                    }
                 } else if (typeof item === 'string' && item.startsWith('data:')) {
                     const url = await supabaseUploadFile(item, 'products');
                     uploadedGallery.push(url);
@@ -1202,12 +1263,21 @@ async function handleEditProduct(id) {
         if (adminSupabase) {
             const uploadedGallery = [];
             for (const item of gallery) {
-                if (typeof item === 'object' && item.file) {
-                    // Upload original File directly!
-                    const url = await supabaseUploadFile(item.file, 'products');
+                if (typeof item === 'object' && item.dataUrl) {
+                    // Use converted JPEG data URL first
+                    const url = await supabaseUploadFile(item.dataUrl, 'products');
                     uploadedGallery.push(url);
                     // Release object URL now that we're done with it
-                    if (item.preview) URL.revokeObjectURL(item.preview);
+                    if (item.preview && item.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(item.preview);
+                    }
+                } else if (typeof item === 'object' && item.file) {
+                    // Fallback to original File
+                    const url = await supabaseUploadFile(item.file, 'products');
+                    uploadedGallery.push(url);
+                    if (item.preview && item.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(item.preview);
+                    }
                 } else if (typeof item === 'string' && item.startsWith('data:')) {
                     const url = await supabaseUploadFile(item, 'products');
                     uploadedGallery.push(url);
