@@ -702,7 +702,8 @@ function getCategoryFileName(slug) {
         'maxis': 'Maxis.html',
         'cord-sets': 'Cord sets.html',
         'kurti': 'Kurti.html',
-        'kurti-sets': 'Kurti sets.html'
+        'kurti-sets': 'Kurti sets.html',
+        'pure-cotton': 'pure-cotton.html'
     };
     // Return the mapped file name if it exists, otherwise slug.html (fallback)
     return slugToFile[slug] || `${slug}.html`;
