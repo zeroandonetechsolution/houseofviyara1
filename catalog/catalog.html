@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Catalog | House Of Viyara</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="catalog-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="preloader" aria-live="polite" aria-busy="true">
+        <div class="loader-scene">
+            <div class="loader-orbit"><span></span><span></span><span></span></div>
+            <div class="loader-logo">HOUSE OF VIYARA</div>
+        </div>
+        <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
+        <div class="loader-percent" id="loader-percent">0%</div>
+        <div class="loader-text" id="loader-text">Loading luxury...</div>
+    </div>
+    <div id="page-transition" aria-hidden="true">
+        <div class="page-transition-logo">CATALOG</div>
+        <div class="page-transition-text">Loading products...</div>
+    </div>
+    <script src="../loader.js"></script>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1><a href="../index.html" style="color: inherit; text-decoration: none;">House Of Viyara</a></h1>
+            </div>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="../maxis.html">Maxis</a></li>
+                    <li><a href="../cord-sets.html">Cord Sets</a></li>
+                    <li><a href="../kurti.html">Kurti</a></li>
+                    <li><a href="../kurti-sets.html">Kurti Sets</a></li>
+                    <li><a href="catalog.html" class="active">Catalog</a></li>
+                </ul>
+            </nav>
+            <div class="header-search-container">
+                <i class="fas fa-search header-search-icon"></i>
+                <input type="text" class="header-search-input" placeholder="SEARCH..." id="catalog-search-input">
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" id="wishlist-toggle-btn" aria-label="Wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlist-badge">0</span>
+                </button>
+                <button class="icon-btn" id="cart-toggle-btn" aria-label="Shopping Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge" id="cart-badge">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="catalog-container">
+        <!-- Filter & Sort Section -->
+        <section class="catalog-controls">
+            <div class="filter-sort-wrapper">
+                <div class="filter-section">
+                    <button class="filter-btn" id="filter-toggle">
+                        <i class="fas fa-filter"></i> Filters
+                    </button>
+                    <div class="filter-panel" id="filter-panel">
+                        <div class="filter-group">
+                            <h4>Category</h4>
+                            <label><input type="checkbox" value="maxis" class="category-filter"> Maxis</label>
+                            <label><input type="checkbox" value="cord-sets" class="category-filter"> Cord Sets</label>
+                            <label><input type="checkbox" value="kurti" class="category-filter"> Kurti</label>
+                            <label><input type="checkbox" value="kurti-sets" class="category-filter"> Kurti Sets</label>
+                            <label><input type="checkbox" value="pure-cotton" class="category-filter"> Pure Cotton</label>
+                        </div>
+                        <div class="filter-group">
+                            <h4>Price Range</h4>
+                            <input type="range" id="price-filter" min="0" max="10000" step="100" value="10000">
+                            <div class="price-display">₹0 - ₹<span id="price-value">10000</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sort-section">
+                    <select id="sort-select" class="sort-select">
+                        <option value="newest">Newest</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div class="view-toggle">
+                    <button class="view-btn grid-view active" id="grid-view-btn" aria-label="Grid View">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="view-btn list-view" id="list-view-btn" aria-label="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Info -->
+        <div class="catalog-info">
+            <p id="results-count">Loading products...</p>
+        </div>
+
+        <!-- Products Grid -->
+        <section class="catalog-grid" id="catalog-grid">
+            <!-- Products will be rendered here -->
+        </section>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="no-results" style="display: none;">
+            <i class="fas fa-search"></i>
+            <h3>No Products Found</h3>
+            <p>Try adjusting your filters or search term</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About Us</h4>
+                <p>House Of Viyara brings luxury ethnic wear to your wardrobe with premium quality fabrics and traditional designs.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="catalog.html">Catalog</a></li>
+                    <li><a href="../privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="../terms.html">Terms</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Email: support@houseofviyara.com</p>
+                <p>Phone: +91 XXXX XXXXXX</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 House Of Viyara. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../supabase-config.js"></script>
+    <script src="../app.js"></script>
+    <script src="catalog.js"></script>
+</body>
+</html>
