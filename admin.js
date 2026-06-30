@@ -130,6 +130,40 @@ async function loadSupabaseClient() {
   }
 }
 
+// --- HELPER: Load heic2any reliably from CDN ---
+let heic2anyLoadingPromise = null;
+function ensureHeic2anyLoaded() {
+    if (window.heic2any) return Promise.resolve();
+    if (heic2anyLoadingPromise) return heic2anyLoadingPromise;
+    heic2anyLoadingPromise = new Promise((resolve, reject) => {
+        let fallbackCount = 0;
+        const cdns = [
+            'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js',
+            'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.10/heic2any.min.js'
+        ];
+        function tryNextCdn() {
+            if (fallbackCount >= cdns.length) {
+                reject(new Error('Failed to load heic2any from any CDN'));
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = cdns[fallbackCount];
+            script.onload = () => {
+                if (window.heic2any) resolve();
+                else tryNextCdn();
+            };
+            script.onerror = () => {
+                fallbackCount++;
+                tryNextCdn();
+            };
+            document.head.appendChild(script);
+        }
+        tryNextCdn();
+    });
+    return heic2anyLoadingPromise;
+}
+
 // Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
     console.log('🔄 Converting HEIC/HEIF file:', file.name);
@@ -139,17 +173,11 @@ async function convertHeicToJpeg(file) {
         return { file: file, preview: URL.createObjectURL(file) };
     }
     
-    // Wait for heic2any to load, if needed
-    let attempts = 0;
-    while (!window.heic2any && attempts < 50) {
-        await new Promise(r => setTimeout(r, 50));
-        attempts++;
-    }
-    
-    // Try heic2any first (most reliable)
-    if (window.heic2any) {
-        try {
-            console.log('📦 Using heic2any');
+    // --- 1. Try heic2any (most reliable) ---
+    try {
+        await ensureHeic2anyLoaded();
+        if (window.heic2any) {
+            console.log('📦 Using heic2any for conversion');
             const jpegBlob = await window.heic2any({
                 blob: file,
                 toType: 'image/jpeg',
@@ -162,15 +190,15 @@ async function convertHeicToJpeg(file) {
                 file: jpegFile,
                 preview: URL.createObjectURL(finalBlob)
             };
-        } catch (err) {
-            console.warn('⚠️ heic2any failed:', err);
         }
+    } catch (err) {
+        console.warn('⚠️ heic2any failed:', err);
     }
     
-    // Try ImageDecoder API
+    // --- 2. Try ImageDecoder API ---
     if (typeof ImageDecoder !== 'undefined') {
         try {
-            console.log('📡 Using ImageDecoder');
+            console.log('📡 Using ImageDecoder API');
             const arrayBuffer = await file.arrayBuffer();
             const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
             let decoder = null;
@@ -199,8 +227,8 @@ async function convertHeicToJpeg(file) {
         }
     }
     
-    // Final fallback
-    console.log('⚠️ Using original file');
+    // --- 3. Final fallback ---
+    console.warn('⚠️ All conversion methods failed! Using original file!');
     return { file: file, preview: URL.createObjectURL(file) };
 }
 
