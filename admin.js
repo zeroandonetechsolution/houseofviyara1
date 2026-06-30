@@ -183,8 +183,8 @@ async function loadLibheif() {
     if (typeof window.libheif !== 'undefined') return true;
     console.log('📚 Loading libheif-js...');
     const urls = [
-        'https://unpkg.com/libheif-js@1.17.1/libheif.js',
-        'https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.js'
+        'https://cdn.jsdelivr.net/npm/libheif-js@1.15.1/libheif.js',
+        'https://unpkg.com/libheif-js@1.15.1/libheif.js'
     ];
     for (const url of urls) {
         const loaded = await new Promise(resolve => {
@@ -237,15 +237,15 @@ async function convertHeicToJpeg(file) {
         if (!heic2anyLoaded) {
             const loadPromise = new Promise(resolve => {
                 const script = document.createElement('script');
-                script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js';
+                script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js';
                 script.onload = () => resolve(true);
                 script.onerror = () => {
-                    script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
+                    script.src = 'https://unpkg.com/heic2any@0.0.3/dist/heic2any.min.js';
                     script.onerror = () => resolve(false);
                 };
                 document.head.appendChild(script);
             });
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 5000));
             heic2anyLoaded = await Promise.race([loadPromise, timeoutPromise]);
         }
         

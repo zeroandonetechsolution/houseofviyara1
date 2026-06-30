@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEIC/HEIF Converter Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #d4a75c;
+            --bg: #f4f4f4;
+            --card-bg: white;
+            --text: #222;
+            --text-muted: #666;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: var(--text);
+            margin: 0 0 0.5rem;
+        }
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        .dropzone {
+            border: 3px dashed #ddd;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        .dropzone:hover, .dropzone.drag-over {
+            border-color: var(--primary);
+            background: rgba(212,167,92,0.05);
+        }
+        .dropzone i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+        .dropzone:hover i, .dropzone.drag-over i {
+            color: var(--primary);
+        }
+        .options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .option-group label {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .option-group select, .option-group input {
+            padding: 0.75rem 1rem;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+        }
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #c4944c;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #eee;
+            color: var(--text);
+        }
+        .btn-secondary:hover {
+            background: #ddd;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .result-item {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+        .result-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .result-item-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .result-item-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+        .result-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-image"></i> HEIC/HEIF Converter Test</h1>
+            <p>100% Client-Side | No Server Required</p>
+        </div>
+
+        <div class="card">
+            <div class="dropzone" id="dropzone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Drop HEIC/HEIF Images Here</h3>
+                <p>Or click to browse</p>
+                <input type="file" id="fileInput" multiple accept=".heic,.heif" hidden>
+            </div>
+
+            <div class="options">
+                <div class="option-group">
+                    <label for="formatSelect">Output Format</label>
+                    <select id="formatSelect">
+                        <option value="jpeg">JPEG (Recommended)</option>
+                        <option value="png">PNG</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="qualityRange">Quality (JPEG Only)</label>
+                    <input type="range" id="qualityRange" min="0.1" max="1" step="0.1" value="0.9">
+                    <span id="qualityValue">0.9</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="convertBtn">
+                    <i class="fas fa-magic"></i> Convert All
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display: none;">
+            <h2 style="margin-top: 0;"><i class="fas fa-check-circle"></i> Converted Images</h2>
+            <div class="results" id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <!-- Load heic2any from CDN -->
+    <script src="https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js"></script>
+    <script>
+        // --- DOM Elements ---
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const formatSelect = document.getElementById('formatSelect');
+        const qualityRange = document.getElementById('qualityRange');
+        const qualityValue = document.getElementById('qualityValue');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        // --- State ---
+        let uploadedFiles = [];
+
+        // --- Event Listeners ---
+        qualityRange.addEventListener('input', () => {
+            qualityValue.textContent = qualityRange.value;
+        });
+
+        // Dropzone click
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadedFiles = [...uploadedFiles, ...Array.from(e.target.files)];
+                console.log('📦 Files added:', uploadedFiles.map(f => f.name));
+            }
+        });
+
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults);
+            document.body.addEventListener(eventName, preventDefaults);
+        });
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.add('drag-over'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'));
+        });
+        dropzone.addEventListener('drop', (e) => {
+            const files = Array.from(e.dataTransfer.files);
+            uploadedFiles = [...uploadedFiles, ...files];
+            console.log('📦 Files dropped:', files.map(f => f.name));
+        });
+
+        // Convert button
+        convertBtn.addEventListener('click', convertAll);
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            uploadedFiles = [];
+            resultsCard.style.display = 'none';
+            resultsContainer.innerHTML = '';
+            fileInput.value = '';
+        });
+
+        // --- Conversion Functions ---
+        async function convertSingleFile(file, format, quality) {
+            console.log('🔄 Converting:', file.name, 'to', format);
+            try {
+                const convertedBlob = await window.heic2any({
+                    blob: file,
+                    toType: `image/${format}`,
+                    quality: format === 'jpeg' ? quality : undefined
+                });
+                const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                const finalFileName = file.name.replace(/\.(heic|heif)$/i, `.${format}`);
+                console.log('✅ Converted:', finalFileName);
+                return {
+                    originalFile: file,
+                    convertedBlob: finalBlob,
+                    convertedFile: new File([finalBlob], finalFileName, { type: `image/${format}` }),
+                    url: URL.createObjectURL(finalBlob)
+                };
+            } catch (err) {
+                console.error('❌ Conversion failed for', file.name, err);
+                throw err;
+            }
+        }
+
+        async function convertAll() {
+            if (uploadedFiles.length === 0) {
+                alert('Please select some HEIC/HEIF images first!');
+                return;
+            }
+
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+
+            const format = formatSelect.value;
+            const quality = parseFloat(qualityRange.value);
+
+            // Convert all files
+            const results = [];
+            for (const file of uploadedFiles) {
+                try {
+                    const result = await convertSingleFile(file, format, quality);
+                    results.push(result);
+                } catch (err) {
+                    alert(`Failed to convert ${file.name}: ${err.message}`);
+                }
+            }
+
+            // Render results
+            renderResults(results);
+
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<i class="fas fa-magic"></i> Convert All';
+        }
+
+        function renderResults(results) {
+            resultsCard.style.display = 'block';
+            resultsContainer.innerHTML = '';
+
+            for (const result of results) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+
+                item.innerHTML = `
+                    <img src="${result.url}" alt="${result.convertedFile.name}">
+                    <div class="result-item-info">
+                        <span class="result-item-name">${result.convertedFile.name}</span>
+                    </div>
+                    <div class="result-item-actions">
+                        <button class="btn btn-sm btn-primary downloadBtn" data-url="${result.url}" data-name="${result.convertedFile.name}">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                `;
+
+                // Add download event listener
+                item.querySelector('.downloadBtn').addEventListener('click', (e) => {
+                    const url = e.currentTarget.dataset.url;
+                    const name = e.currentTarget.dataset.name;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+
+                resultsContainer.appendChild(item);
+            }
+        }
+
+        // --- Init ---
+        console.log('✅ HEIC Converter initialized!');
+    </script>
+</body>
+</html>

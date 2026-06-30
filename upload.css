@@ -1,0 +1,372 @@
+.upload-page-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.upload-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #222;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.back-btn:hover {
+    color: #d4a75c;
+}
+
+.upload-header h1 {
+    font-size: 2.5rem;
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.upload-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.upload-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.upload-dropzone {
+    border: 3px dashed #ddd;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 2rem;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.drag-over {
+    border-color: #d4a75c;
+    background: rgba(212, 167, 92, 0.05);
+}
+
+.upload-dropzone i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+    transition: color 0.3s;
+}
+
+.upload-dropzone:hover i,
+.upload-dropzone.drag-over i {
+    color: #d4a75c;
+}
+
+.upload-dropzone h3 {
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.upload-dropzone p {
+    color: #888;
+    margin-bottom: 1.5rem;
+}
+
+.upload-btn,
+.upload-all-btn,
+.clear-btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-btn,
+.upload-all-btn {
+    background: #d4a75c;
+    color: white;
+}
+
+.upload-btn:hover,
+.upload-all-btn:hover {
+    background: #c4944c;
+    transform: translateY(-2px);
+}
+
+.clear-btn {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.clear-btn:hover {
+    background: #eaeaea;
+}
+
+.upload-list {
+    margin-bottom: 1.5rem;
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.upload-item-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    background: #d4a75c;
+}
+
+.upload-item-info {
+    flex: 1;
+}
+
+.upload-item-name {
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.25rem;
+}
+
+.upload-item-size {
+    color: #888;
+    font-size: 0.875rem;
+}
+
+.upload-item-progress {
+    width: 100%;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.upload-item-progress-bar {
+    height: 100%;
+    background: #d4a75c;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.upload-item-remove {
+    background: none;
+    border: none;
+    color: #cc3333;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.upload-item-remove:hover {
+    color: #aa2222;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-bottom: 2rem;
+}
+
+.uploaded-files {
+    border-top: 1px solid #eee;
+    padding-top: 2rem;
+}
+
+.uploaded-files h3 {
+    color: #222;
+    margin-bottom: 1rem;
+}
+
+.uploaded-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.uploaded-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+    background: #888;
+}
+
+.uploaded-item-info {
+    flex: 1;
+}
+
+.uploaded-item-name {
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 0.25rem;
+}
+
+.uploaded-item-link {
+    color: #d4a75c;
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.uploaded-item-link:hover {
+    text-decoration: underline;
+}
+
+.uploaded-item-copy {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.uploaded-item-copy:hover {
+    color: #222;
+}
+
+.preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: none;
+}
+
+.preview-modal.show {
+    display: block;
+}
+
+.preview-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+}
+
+.preview-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+}
+
+.preview-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+    z-index: 10;
+}
+
+.preview-modal-close:hover {
+    transform: scale(1.1);
+}
+
+.preview-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 300px;
+}
+
+.preview-modal-body img,
+.preview-modal-body video,
+.preview-modal-body audio,
+.preview-modal-body iframe {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+}
+
+.preview-modal-body .preview-fallback {
+    text-align: center;
+    padding: 2rem;
+}
+
+.preview-modal-body .preview-fallback i {
+    font-size: 4rem;
+    color: #d4a75c;
+    margin-bottom: 1rem;
+}
+
+.uploaded-item-preview {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-right: 0.5rem;
+}
+
+.uploaded-item-preview:hover {
+    color: #222;
+}
+
+.upload-item-preview {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-right: 0.5rem;
+}
+
+.upload-item-preview:hover {
+    color: #222;
+}

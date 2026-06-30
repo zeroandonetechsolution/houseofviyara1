@@ -1,8 +1,8 @@
 // SUPABASE EDGE FUNCTION: Convert HEIC/HEIF to JPEG!
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import heic2any from "https://esm.sh/heic2any@0.0.10";
 
-// We'll use client-side conversion as primary, and just upload original if needed (since sharp is tricky in Deno Edge Functions)
 serve(async (req: Request) => {
   // --- 1. HANDLE CORS ---
   if (req.method === "OPTIONS") {
@@ -26,11 +26,29 @@ serve(async (req: Request) => {
     if (!file) return new Response("Missing image file", { status: 400 });
     console.log("📦 File received:", file.name, "size:", file.size);
 
-    // For now, just upload the file as-is (client-side conversion will handle HEIC!)
-    const processedBlob = file;
-    const processedFileName = file.name;
+    // --- 3. CHECK IF IT'S HEIC/HEIF ---
+    const isHeic = file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif") || file.type.includes("heic") || file.type.includes("heif");
+    let processedBlob: Blob = file;
+    let processedFileName: string = file.name;
 
-    // --- 3. UPLOAD TO SUPABASE STORAGE ---
+    if (isHeic) {
+      console.log("📸 HEIC/HEIF detected! Converting...");
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const jpegBlob = await heic2any({
+          blob: new Blob([arrayBuffer], { type: file.type }),
+          toType: "image/jpeg",
+          quality: 0.9
+        });
+        processedBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+        processedFileName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+        console.log("✅ Converted successfully!");
+      } catch (convertErr) {
+        console.warn("⚠️ Conversion failed, using original file:", convertErr);
+      }
+    }
+
+    // --- 4. UPLOAD TO SUPABASE STORAGE ---
     const supabaseUrl = Deno.env.get("PROJECT_URL")!;
     const supabaseServiceKey = Deno.env.get("SRV_ROLE_KEY")!;
     const bucket = Deno.env.get("BUCKET_NAME")!;
@@ -43,7 +61,7 @@ serve(async (req: Request) => {
     console.log("📤 Uploading to Supabase bucket:", bucket, "path:", filename);
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filename, processedBlob, { upsert: true, contentType: file.type || "application/octet-stream" });
+      .upload(filename, processedBlob, { upsert: true, contentType: isHeic ? "image/jpeg" : file.type || "application/octet-stream" });
 
     if (uploadError) {
       console.error("❌ Supabase upload error:", uploadError);
