@@ -93,6 +93,76 @@ async function loadSupabaseClient() {
   }
 }
 
+// Convert HEIC/HEIF to JPEG
+async function convertHeicToJpeg(file) {
+  console.log('🔄 Converting HEIC/HEIF file:', file.name);
+  const isHeic = isHeicFile(file);
+  
+  if (!isHeic) {
+    // Not HEIC, just return the original file
+    return { file: file, preview: URL.createObjectURL(file) };
+  }
+
+  // Try method 1: heic2any library
+  if (window.heic2any) {
+    try {
+      console.log('📦 Using heic2any for conversion');
+      const jpegBlob = await window.heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9
+      });
+      const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+      // Create a File object from the blob
+      const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+      console.log('✅ heic2any conversion successful!');
+      return {
+        file: jpegFile,
+        preview: URL.createObjectURL(finalBlob)
+      };
+    } catch (err) {
+      console.warn('⚠️ heic2any conversion failed, trying ImageDecoder:', err);
+    }
+  }
+
+  // Try method 2: Native ImageDecoder API (modern browsers)
+  if (typeof ImageDecoder !== 'undefined') {
+    try {
+      console.log('📡 Using ImageDecoder API');
+      const arrayBuffer = await file.arrayBuffer();
+      const decoder = new ImageDecoder({
+        data: arrayBuffer,
+        type: 'image/heic'
+      });
+      const { image } = await decoder.decode();
+      // Draw to canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = image.displayWidth;
+      canvas.height = image.displayHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0);
+      const jpegBlob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, 'image/jpeg', 0.9)
+      );
+      const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+      console.log('✅ ImageDecoder conversion successful!');
+      return {
+        file: jpegFile,
+        preview: URL.createObjectURL(jpegBlob)
+      };
+    } catch (err) {
+      console.warn('⚠️ ImageDecoder failed, falling back to original:', err);
+    }
+  }
+
+  // Fallback: Return original file, but warn user
+  console.log('⚠️ All conversion methods failed; uploading original HEIC');
+  return {
+    file: file,
+    preview: URL.createObjectURL(file)
+  };
+}
+
 // ── Fetch helper ──
 async function apiFetch(endpoint, options = {}) {
     const headers = options.body instanceof FormData
@@ -881,17 +951,13 @@ function setupProductForm() {
     });
 
     // Setup gallery file input
-    document.getElementById('pf-gallery-files').addEventListener('change', (e) => {
+    document.getElementById('pf-gallery-files').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
-            // Always use original file with object URL preview
-            const previewUrl = URL.createObjectURL(file);
-            tempProductData.gallery.push({
-                file: file,
-                preview: previewUrl
-            });
+            const converted = await convertHeicToJpeg(file);
+            tempProductData.gallery.push(converted);
             pf_renderGallery();
         }
     });
@@ -944,13 +1010,7 @@ function setupProductForm() {
 
                 // Convert image file if one is selected
                 if (imageFile) {
-                    // Upload original file directly with object URL preview
-                    const previewUrl = URL.createObjectURL(imageFile);
-                    // Store as object with file and preview for upload later
-                    finalImageUrl = {
-                        file: imageFile,
-                        preview: previewUrl
-                    };
+                    finalImageUrl = await convertHeicToJpeg(imageFile);
                 }
 
                 // Create new variant object
@@ -1475,16 +1535,15 @@ function setupCategoryForm() {
     const previewImg = document.getElementById('cf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function() {
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Always use original file
-                const previewUrl = URL.createObjectURL(file);
-                window._cfTempImage = previewUrl;
-                window._cfTempFile = file;
+                const converted = await convertHeicToJpeg(file);
+                window._cfTempImage = converted.preview;
+                window._cfTempFile = converted.file;
                 previewWrap.style.display = 'block';
-                previewImg.src = previewUrl;
+                previewImg.src = converted.preview;
                 urlInput.value = '';
             } catch (err) {
                 console.error('Upload failed:', err);
@@ -1801,16 +1860,15 @@ function setupBannerForm() {
     const previewImg = document.getElementById('bf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function() {
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Always use original file
-                const previewUrl = URL.createObjectURL(file);
-                window._bfTempImage = previewUrl;
-                window._bfTempFile = file;
+                const converted = await convertHeicToJpeg(file);
+                window._bfTempImage = converted.preview;
+                window._bfTempFile = converted.file;
                 previewWrap.style.display = 'block';
-                previewImg.src = previewUrl;
+                previewImg.src = converted.preview;
                 previewImg.style.display = 'block';
                 urlInput.value = '';
             } catch (err) {
@@ -2464,16 +2522,15 @@ function setupHeroImageForm() {
     const previewImg = document.getElementById('hi-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Always use original file
-                const previewUrl = URL.createObjectURL(file);
-                window._hiTempImage = previewUrl;
-                window._hiTempFile = file;
+                const converted = await convertHeicToJpeg(file);
+                window._hiTempImage = converted.preview;
+                window._hiTempFile = converted.file;
                 previewWrap.style.display = 'block';
-                previewImg.src = previewUrl;
+                previewImg.src = converted.preview;
                 urlInput.value = '';
             } catch (e) {
                 console.error('Upload failed:', e);
