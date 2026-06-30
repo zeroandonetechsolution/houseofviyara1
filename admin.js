@@ -132,24 +132,33 @@ async function loadSupabaseClient() {
   }
 }
 
+// Helper to convert any blob/file to data URL
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 // Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
     console.log('🔄 Processing file:', file.name);
     const isHeic = isHeicFile(file);
     
-    // FIRST: ALWAYS RETURN A PREVIEW FIRST SO THE ADMIN SHOWS SOMETHING!
-    const originalPreview = URL.createObjectURL(file);
+    // FIRST: Create a DATA URL preview immediately, so it ALWAYS displays!
+    const originalDataURL = await fileToDataURL(file);
     
     if (!isHeic) {
-        return { file: file, preview: originalPreview };
+        return { file: file, preview: originalDataURL };
     }
     
-    // Try conversion, but only for 5 seconds max, never get stuck!
+    // Try conversion!
     try {
         // Try to load heic2any quickly, with timeout
         let heic2anyLoaded = !!window.heic2any;
         if (!heic2anyLoaded) {
-            // Try to load heic2any from jsDelivr quickly
             const loadPromise = new Promise(resolve => {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
@@ -157,7 +166,6 @@ async function convertHeicToJpeg(file) {
                 script.onerror = () => resolve(false);
                 document.head.appendChild(script);
             });
-            // Wait max 3 seconds for heic2any to load
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
             heic2anyLoaded = await Promise.race([loadPromise, timeoutPromise]);
         }
@@ -172,13 +180,9 @@ async function convertHeicToJpeg(file) {
                 });
                 const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
                 const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                const jpegDataURL = await fileToDataURL(finalBlob);
                 console.log('✅ heic2any conversion successful!');
-                // Revoke the original preview to save memory
-                URL.revokeObjectURL(originalPreview);
-                return {
-                    file: jpegFile,
-                    preview: URL.createObjectURL(finalBlob)
-                };
+                return { file: jpegFile, preview: jpegDataURL };
             } catch (err) {
                 console.warn('⚠️ heic2any failed:', err);
             }
@@ -206,12 +210,9 @@ async function convertHeicToJpeg(file) {
                     ctx.drawImage(image, 0, 0);
                     const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
                     const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                    const jpegDataURL = await fileToDataURL(jpegBlob);
                     console.log('✅ ImageDecoder conversion successful!');
-                    URL.revokeObjectURL(originalPreview);
-                    return {
-                        file: jpegFile,
-                        preview: URL.createObjectURL(jpegBlob)
-                    };
+                    return { file: jpegFile, preview: jpegDataURL };
                 }
             } catch (err) {
                 console.warn('⚠️ ImageDecoder failed:', err);
@@ -221,9 +222,9 @@ async function convertHeicToJpeg(file) {
         console.warn('⚠️ Conversion attempt failed:', err);
     }
     
-    // Final fallback: use original file with original preview
-    console.warn('⚠️ All conversion methods failed! Using original file, but preview is available!');
-    return { file: file, preview: originalPreview };
+    // Final fallback: use original file with original data URL preview!
+    console.warn('⚠️ All conversion methods failed! Using original file, preview still works!');
+    return { file: file, preview: originalDataURL };
 }
 
 // ── Fetch helper ──
