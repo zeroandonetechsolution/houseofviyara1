@@ -567,6 +567,12 @@ const productCache = new Map();
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 let bannerIntervalId = null;
 
+function isHeicUrl(url) {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.includes('.heic') || lowerUrl.includes('.heif');
+}
+
 function optimizeImg(url, w = 400, q = 60) {
     if (window.LifeStyleLoader) return LifeStyleLoader.optimizeImageUrl(url, w, q);
     if (url && url.includes('unsplash.com')) {
@@ -1106,9 +1112,10 @@ function renderToDOM(products, container, category) {
         const optimizedImg = optimizeImg(p.image_url, 400, 60);
         const thumbImg = optimizeImg(p.image_url, 40, 30);
         const eager = idx < 4 ? 'eager' : 'lazy';
+        const placeholder = 'https://via.placeholder.com/400x400?text=Product+Image';
         const imgAttrs = eager === 'lazy'
-            ? `src="${thumbImg}" data-src="${optimizedImg}" class="lazy-loading" loading="lazy"`
-            : `src="${optimizedImg}" loading="eager"`;
+            ? `src="${thumbImg}" data-src="${optimizedImg}" class="lazy-loading" loading="lazy" onerror="this.onerror=null; this.src='${placeholder}'; if(this.dataset.src) this.dataset.src='${placeholder}';"`
+            : `src="${optimizedImg}" loading="eager" onerror="this.onerror=null; this.src='${placeholder}';"`;
         
         const isInWishlist = wishlist.some(item => item.id === p.id);
         const variantSummary = normalizeProductVariants(p).slice(0, 3).map(v => `${v.color} / ${v.size}`).join(', ');
@@ -1390,6 +1397,7 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
     // Generate Gallery — first image eager, rest lazy; video deferred until selected
     const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length ? selectedVariant.gallery : Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url];
     const gallery = Array.isArray(variantGallery) && variantGallery.length ? variantGallery : [selectedVariant.image_url || product.image_url];
+    const galleryPlaceholder = 'https://via.placeholder.com/900x900?text=Product+View';
     let galleryDots = gallery.map((img, i) => {
         const dotBg = optimizeImg(img, 80, 40);
         return `<div class="gallery-dot ${i === 0 ? 'active' : ''}" style="background-image:url('${dotBg}')" onclick="changeGalleryImage(${i})"></div>`;
@@ -1400,9 +1408,9 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
         const fullImg = optimizeImg(img, 900, 75);
         const thumb = optimizeImg(img, 60, 30);
         if (i === 0) {
-            mediaHtml += `<img src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item active" id="gallery-img-${i}" decoding="async">`;
+            mediaHtml += `<img src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item active" id="gallery-img-${i}" decoding="async" onerror="this.onerror=null; this.src='${galleryPlaceholder}';">`;
         } else {
-            mediaHtml += `<img src="${thumb}" data-src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item lazy-loading" id="gallery-img-${i}" decoding="async">`;
+            mediaHtml += `<img src="${thumb}" data-src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item lazy-loading" id="gallery-img-${i}" decoding="async" onerror="this.onerror=null; this.src='${galleryPlaceholder}'; if(this.dataset.src) this.dataset.src='${galleryPlaceholder}';">`;
         }
     });
     

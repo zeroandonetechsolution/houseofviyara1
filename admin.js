@@ -731,17 +731,23 @@ function pf_renderGallery() {
 function pf_renderVideos() {
     const container = document.getElementById('pf-videos-container');
     if (!container) return;
-    container.innerHTML = tempProductData.videos.map((vid, idx) => `
+    container.innerHTML = tempProductData.videos.map((vid, idx) => {
+        const preview = typeof vid === 'string' ? vid : vid.preview;
+        return `
       <div class="video-item" style="position:relative;width:150px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <video src="${vid}" style="width:100%;height:100px;object-fit:cover;" controls></video>
+        <video src="${preview}" style="width:100%;height:100px;object-fit:cover;" controls></video>
         <button type="button" class="pf-remove-video-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `).join('');
+    `}).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-video-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const idx = parseInt(btn.dataset.index);
-            tempProductData.videos.splice(idx, 1);
+            const removed = tempProductData.videos.splice(idx, 1);
+            // Release object URL if needed
+            if (removed[0] && removed[0].preview && removed[0].preview.startsWith('blob:')) {
+                URL.revokeObjectURL(removed[0].preview);
+            }
             pf_renderVideos();
         });
     });
@@ -800,8 +806,44 @@ function readFileAsDataURL(file) {
     });
 }
 
-// Read image file as data URL (no conversion)
+// Check if file is HEIC/HEIF
+function isHeicFile(file) {
+    if (!file) return false;
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    return (
+        type === 'image/heic' || 
+        type === 'image/heif' || 
+        type === 'image/heic-sequence' ||
+        type === 'image/heif-sequence' ||
+        name.endsWith('.heic') || 
+        name.endsWith('.heif')
+    );
+}
+
+// Read image file, convert HEIC/HEIF to JPEG
 async function readImageFileAsDataURL(file) {
+    // If it's HEIC, convert it to JPEG first
+    if (isHeicFile(file) && window.heic2any) {
+        try {
+            console.log('Converting HEIC file:', file.name);
+            const convertedBlob = await window.heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.92
+            });
+            const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            // Convert JPEG blob to data URL
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        } catch (err) {
+            console.warn('HEIC conversion failed, using original:', err);
+        }
+    }
+    // Fallback: return original file as data URL
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -844,36 +886,29 @@ function setupProductForm() {
         if (!files.length) return;
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
-            try {
-                const previewUrl = URL.createObjectURL(file);
-                tempProductData.gallery.push({
-                    file: file,
-                    preview: previewUrl
-                });
-                pf_renderGallery();
-            } catch (err) {
-                console.error('File error', err);
-                showToast('Image file could not be processed', 'error');
-            }
+            // Always use original file with object URL preview
+            const previewUrl = URL.createObjectURL(file);
+            tempProductData.gallery.push({
+                file: file,
+                preview: previewUrl
+            });
+            pf_renderGallery();
         }
     });
 
     // Setup video file input
-    document.getElementById('pf-video-files').addEventListener('change', async (e) => {
+    document.getElementById('pf-video-files').addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
         for (const file of files) {
             if (tempProductData.videos.length >= 5) break;
-            try {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    tempProductData.videos.push(event.target.result);
-                    pf_renderVideos();
-                };
-                reader.readAsDataURL(file);
-            } catch (err) {
-                console.error('File read error', err);
-            }
+            // Use object URL with file reference
+            const previewUrl = URL.createObjectURL(file);
+            tempProductData.videos.push({
+                file: file,
+                preview: previewUrl
+            });
+            pf_renderVideos();
         }
     });
 
@@ -909,7 +944,13 @@ function setupProductForm() {
 
                 // Convert image file if one is selected
                 if (imageFile) {
-                    finalImageUrl = await readImageFileAsDataURL(imageFile);
+                    // Upload original file directly with object URL preview
+                    const previewUrl = URL.createObjectURL(imageFile);
+                    // Store as object with file and preview for upload later
+                    finalImageUrl = {
+                        file: imageFile,
+                        preview: previewUrl
+                    };
                 }
 
                 // Create new variant object
@@ -1053,7 +1094,15 @@ async function handleAddProduct() {
 
             const uploadedVideos = [];
             for (const vid of videos) {
-                if (vid.startsWith('data:')) {
+                if (typeof vid === 'object' && vid.file) {
+                    // Upload the original file
+                    const url = await supabaseUploadFile(vid.file, 'products');
+                    uploadedVideos.push(url);
+                    // Release object URL
+                    if (vid.preview && vid.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(vid.preview);
+                    }
+                } else if (typeof vid === 'string' && vid.startsWith('data:')) {
                     const url = await supabaseUploadFile(vid, 'products');
                     uploadedVideos.push(url);
                 } else {
@@ -1062,10 +1111,20 @@ async function handleAddProduct() {
             }
             videos = uploadedVideos;
 
-            // Also upload variant images if they are data URLs
+            // Also upload variant images if they are data URLs or file objects
             for (const variant of variants) {
-                if (variant.image_url && variant.image_url.startsWith('data:')) {
-                    variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                if (variant.image_url) {
+                    if (typeof variant.image_url === 'object' && variant.image_url.file) {
+                        // Upload the original file
+                        variant.image_url = await supabaseUploadFile(variant.image_url.file, 'products');
+                        // Release the preview URL
+                        if (variant.image_url.preview && variant.image_url.preview.startsWith('blob:')) {
+                            URL.revokeObjectURL(variant.image_url.preview);
+                        }
+                    } else if (typeof variant.image_url === 'string' && variant.image_url.startsWith('data:')) {
+                        // Upload data URL
+                        variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                    }
                 }
             }
         }
@@ -1155,7 +1214,15 @@ async function handleEditProduct(id) {
 
             const uploadedVideos = [];
             for (const vid of videos) {
-                if (vid.startsWith('data:')) {
+                if (typeof vid === 'object' && vid.file) {
+                    // Upload the original file
+                    const url = await supabaseUploadFile(vid.file, 'products');
+                    uploadedVideos.push(url);
+                    // Release object URL
+                    if (vid.preview && vid.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(vid.preview);
+                    }
+                } else if (typeof vid === 'string' && vid.startsWith('data:')) {
                     const url = await supabaseUploadFile(vid, 'products');
                     uploadedVideos.push(url);
                 } else {
@@ -1164,10 +1231,20 @@ async function handleEditProduct(id) {
             }
             videos = uploadedVideos;
 
-            // Also upload variant images if they are data URLs
+            // Also upload variant images if they are data URLs or file objects
             for (const variant of variants) {
-                if (variant.image_url && variant.image_url.startsWith('data:')) {
-                    variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                if (variant.image_url) {
+                    if (typeof variant.image_url === 'object' && variant.image_url.file) {
+                        // Upload the original file
+                        variant.image_url = await supabaseUploadFile(variant.image_url.file, 'products');
+                        // Release the preview URL
+                        if (variant.image_url.preview && variant.image_url.preview.startsWith('blob:')) {
+                            URL.revokeObjectURL(variant.image_url.preview);
+                        }
+                    } else if (typeof variant.image_url === 'string' && variant.image_url.startsWith('data:')) {
+                        // Upload data URL
+                        variant.image_url = await supabaseUploadFile(variant.image_url, 'products');
+                    }
                 }
             }
         }
@@ -1398,25 +1475,11 @@ function setupCategoryForm() {
     const previewImg = document.getElementById('cf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', async function(){
+        fileInput.addEventListener('change', function(){
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Try conversion first
-                if (isHeicFile(file)) {
-                    try {
-                        const dataUrl = await readImageFileAsDataURL(file);
-                        window._cfTempImage = dataUrl;
-                        window._cfTempFile = null;
-                        previewWrap.style.display = 'block';
-                        previewImg.src = dataUrl;
-                        urlInput.value = '';
-                        return;
-                    } catch (err) {
-                        console.warn('HEIC conversion failed, using original:', err);
-                    }
-                }
-                // Fallback to original file
+                // Always use original file
                 const previewUrl = URL.createObjectURL(file);
                 window._cfTempImage = previewUrl;
                 window._cfTempFile = file;
@@ -1738,26 +1801,11 @@ function setupBannerForm() {
     const previewImg = document.getElementById('bf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', async function(){
+        fileInput.addEventListener('change', function(){
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Try conversion first
-                if (isHeicFile(file)) {
-                    try {
-                        const dataUrl = await readImageFileAsDataURL(file);
-                        window._bfTempImage = dataUrl;
-                        window._bfTempFile = null;
-                        previewWrap.style.display = 'block';
-                        previewImg.src = dataUrl;
-                        previewImg.style.display = 'block';
-                        urlInput.value = '';
-                        return;
-                    } catch (err) {
-                        console.warn('HEIC conversion failed, using original:', err);
-                    }
-                }
-                // Fallback to original file
+                // Always use original file
                 const previewUrl = URL.createObjectURL(file);
                 window._bfTempImage = previewUrl;
                 window._bfTempFile = file;
@@ -2416,25 +2464,11 @@ function setupHeroImageForm() {
     const previewImg = document.getElementById('hi-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', async function(){
+        fileInput.addEventListener('change', function(){
             if (!fileInput.files.length) return;
             try {
                 const file = fileInput.files[0];
-                // Try conversion first
-                if (isHeicFile(file)) {
-                    try {
-                        const dataUrl = await readImageFileAsDataURL(file);
-                        window._hiTempImage = dataUrl;
-                        window._hiTempFile = null;
-                        previewWrap.style.display = 'block';
-                        previewImg.src = dataUrl;
-                        urlInput.value = '';
-                        return;
-                    } catch (err) {
-                        console.warn('HEIC conversion failed, using original:', err);
-                    }
-                }
-                // Fallback to original file
+                // Always use original file
                 const previewUrl = URL.createObjectURL(file);
                 window._hiTempImage = previewUrl;
                 window._hiTempFile = file;
