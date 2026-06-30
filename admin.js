@@ -703,22 +703,12 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
 function pf_renderGallery() {
     const container = document.getElementById('pf-gallery-container');
     if (!container) return;
-    container.innerHTML = tempProductData.gallery.map((item, idx) => {
-        let imgSrc = 'https://via.placeholder.com/100?text=Image';
-        if (typeof item === 'string') {
-            imgSrc = item;
-        } else if (item && item.preview) {
-            imgSrc = item.preview;
-        } else if (item && item.file) {
-            // If no preview, show placeholder
-            imgSrc = 'https://via.placeholder.com/100?text=' + encodeURIComponent(item.file.name);
-        }
-        return `
+    container.innerHTML = tempProductData.gallery.map((url, idx) => `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${imgSrc}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+        <img src="${url}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%23666%22%3EImage%3C/text%3E%3C/svg%3E'">
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `}).join('');
+    `).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -925,27 +915,34 @@ function setupProductForm() {
     document.getElementById('pf-gallery-files').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
+        
+        // Ensure Supabase client is loaded
+        await loadSupabaseClient();
+        if (!adminSupabase) {
+            showToast('Supabase not connected!', 'error');
+            return;
+        }
+
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                // Try to get a preview dataURL
-                let preview = null;
-                try {
-                    preview = await readImageFileAsDataURL(file);
-                } catch (err) {
-                    console.warn('Preview conversion failed, will still upload original file', err);
-                }
-                // Store both the original file and preview
-                tempProductData.gallery.push({
-                    file: file,
-                    preview: preview
-                });
+                console.log('📤 Uploading file:', file.name);
+                // Upload file directly to Supabase Storage first
+                const url = await supabaseUploadFile(file, 'products');
+                console.log('✅ Upload complete, URL:', url);
+                
+                // Store the URL directly in gallery
+                tempProductData.gallery.push(url);
                 pf_renderGallery();
+                showToast(`Uploaded ${file.name}`, 'success');
             } catch (err) {
-                console.error('File read error', err);
-                showToast('Image file could not be read', 'error');
+                console.error('❌ Upload failed for', file.name, err);
+                showToast(`Failed to upload ${file.name}: ${err.message}`, 'error');
             }
         }
+        
+        // Clear the file input so user can re-select same file if needed
+        e.target.value = '';
     });
 
     // Setup video file input
@@ -1116,15 +1113,11 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
+        // Upload any remaining data URLs to Supabase Storage (for URLs added manually or from old code)
         if (adminSupabase) {
             const uploadedGallery = [];
             for (const item of gallery) {
-                if (typeof item === 'object' && item && item.file) {
-                    // Upload the original File object
-                    const url = await supabaseUploadFile(item.file, 'products');
-                    uploadedGallery.push(url);
-                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                if (typeof item === 'string' && item.startsWith('data:')) {
                     // Upload data URL
                     const url = await supabaseUploadFile(item, 'products');
                     uploadedGallery.push(url);
@@ -1212,15 +1205,11 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
+        // Upload any remaining data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
             for (const item of gallery) {
-                if (typeof item === 'object' && item && item.file) {
-                    // Upload the original File object
-                    const url = await supabaseUploadFile(item.file, 'products');
-                    uploadedGallery.push(url);
-                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                if (typeof item === 'string' && item.startsWith('data:')) {
                     // Upload data URL
                     const url = await supabaseUploadFile(item, 'products');
                     uploadedGallery.push(url);
