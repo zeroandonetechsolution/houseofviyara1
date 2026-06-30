@@ -973,7 +973,16 @@ function pf_renderVariants() {
     const container = document.getElementById('pf-variants-container');
     if (!container) return;
 
-    container.innerHTML = tempProductData.variants.map((variant, idx) => `
+    container.innerHTML = tempProductData.variants.map((variant, idx) => {
+        let imgSrc = '';
+        if (variant.image_url) {
+            if (typeof variant.image_url === 'object' && variant.image_url.preview) {
+                imgSrc = variant.image_url.preview;
+            } else if (typeof variant.image_url === 'string') {
+                imgSrc = variant.image_url;
+            }
+        }
+        return `
         <div class="variant-tag" style="display:flex;flex-direction:column;gap:2px;padding:10px;border:2px solid #FF007A;border-radius:8px;background:#fff;">
             <div style="display:flex;align-items:center;gap:5px;">
                 <span style="font-weight:700;">${variant.color || 'Default'}</span>
@@ -981,9 +990,9 @@ function pf_renderVariants() {
                 <button type="button" class="pf-remove-variant-btn" data-index="${idx}" style="margin-left:auto;background:none;border:none;color:#FF007A;cursor:pointer;font-size:18px;line-height:1;">×</button>
             </div>
             ${variant.price ? `<span style="font-size:0.85rem;">₹${variant.price}</span>` : ''}
-            ${variant.image_url ? `<img src="${variant.image_url}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin-top:5px;">` : ''}
+            ${imgSrc ? `<img src="${imgSrc}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin-top:5px;">` : ''}
         </div>
-    `).join('');
+    `}).join('');
 
     // Update add variant button state based on limit
     const addVariantBtn = document.getElementById('pf-add-variant');
@@ -1320,11 +1329,13 @@ async function handleAddProduct() {
             for (const variant of variants) {
                 if (variant.image_url) {
                     if (typeof variant.image_url === 'object' && variant.image_url.file) {
+                        // Store preview URL before overwriting
+                        const previewUrl = variant.image_url.preview;
                         // Upload the original file
                         variant.image_url = await supabaseUploadFile(variant.image_url.file, 'products');
                         // Release the preview URL
-                        if (variant.image_url.preview && variant.image_url.preview.startsWith('blob:')) {
-                            URL.revokeObjectURL(variant.image_url.preview);
+                        if (previewUrl && previewUrl.startsWith('blob:')) {
+                            URL.revokeObjectURL(previewUrl);
                         }
                     } else if (typeof variant.image_url === 'string' && variant.image_url.startsWith('data:')) {
                         // Upload data URL
@@ -1440,11 +1451,13 @@ async function handleEditProduct(id) {
             for (const variant of variants) {
                 if (variant.image_url) {
                     if (typeof variant.image_url === 'object' && variant.image_url.file) {
+                        // Store preview URL before overwriting
+                        const previewUrl = variant.image_url.preview;
                         // Upload the original file
                         variant.image_url = await supabaseUploadFile(variant.image_url.file, 'products');
                         // Release the preview URL
-                        if (variant.image_url.preview && variant.image_url.preview.startsWith('blob:')) {
-                            URL.revokeObjectURL(variant.image_url.preview);
+                        if (previewUrl && previewUrl.startsWith('blob:')) {
+                            URL.revokeObjectURL(previewUrl);
                         }
                     } else if (typeof variant.image_url === 'string' && variant.image_url.startsWith('data:')) {
                         // Upload data URL
