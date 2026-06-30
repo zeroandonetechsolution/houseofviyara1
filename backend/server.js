@@ -14,6 +14,7 @@ const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const { convert } = require('heic-convert');
 let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 
@@ -570,18 +571,25 @@ app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => 
     let filePath = req.file.path;
     let isHeic = /\.heic$/i.test(req.file.originalname) || /\.heif$/i.test(req.file.originalname);
 
-    if (isHeic && sharp) {
+    if (isHeic) {
         try {
-            // Convert HEIC to JPEG
+            console.log('Converting HEIC/HEIF file with heic-convert');
+            const inputBuffer = fs.readFileSync(filePath);
+            const outputBuffer = await convert({
+                buffer: inputBuffer,
+                format: 'JPEG',
+                quality: 0.9
+            });
+            
             const jpegPath = filePath.replace(/\.(heic|heif)$/i, '.jpg');
-            await sharp(filePath)
-                .jpeg({ quality: 90 })
-                .toFile(jpegPath);
-            // Remove original HEIC
+            fs.writeFileSync(jpegPath, outputBuffer);
+            
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            
             filePath = jpegPath;
             req.file.filename = path.basename(jpegPath);
             req.file.originalname = req.file.originalname.replace(/\.(heic|heif)$/i, '.jpg');
+            console.log('HEIC conversion successful');
         } catch (conversionError) {
             console.warn('HEIC conversion failed, keeping original:', conversionError);
         }
