@@ -31,9 +31,9 @@ serve(async (req: Request) => {
     const processedFileName = file.name;
 
     // --- 3. UPLOAD TO SUPABASE STORAGE ---
-    const supabaseUrl = Deno.env.get("PUBLIC_SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SERVICE_ROLE_KEY")!;
-    const bucket = Deno.env.get("STORAGE_BUCKET")!;
+    const supabaseUrl = Deno.env.get("PROJECT_URL")!;
+    const supabaseServiceKey = Deno.env.get("SRV_ROLE_KEY")!;
+    const bucket = Deno.env.get("BUCKET_NAME")!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
