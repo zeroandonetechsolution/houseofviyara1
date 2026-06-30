@@ -792,6 +792,47 @@ function readFileAsDataURL(file) {
     });
 }
 
+function isHeicFile(file) {
+    const type = (file && file.type || '').toLowerCase();
+    return type === 'image/heic' || type === 'image/heif' || /\.(heic|heif)$/i.test(file.name || '');
+}
+
+function canvasToJpegDataURL(bitmap) {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+async function convertImageFileToJpegDataURL(file) {
+    if (!file) throw new Error('No file provided');
+    try {
+        if (window.ImageDecoder) {
+            const decoder = new ImageDecoder({ type: file.type || 'image/heic', data: file });
+            const frame = await decoder.decode();
+            const bitmap = await createImageBitmap(frame.image);
+            return canvasToJpegDataURL(bitmap);
+        }
+    } catch (err) {
+        console.warn('ImageDecoder could not decode HEIC/HEIF file, retrying with createImageBitmap', err);
+    }
+    const bitmap = await createImageBitmap(file);
+    return canvasToJpegDataURL(bitmap);
+}
+
+async function readImageFileAsDataURL(file) {
+    if (isHeicFile(file)) {
+        try {
+            return await convertImageFileToJpegDataURL(file);
+        } catch (err) {
+            console.warn('HEIC conversion failed, falling back to raw data URL', err);
+        }
+    }
+    return await readFileAsDataURL(file);
+}
+
 // Setup product form
 function setupProductForm() {
     // Setup add gallery URL button
@@ -827,14 +868,12 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    tempProductData.gallery.push(event.target.result);
-                    pf_renderGallery();
-                };
-                reader.readAsDataURL(file);
+                const dataUrl = await readImageFileAsDataURL(file);
+                tempProductData.gallery.push(dataUrl);
+                pf_renderGallery();
             } catch (err) {
                 console.error('File read error', err);
+                showToast('Image file could not be read', 'error');
             }
         }
     });
@@ -890,11 +929,7 @@ function setupProductForm() {
 
                 // Upload image if file is selected
                 if (imageFile) {
-                    const dataUrl = await readFileAsDataURL(imageFile);
-                    finalImageUrl = await supabaseUploadFile(dataUrl, 'products');
-                } else if (imageUrlInput) {
-                    finalImageUrl = imageUrlInput;
-                }
+                        const dataUrl = await readImageFileAsDataURL(imageFile);
 
                 // Create new variant object
                 const newVariant = {
@@ -1316,15 +1351,17 @@ function categoryFormHTML(c = {}) {
         if (!fileInput.files.length) return;
         try {
           // Read file as data URL for preview
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            window._cfTempImage = e.target.result;
+          try {
+            const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+            window._cfTempImage = dataUrl;
             wrap.style.display = 'block';
-            img.src = e.target.result;
+            img.src = dataUrl;
             // Clear the URL input since we're using a file
             urlInput.value = '';
-          };
-          reader.readAsDataURL(fileInput.files[0]);
+          } catch (err) {
+            console.error('Upload failed:', err);
+            showToast('Image upload failed', 'error');
+          }
         } catch (e) {
           console.error('Upload failed:', e);
           showToast('Image upload failed', 'error');
@@ -1358,14 +1395,16 @@ function setupCategoryForm() {
         fileInput.addEventListener('change', function(){
             if (!fileInput.files.length) return;
             try {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    window._cfTempImage = e.target.result;
+                try {
+                    const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+                    window._cfTempImage = dataUrl;
                     previewWrap.style.display = 'block';
-                    previewImg.src = e.target.result;
+                    previewImg.src = dataUrl;
                     urlInput.value = '';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
+                } catch (err) {
+                    console.error('Upload failed:', err);
+                    showToast('Image upload failed', 'error');
+                }
             } catch (e) {
                 console.error('Upload failed:', e);
                 showToast('Image upload failed', 'error');
@@ -1632,16 +1671,17 @@ function bannerFormHTML(b = {}) {
         if (!fileInput.files.length) return;
         try {
           // Read file as data URL for preview
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            window._bfTempImage = e.target.result;
+          try {
+            const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+            window._bfTempImage = dataUrl;
             wrap.style.display = 'block';
-            img.src = e.target.result;
+            img.src = dataUrl;
             img.style.display = 'block';
             // Clear the URL input since we're using a file
             urlInput.value = '';
-          };
-          reader.readAsDataURL(fileInput.files[0]);
+          } catch (err) {
+            showToast('Upload failed: ' + err.message, 'error');
+          }
         } catch (err) {
           showToast('Upload failed: ' + err.message, 'error');
         }
@@ -1669,15 +1709,17 @@ function setupBannerForm() {
         fileInput.addEventListener('change', function(){
             if (!fileInput.files.length) return;
             try {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    window._bfTempImage = e.target.result;
+                try {
+                    const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+                    window._bfTempImage = dataUrl;
                     previewWrap.style.display = 'block';
-                    previewImg.src = e.target.result;
+                    previewImg.src = dataUrl;
                     previewImg.style.display = 'block';
                     urlInput.value = '';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
+                } catch (err) {
+                    console.error('Upload failed:', err);
+                    showToast('Image upload failed', 'error');
+                }
             } catch (e) {
                 console.error('Upload failed:', e);
                 showToast('Image upload failed', 'error');

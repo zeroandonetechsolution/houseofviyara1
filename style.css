@@ -1306,6 +1306,32 @@ video.lazy-loaded {
 }
 
 .footer-brand h3 { font-size: 2rem; margin-bottom: 15px; }
+.footer-brand p {
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 320px;
+    margin-bottom: 20px;
+}
+.social-icons {
+    display: flex;
+    gap: 15px;
+}
+.social-icons a {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #444;
+    border-radius: 50%;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+.social-icons a:hover {
+    border-color: var(--accent-yellow);
+    color: var(--accent-yellow);
+}
 .footer-links h4 { font-size: 1.1rem; margin-bottom: 15px; color: var(--accent-yellow); }
 .footer-links ul { list-style: none; }
 .footer-links li { margin-bottom: 8px; }
