@@ -204,8 +204,116 @@
         </div>
     </div>
 
-    <!-- Load heic2any from CDN -->
-    <script src="https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js"></script>
+    <!-- Load converters with multiple CDN fallbacks! -->
+    <script>
+        window.loadHeic2Any = async function() {
+            if (typeof window.heic2any !== 'undefined') {
+                console.log('✅ heic2any already loaded!');
+                return true;
+            }
+            const cdns = [
+                'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js',
+                'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.10/heic2any.min.js'
+            ];
+            for (const url of cdns) {
+                console.log('📦 Trying to load heic2any from:', url);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    if (typeof window.heic2any !== 'undefined') {
+                        console.log('✅ heic2any loaded from:', url);
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to load from:', url);
+                }
+            }
+            console.error('❌ All CDNs failed to load heic2any!');
+            return false;
+        };
+
+        window.loadLibHeif = async function() {
+            if (typeof window.libheif !== 'undefined') {
+                console.log('✅ libheif already loaded!');
+                return true;
+            }
+            const cdns = [
+                'https://cdn.jsdelivr.net/npm/libheif-js@1.15.1/libheif.min.js',
+                'https://unpkg.com/libheif-js@1.15.1/libheif.min.js'
+            ];
+            for (const url of cdns) {
+                console.log('📦 Trying to load libheif from:', url);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    if (typeof window.libheif !== 'undefined') {
+                        console.log('✅ libheif loaded from:', url);
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to load from:', url);
+                }
+            }
+            console.error('❌ All CDNs failed to load libheif!');
+            return false;
+        };
+
+        window.convertWithLibheif = async function(file, format, quality) {
+            console.log('📸 Using libheif for conversion');
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const decoder = new window.libheif.HeifDecoder();
+                        const images = decoder.decode(new Uint8Array(reader.result));
+                        if (!images || images.length === 0) {
+                            reject(new Error('No images in HEIC file'));
+                            return;
+                        }
+
+                        const img = images[0];
+                        const w = img.get_width();
+                        const h = img.get_height();
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+
+                        const rgba = new Uint8ClampedArray(w * h * 4);
+                        img.display(rgba, function(result) {
+                            if (result === window.libheif.heif_error_code.Ok) {
+                                const imgData = new ImageData(rgba, w, h);
+                                ctx.putImageData(imgData, 0, 0);
+                                canvas.toBlob(function(blob) {
+                                    resolve({
+                                        blob,
+                                        fileName: file.name.replace(/\.(heic|heif)$/i, `.${format}`)
+                                    });
+                                }, `image/${format}`, format === 'jpeg' ? quality : undefined);
+                            } else {
+                                reject(new Error('libheif display failed'));
+                            }
+                        });
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        };
+    </script>
     <script>
         // --- DOM Elements ---
         const dropzone = document.getElementById('dropzone');
@@ -272,25 +380,48 @@
         // --- Conversion Functions ---
         async function convertSingleFile(file, format, quality) {
             console.log('🔄 Converting:', file.name, 'to', format);
-            try {
-                const convertedBlob = await window.heic2any({
-                    blob: file,
-                    toType: `image/${format}`,
-                    quality: format === 'jpeg' ? quality : undefined
-                });
-                const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-                const finalFileName = file.name.replace(/\.(heic|heif)$/i, `.${format}`);
-                console.log('✅ Converted:', finalFileName);
-                return {
-                    originalFile: file,
-                    convertedBlob: finalBlob,
-                    convertedFile: new File([finalBlob], finalFileName, { type: `image/${format}` }),
-                    url: URL.createObjectURL(finalBlob)
-                };
-            } catch (err) {
-                console.error('❌ Conversion failed for', file.name, err);
-                throw err;
+            let convertedBlob;
+            let finalFileName;
+
+            // --- 1. Try heic2any first ---
+            if (typeof window.heic2any !== 'undefined') {
+                try {
+                    console.log('📦 Trying heic2any...');
+                    convertedBlob = await window.heic2any({
+                        blob: file,
+                        toType: `image/${format}`,
+                        quality: format === 'jpeg' ? quality : undefined
+                    });
+                    convertedBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                    finalFileName = file.name.replace(/\.(heic|heif)$/i, `.${format}`);
+                    console.log('✅ heic2any conversion successful!');
+                } catch (err) {
+                    console.warn('⚠️ heic2any failed, trying libheif...', err);
+                }
             }
+
+            // --- 2. Try libheif if heic2any failed ---
+            if (!convertedBlob && typeof window.libheif !== 'undefined') {
+                try {
+                    const result = await window.convertWithLibheif(file, format, quality);
+                    convertedBlob = result.blob;
+                    finalFileName = result.fileName;
+                    console.log('✅ libheif conversion successful!');
+                } catch (err) {
+                    console.warn('⚠️ libheif also failed!', err);
+                }
+            }
+
+            if (!convertedBlob) {
+                throw new Error('Both converters failed! Please try again.');
+            }
+
+            return {
+                originalFile: file,
+                convertedBlob: convertedBlob,
+                convertedFile: new File([convertedBlob], finalFileName, { type: `image/${format}` }),
+                url: URL.createObjectURL(convertedBlob)
+            };
         }
 
         async function convertAll() {
@@ -300,6 +431,26 @@
             }
 
             convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading converters...';
+
+            // Load both converters!
+            let anyConverterLoaded = false;
+            try {
+                const heic2anyLoaded = await window.loadHeic2Any();
+                if (heic2anyLoaded) anyConverterLoaded = true;
+                const libheifLoaded = await window.loadLibHeif();
+                if (libheifLoaded) anyConverterLoaded = true;
+            } catch (err) {
+                console.warn('Some converters failed to load', err);
+            }
+
+            if (!anyConverterLoaded) {
+                alert('Failed to load any image converter! Please check your internet connection and try again.');
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fas fa-magic"></i> Convert All';
+                return;
+            }
+
             convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
 
             const format = formatSelect.value;
