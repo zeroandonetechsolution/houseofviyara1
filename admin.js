@@ -28,14 +28,12 @@ function dataURLToBlob(dataURL) {
 }
 
 // Helper function to upload file using SUPABASE EDGE FUNCTION for HEIC/HEIF conversion!
-async function uploadViaBackend(file) {
+async function uploadViaBackend(file, pathPrefix = 'products') {
   console.log('🚀 Using SUPABASE EDGE FUNCTION for HEIC conversion!');
   const formData = new FormData();
   formData.append('image', file);
-  formData.append('pathPrefix', 'products');
+  formData.append('pathPrefix', pathPrefix);
 
-  // YOUR SUPABASE EDGE FUNCTION URL HERE!
-  // Once deployed, it will be like https://<project-ref>.supabase.co/functions/v1/convert-heic
   const edgeFunctionUrl = `${window.SUPABASE_URL}/functions/v1/convert-heic`;
   
   const res = await fetch(edgeFunctionUrl, {
@@ -66,15 +64,22 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   }
   if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
 
-  // --- ALWAYS try client-side HEIC/HEIF conversion first! ---
+  // --- TRY EDGE FUNCTION FIRST FOR HEIC/HEIF! ---
   if (isHeicFile(file)) {
-    console.log('📦 HEIC/HEIF detected, converting client-side!');
-    const converted = await convertHeicToJpeg(file);
-    // Upload the converted file (or original if conversion failed) to Supabase!
-    file = converted.file;
+    console.log('📦 HEIC/HEIF detected, trying Edge Function first!');
+    try {
+      return await uploadViaBackend(file, pathPrefix);
+    } catch (edgeError) {
+      console.warn('⚠️ Edge Function failed, falling back to client-side conversion:', edgeError);
+      // If Edge Function fails, fall back to client-side conversion
+      const converted = await convertHeicToJpeg(file);
+      file = converted.file;
+    }
+  } else {
+    // For non-HEIC files, check if we're on localhost and maybe use backend, but default to direct upload
   }
   
-  // Upload to Supabase directly!
+  // Upload to Supabase directly if we didn't use Edge Function!
   if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
   const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
   const bucket = window.SUPABASE_BUCKET || 'public';
@@ -142,6 +147,43 @@ function fileToDataURL(file) {
     });
 }
 
+// Helper to convert HEIC using libheif-js
+async function convertWithLibheif(file) {
+    if (typeof window.libheif === 'undefined') {
+        throw new Error('libheif not available');
+    }
+    console.log('📚 Using libheif-js for conversion');
+    const arrayBuffer = await file.arrayBuffer();
+    const decoder = new window.libheif.HeifDecoder();
+    const images = decoder.decode(new Uint8Array(arrayBuffer));
+    if (!images || images.length === 0) {
+        throw new Error('No images found in HEIC file');
+    }
+    
+    const image = images[0];
+    const width = image.get_width();
+    const height = image.get_height();
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(width, height);
+    
+    await new Promise((resolve, reject) => {
+        image.display(imageData, (displayResult) => {
+            if (displayResult === window.libheif.heif_error_code.Ok) {
+                ctx.putImageData(imageData, 0, 0);
+                resolve();
+            } else {
+                reject(new Error(`libheif display failed: ${displayResult}`));
+            }
+        });
+    });
+    
+    const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    return jpegBlob;
+}
+
 // Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
     console.log('🔄 Processing file:', file.name);
@@ -156,7 +198,20 @@ async function convertHeicToJpeg(file) {
     
     // Try conversion!
     try {
-        // Try to load heic2any quickly, with timeout
+        // Try libheif-js FIRST since it's already loaded in admin.html!
+        if (typeof window.libheif !== 'undefined') {
+            try {
+                const jpegBlob = await convertWithLibheif(file);
+                const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                const jpegDataURL = await fileToDataURL(jpegBlob);
+                console.log('✅ libheif-js conversion successful!');
+                return { file: jpegFile, preview: jpegDataURL };
+            } catch (err) {
+                console.warn('⚠️ libheif-js failed:', err);
+            }
+        }
+        
+        // Try heic2any
         let heic2anyLoaded = !!window.heic2any;
         if (!heic2anyLoaded) {
             const loadPromise = new Promise(resolve => {
