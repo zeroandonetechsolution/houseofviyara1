@@ -703,17 +703,23 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
 function pf_renderGallery() {
     const container = document.getElementById('pf-gallery-container');
     if (!container) return;
-    container.innerHTML = tempProductData.gallery.map((url, idx) => `
+    container.innerHTML = tempProductData.gallery.map((item, idx) => {
+        const preview = typeof item === 'string' ? item : item.preview;
+        return `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${url}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=No+Preview'">
+        <img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Image'">
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `).join('');
+    `}).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const idx = parseInt(btn.dataset.index);
-            tempProductData.gallery.splice(idx, 1);
+            const removedItem = tempProductData.gallery.splice(idx, 1)[0];
+            // Release object URL to avoid memory leak
+            if (removedItem && removedItem.preview && typeof removedItem.preview !== 'string') {
+                URL.revokeObjectURL(removedItem.preview);
+            }
             pf_renderGallery();
         });
     });
@@ -826,22 +832,25 @@ function loadHeic2Any() {
 async function convertHeicToJpeg(file) {
     try {
         await loadHeic2Any();
+        console.log('Starting HEIC conversion for file:', file.name);
         const convertedBlob = await window.heic2any({
             blob: file,
             toType: 'image/jpeg',
-            quality: 0.92
+            quality: 0.9
         });
+        console.log('heic2any returned:', convertedBlob);
         // Handle case where heic2any returns array (for burst shots)
         const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        const bitmap = await createImageBitmap(blobToUse);
-        const canvas = document.createElement('canvas');
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(bitmap, 0, 0);
-        return canvas.toDataURL('image/jpeg', 0.92);
+        
+        // Convert blob to data URL
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blobToUse);
+        });
     } catch (err) {
-        console.warn('HEIC conversion failed, trying raw read:', err);
+        console.warn('HEIC conversion failed:', err);
         throw err;
     }
 }
@@ -852,22 +861,17 @@ async function readImageFileAsDataURL(file) {
         try {
             return await convertHeicToJpeg(file);
         } catch (err) {
-            console.warn('HEIC conversion failed, trying raw read:', err);
+            console.warn('HEIC conversion failed, falling back to object URL preview:', err);
+            // For preview, we can still use object URL, but when uploading we'll convert later? Wait, no—let's just upload the original file if conversion fails
         }
     }
-    // Fallback: read raw file
-    try {
-        const dataUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-        return dataUrl;
-    } catch (err) {
-        console.error('Failed to read file:', err);
-        throw err;
-    }
+    // For non-HEIC or failed conversion, return data URL
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // Setup product form
@@ -905,12 +909,27 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                const dataUrl = await readImageFileAsDataURL(file);
-                tempProductData.gallery.push(dataUrl);
+                // First try to convert HEIC
+                if (isHeicFile(file)) {
+                    try {
+                        const dataUrl = await readImageFileAsDataURL(file);
+                        tempProductData.gallery.push(dataUrl);
+                        pf_renderGallery();
+                        continue;
+                    } catch (err) {
+                        console.warn('HEIC conversion failed, using original file:', err);
+                    }
+                }
+                // Fallback to original file with object URL preview
+                const previewUrl = URL.createObjectURL(file);
+                tempProductData.gallery.push({
+                    file: file,
+                    preview: previewUrl
+                });
                 pf_renderGallery();
             } catch (err) {
-                console.error('File read error', err);
-                showToast('Image file could not be read', 'error');
+                console.error('File error', err);
+                showToast('Image file could not be processed', 'error');
             }
         }
     });
@@ -1083,15 +1102,21 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const url of gallery) {
-                if (url.startsWith('data:')) {
-                    const uploadedUrl = await supabaseUploadFile(url, 'products');
-                    uploadedGallery.push(uploadedUrl);
-                } else {
+            for (const item of gallery) {
+                if (typeof item === 'object' && item.file) {
+                    // Upload original File directly!
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
+                    // Release object URL now that we're done with it
+                    if (item.preview) URL.revokeObjectURL(item.preview);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
@@ -1173,15 +1198,21 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const url of gallery) {
-                if (url.startsWith('data:')) {
-                    const uploadedUrl = await supabaseUploadFile(url, 'products');
-                    uploadedGallery.push(uploadedUrl);
-                } else {
+            for (const item of gallery) {
+                if (typeof item === 'object' && item.file) {
+                    // Upload original File directly!
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
+                    // Release object URL now that we're done with it
+                    if (item.preview) URL.revokeObjectURL(item.preview);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
@@ -1424,6 +1455,7 @@ function categoryFormHTML(c = {}) {
 
 function setupCategoryForm() {
     window._cfTempImage = null;
+    window._cfTempFile = null;
     const fileInput = document.getElementById('cf-banner-file');
     const urlInput = document.getElementById('cf-banner');
     const previewWrap = document.getElementById('cf-preview-wrap');
@@ -1433,10 +1465,27 @@ function setupCategoryForm() {
         fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
-                window._cfTempImage = dataUrl;
+                const file = fileInput.files[0];
+                // Try conversion first
+                if (isHeicFile(file)) {
+                    try {
+                        const dataUrl = await readImageFileAsDataURL(file);
+                        window._cfTempImage = dataUrl;
+                        window._cfTempFile = null;
+                        previewWrap.style.display = 'block';
+                        previewImg.src = dataUrl;
+                        urlInput.value = '';
+                        return;
+                    } catch (err) {
+                        console.warn('HEIC conversion failed, using original:', err);
+                    }
+                }
+                // Fallback to original file
+                const previewUrl = URL.createObjectURL(file);
+                window._cfTempImage = previewUrl;
+                window._cfTempFile = file;
                 previewWrap.style.display = 'block';
-                previewImg.src = dataUrl;
+                previewImg.src = previewUrl;
                 urlInput.value = '';
             } catch (err) {
                 console.error('Upload failed:', err);
@@ -1451,6 +1500,7 @@ function setupCategoryForm() {
                 previewWrap.style.display = 'block';
                 previewImg.src = this.value;
                 window._cfTempImage = null;
+                window._cfTempFile = null;
             } else {
                 previewWrap.style.display = 'none';
             }
@@ -1489,8 +1539,13 @@ async function handleAddCategory() {
         await loadSupabaseClient();
         let final_banner_url = banner_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._cfTempImage) {
+        // Check if we have a temporary file from upload
+        if (window._cfTempFile) {
+            if (adminSupabase) {
+                final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
+            }
+        } else if (window._cfTempImage && window._cfTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
             }
@@ -1511,8 +1566,9 @@ async function handleAddCategory() {
                 body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
             });
         }
-        // Clear temp image
+        // Clear temp image/file
         window._cfTempImage = null;
+        window._cfTempFile = null;
         closeModal(); showToast('Category added!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1526,8 +1582,13 @@ async function handleEditCategory(id) {
         await loadSupabaseClient();
         let final_banner_url = banner_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._cfTempImage) {
+        // Check if we have a temporary file from upload
+        if (window._cfTempFile) {
+            if (adminSupabase) {
+                final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
+            }
+        } else if (window._cfTempImage && window._cfTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
             }
@@ -1548,8 +1609,9 @@ async function handleEditCategory(id) {
                 body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
             });
         }
-        // Clear temp image
+        // Clear temp image/file
         window._cfTempImage = null;
+        window._cfTempFile = null;
         closeModal(); showToast('Category updated!', 'success'); renderCategories();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1733,6 +1795,7 @@ function updateBannerPreview(url) {
 
 function setupBannerForm() {
     window._bfTempImage = null;
+    window._bfTempFile = null;
     const fileInput = document.getElementById('bf-img-file');
     const urlInput = document.getElementById('bf-img');
     const previewWrap = document.getElementById('bf-preview-wrap');
@@ -1742,10 +1805,28 @@ function setupBannerForm() {
         fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
-                window._bfTempImage = dataUrl;
+                const file = fileInput.files[0];
+                // Try conversion first
+                if (isHeicFile(file)) {
+                    try {
+                        const dataUrl = await readImageFileAsDataURL(file);
+                        window._bfTempImage = dataUrl;
+                        window._bfTempFile = null;
+                        previewWrap.style.display = 'block';
+                        previewImg.src = dataUrl;
+                        previewImg.style.display = 'block';
+                        urlInput.value = '';
+                        return;
+                    } catch (err) {
+                        console.warn('HEIC conversion failed, using original:', err);
+                    }
+                }
+                // Fallback to original file
+                const previewUrl = URL.createObjectURL(file);
+                window._bfTempImage = previewUrl;
+                window._bfTempFile = file;
                 previewWrap.style.display = 'block';
-                previewImg.src = dataUrl;
+                previewImg.src = previewUrl;
                 previewImg.style.display = 'block';
                 urlInput.value = '';
             } catch (err) {
@@ -1762,6 +1843,7 @@ function setupBannerForm() {
                 previewImg.src = this.value;
                 previewImg.style.display = 'block';
                 window._bfTempImage = null;
+                window._bfTempFile = null;
             } else {
                 previewWrap.style.display = 'none';
             }
@@ -1797,15 +1879,20 @@ async function handleAddBanner() {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._bfTempImage) {
+        // Check if we have a temporary file or image from upload
+        if (window._bfTempFile) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
+            }
+        } else if (window._bfTempImage && window._bfTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
             }
         }
         
         // Require at least one of temp image or URL
-        if (!final_image_url && !window._bfTempImage) {
+        if (!final_image_url && !window._bfTempImage && !window._bfTempFile) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
         
@@ -1834,8 +1921,9 @@ async function handleAddBanner() {
                 })
             });
         }
-        // Clear temp image
+        // Clear temp image/file
         window._bfTempImage = null;
+        window._bfTempFile = null;
         closeModal(); showToast('Banner added!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -1846,15 +1934,20 @@ async function handleEditBanner(id) {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._bfTempImage) {
+        // Check if we have a temporary file or image from upload
+        if (window._bfTempFile) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
+            }
+        } else if (window._bfTempImage && window._bfTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
             }
         }
         
         // Require at least one of temp image, URL, or existing image
-        if (!final_image_url && !window._bfTempImage) {
+        if (!final_image_url && !window._bfTempImage && !window._bfTempFile) {
             // Get existing banner to check if it has an image
             if (adminSupabase) {
                 const { data: existingBanner } = await adminSupabase.from('banners').select('image_url').eq('id', id).single();
@@ -1892,8 +1985,9 @@ async function handleEditBanner(id) {
                 })
             });
         }
-        // Clear temp image
+        // Clear temp image/file
         window._bfTempImage = null;
+        window._bfTempFile = null;
         closeModal(); showToast('Banner updated!', 'success'); renderBanners();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
@@ -2379,6 +2473,7 @@ function heroImageFormHTML(img = {}) {
 function setupHeroImageForm() {
     console.log('🔧 setupHeroImageForm called!');
     window._hiTempImage = null;
+    window._hiTempFile = null;
     const fileInput = document.getElementById('hi-img-file');
     const urlInput = document.getElementById('hi-img');
     const previewWrap = document.getElementById('hi-preview-wrap');
@@ -2388,10 +2483,27 @@ function setupHeroImageForm() {
         fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
-                window._hiTempImage = dataUrl;
+                const file = fileInput.files[0];
+                // Try conversion first
+                if (isHeicFile(file)) {
+                    try {
+                        const dataUrl = await readImageFileAsDataURL(file);
+                        window._hiTempImage = dataUrl;
+                        window._hiTempFile = null;
+                        previewWrap.style.display = 'block';
+                        previewImg.src = dataUrl;
+                        urlInput.value = '';
+                        return;
+                    } catch (err) {
+                        console.warn('HEIC conversion failed, using original:', err);
+                    }
+                }
+                // Fallback to original file
+                const previewUrl = URL.createObjectURL(file);
+                window._hiTempImage = previewUrl;
+                window._hiTempFile = file;
                 previewWrap.style.display = 'block';
-                previewImg.src = dataUrl;
+                previewImg.src = previewUrl;
                 urlInput.value = '';
             } catch (e) {
                 console.error('Upload failed:', e);
@@ -2406,6 +2518,7 @@ function setupHeroImageForm() {
                 previewWrap.style.display = 'block';
                 previewImg.src = this.value;
                 window._hiTempImage = null;
+                window._hiTempFile = null;
             } else {
                 previewWrap.style.display = 'none';
             }
@@ -2440,15 +2553,20 @@ async function handleAddHeroImage() {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._hiTempImage) {
+        // Check if we have a temporary file or image from upload
+        if (window._hiTempFile) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
+            }
+        } else if (window._hiTempImage && window._hiTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
             }
         }
         
         // Require at least one of temp image or URL
-        if (!final_image_url && !window._hiTempImage) {
+        if (!final_image_url && !window._hiTempImage && !window._hiTempFile) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
         
@@ -2462,8 +2580,9 @@ async function handleAddHeroImage() {
             });
             if (error) throw error;
         }
-        // Clear temp image
+        // Clear temp image/file
         window._hiTempImage = null;
+        window._hiTempFile = null;
         closeModal(); showToast('Hero image added!', 'success'); renderHeroImages();
     } catch (e) {
         console.error('❌ handleAddHeroImage error:', e);
@@ -2477,15 +2596,20 @@ async function handleEditHeroImage(id) {
         await loadSupabaseClient();
         let final_image_url = image_url_input;
         
-        // Check if we have a temporary image from file upload
-        if (window._hiTempImage) {
+        // Check if we have a temporary file or image from upload
+        if (window._hiTempFile) {
+            if (adminSupabase) {
+                final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
+            }
+        } else if (window._hiTempImage && window._hiTempImage.startsWith('data:')) {
+            // Fallback for data URLs
             if (adminSupabase) {
                 final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
             }
         }
         
         // Require at least one of temp image, URL, or existing image
-        if (!final_image_url && !window._hiTempImage) {
+        if (!final_image_url && !window._hiTempImage && !window._hiTempFile) {
             // Get existing hero image to check if it has an image
             if (adminSupabase) {
                 const { data: existingHero } = await adminSupabase.from('hero_images').select('image_url').eq('id', id).single();
@@ -2508,8 +2632,9 @@ async function handleEditHeroImage(id) {
             }).eq('id', id);
             if (error) throw error;
         }
-        // Clear temp image
+        // Clear temp image/file
         window._hiTempImage = null;
+        window._hiTempFile = null;
         closeModal(); showToast('Hero image updated!', 'success'); renderHeroImages();
     } catch (e) { showToast('Failed: ' + e.message, 'error'); }
 }
