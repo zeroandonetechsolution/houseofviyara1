@@ -631,7 +631,7 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
         <label>Product Gallery Images (up to 10)</label>
         <div id="pf-gallery-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input type="file" id="pf-gallery-files" accept="image/*" multiple style="flex:1;">
+            <input type="file" id="pf-gallery-files" accept="image/*,.heic,.heif" multiple style="flex:1;">
             <input type="text" id="pf-gallery-url" placeholder="Or paste an image URL" style="flex:1;">
             <button type="button" class="admin-btn admin-btn-sm" id="pf-add-gallery-url">Add URL</button>
         </div>
@@ -680,7 +680,7 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
           </div>
           <div class="aform-group">
             <label>Variant Image</label>
-            <input type="file" id="pf-variant-image-file" accept="image/*" style="margin-bottom:5px;">
+            <input type="file" id="pf-variant-image-file" accept="image/*,.heic,.heif" style="margin-bottom:5px;">
             <input class="aform-input" id="pf-variant-image-url" placeholder="Or paste image URL...">
           </div>
           <button type="button" class="admin-btn admin-btn-primary" id="pf-add-variant" style="width:100%;">Add Variant</button>
@@ -925,11 +925,12 @@ function setupProductForm() {
             addVariantBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
 
             try {
-                let finalImageUrl = '';
+                let finalImageUrl = imageUrlInput;
 
-                // Upload image if file is selected
+                // Convert image file if one is selected
                 if (imageFile) {
-                        const dataUrl = await readImageFileAsDataURL(imageFile);
+                    finalImageUrl = await readImageFileAsDataURL(imageFile);
+                }
 
                 // Create new variant object
                 const newVariant = {
@@ -1306,7 +1307,7 @@ function categoryFormHTML(c = {}) {
             <label style="display:flex;align-items:center;gap:8px;">
               <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
             </label>
-            <input class="aform-input" id="cf-banner-file" type="file" accept="image/*">
+            <input class="aform-input" id="cf-banner-file" type="file" accept="image/*,.heic,.heif">
           </div>
         </div>
         
@@ -1392,21 +1393,16 @@ function setupCategoryForm() {
     const previewImg = document.getElementById('cf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                try {
-                    const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
-                    window._cfTempImage = dataUrl;
-                    previewWrap.style.display = 'block';
-                    previewImg.src = dataUrl;
-                    urlInput.value = '';
-                } catch (err) {
-                    console.error('Upload failed:', err);
-                    showToast('Image upload failed', 'error');
-                }
-            } catch (e) {
-                console.error('Upload failed:', e);
+                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+                window._cfTempImage = dataUrl;
+                previewWrap.style.display = 'block';
+                previewImg.src = dataUrl;
+                urlInput.value = '';
+            } catch (err) {
+                console.error('Upload failed:', err);
                 showToast('Image upload failed', 'error');
             }
         });
@@ -1605,7 +1601,7 @@ function bannerFormHTML(b = {}) {
             <label style="display:flex;align-items:center;gap:8px;">
               <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
             </label>
-            <input class="aform-input" id="bf-img-file" type="file" accept="image/*">
+            <input class="aform-input" id="bf-img-file" type="file" accept="image/*,.heic,.heif">
           </div>
         </div>
         
@@ -1706,22 +1702,17 @@ function setupBannerForm() {
     const previewImg = document.getElementById('bf-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                try {
-                    const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
-                    window._bfTempImage = dataUrl;
-                    previewWrap.style.display = 'block';
-                    previewImg.src = dataUrl;
-                    previewImg.style.display = 'block';
-                    urlInput.value = '';
-                } catch (err) {
-                    console.error('Upload failed:', err);
-                    showToast('Image upload failed', 'error');
-                }
-            } catch (e) {
-                console.error('Upload failed:', e);
+                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+                window._bfTempImage = dataUrl;
+                previewWrap.style.display = 'block';
+                previewImg.src = dataUrl;
+                previewImg.style.display = 'block';
+                urlInput.value = '';
+            } catch (err) {
+                console.error('Upload failed:', err);
                 showToast('Image upload failed', 'error');
             }
         });
@@ -2261,7 +2252,7 @@ function heroImageFormHTML(img = {}) {
             <label style="display:flex;align-items:center;gap:8px;">
               <i class="fas fa-upload" style="color:#FF007A;"></i> Upload From Device
             </label>
-            <input class="aform-input" id="hi-img-file" type="file" accept="image/*">
+            <input class="aform-input" id="hi-img-file" type="file" accept="image/*,.heic,.heif">
           </div>
         </div>
         
@@ -2316,16 +2307,12 @@ function heroImageFormHTML(img = {}) {
         const imgEl = document.getElementById('hi-preview');
         if (!fileInput.files.length) return;
         try {
-          // Read file as data URL for preview
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            window._hiTempImage = e.target.result;
-            wrap.style.display = 'block';
-            imgEl.src = e.target.result;
-            // Clear the URL input since we're using a file
-            urlInput.value = '';
-          };
-          reader.readAsDataURL(fileInput.files[0]);
+          const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+          window._hiTempImage = dataUrl;
+          wrap.style.display = 'block';
+          imgEl.src = dataUrl;
+          // Clear the URL input since we're using a file
+          urlInput.value = '';
         } catch (e) {
           console.error('Upload failed:', e);
           showToast('Image upload failed', 'error');
@@ -2361,17 +2348,14 @@ function setupHeroImageForm() {
     const previewImg = document.getElementById('hi-preview');
     
     if (fileInput) {
-        fileInput.addEventListener('change', function(){
+        fileInput.addEventListener('change', async function(){
             if (!fileInput.files.length) return;
             try {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    window._hiTempImage = e.target.result;
-                    previewWrap.style.display = 'block';
-                    previewImg.src = e.target.result;
-                    urlInput.value = '';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
+                const dataUrl = await readImageFileAsDataURL(fileInput.files[0]);
+                window._hiTempImage = dataUrl;
+                previewWrap.style.display = 'block';
+                previewImg.src = dataUrl;
+                urlInput.value = '';
             } catch (e) {
                 console.error('Upload failed:', e);
                 showToast('Image upload failed', 'error');
