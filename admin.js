@@ -159,15 +159,27 @@ async function convertWithLibheif(file) {
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    const imageData = ctx.createImageData(width, height);
     
+    // Create a promise for decoding
     await new Promise((resolve, reject) => {
-        image.display(imageData, (displayResult) => {
+        image.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (displayResult) => {
             if (displayResult === window.libheif.heif_error_code.Ok) {
-                ctx.putImageData(imageData, 0, 0);
-                resolve();
+                // Now we need to get the image data properly!
+                // Create ImageData
+                const imgData = ctx.createImageData(width, height);
+                // Wait, maybe we need to use a different method? Let's use the ispe libheif example approach!
+                const rgbaData = new Uint8ClampedArray(width * height * 4);
+                image.display(rgbaData, (result) => {
+                    if (result === window.libheif.heif_error_code.Ok) {
+                        const imgData2 = new ImageData(rgbaData, width, height);
+                        ctx.putImageData(imgData2, 0, 0);
+                        resolve();
+                    } else {
+                        reject(new Error(`libheif display failed: ${result}`));
+                    }
+                });
             } else {
-                reject(new Error(`libheif display failed: ${displayResult}`));
+                reject(new Error(`libheif init failed: ${displayResult}`));
             }
         });
     });
@@ -181,29 +193,17 @@ async function convertHeicToJpeg(file) {
     console.log('🔄 Processing file:', file.name);
     const isHeic = isHeicFile(file);
     
-    // FIRST: Create a DATA URL preview immediately, so it ALWAYS displays!
+    // FIRST: Create a preview immediately using object URL!
+    const originalPreview = URL.createObjectURL(file);
     const originalDataURL = await fileToDataURL(file);
     
     if (!isHeic) {
-        return { file: file, preview: originalDataURL };
+        return { file: file, preview: originalPreview };
     }
     
     // Try conversion!
     try {
-        // Try libheif-js FIRST since it's already loaded in admin.html!
-        if (typeof window.libheif !== 'undefined') {
-            try {
-                const jpegBlob = await convertWithLibheif(file);
-                const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                const jpegDataURL = await fileToDataURL(jpegBlob);
-                console.log('✅ libheif-js conversion successful!');
-                return { file: jpegFile, preview: jpegDataURL };
-            } catch (err) {
-                console.warn('⚠️ libheif-js failed:', err);
-            }
-        }
-        
-        // Try heic2any
+        // Try heic2any FIRST
         let heic2anyLoaded = !!window.heic2any;
         if (!heic2anyLoaded) {
             const loadPromise = new Promise(resolve => {
@@ -227,9 +227,11 @@ async function convertHeicToJpeg(file) {
                 });
                 const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
                 const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                const jpegDataURL = await fileToDataURL(finalBlob);
+                const jpegPreview = URL.createObjectURL(finalBlob);
                 console.log('✅ heic2any conversion successful!');
-                return { file: jpegFile, preview: jpegDataURL };
+                // Revoke original object URL to free memory
+                URL.revokeObjectURL(originalPreview);
+                return { file: jpegFile, preview: jpegPreview };
             } catch (err) {
                 console.warn('⚠️ heic2any failed:', err);
             }
@@ -257,9 +259,10 @@ async function convertHeicToJpeg(file) {
                     ctx.drawImage(image, 0, 0);
                     const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
                     const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                    const jpegDataURL = await fileToDataURL(jpegBlob);
+                    const jpegPreview = URL.createObjectURL(jpegBlob);
                     console.log('✅ ImageDecoder conversion successful!');
-                    return { file: jpegFile, preview: jpegDataURL };
+                    URL.revokeObjectURL(originalPreview);
+                    return { file: jpegFile, preview: jpegPreview };
                 }
             } catch (err) {
                 console.warn('⚠️ ImageDecoder failed:', err);
@@ -269,9 +272,9 @@ async function convertHeicToJpeg(file) {
         console.warn('⚠️ Conversion attempt failed:', err);
     }
     
-    // Final fallback: use original file with original data URL preview!
+    // Final fallback: use original file with original preview
     console.warn('⚠️ All conversion methods failed! Using original file, preview still works!');
-    return { file: file, preview: originalDataURL };
+    return { file: file, preview: originalPreview };
 }
 
 // ── Fetch helper ──
