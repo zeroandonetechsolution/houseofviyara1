@@ -14,7 +14,7 @@ const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const { convert } = require('heic-convert');
+const convert = require('heic-convert');
 let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 
