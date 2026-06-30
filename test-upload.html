@@ -13,15 +13,8 @@
         .preview-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; }
         .result-url { margin-top: 1rem; padding: 10px; background: #f0f0f0; border-radius: 5px; word-wrap: break-word; }
     </style>
-    <!-- Load heic2any with multiple CDN fallbacks -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js?v=2"></script>
-    <script>
-        if (!window.heic2any) {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=2';
-            document.head.appendChild(script);
-        }
-    </script>
+    <!-- Load supabase-config to get SUPABASE_URL and SUPABASE_ANON_KEY -->
+    <script src="supabase-config.js"></script>
 </head>
 <body>
     <h1>Test Image Upload (All Formats)</h1>
@@ -37,62 +30,29 @@
         const uploadBtn = document.getElementById('upload-btn');
         const previewContainer = document.getElementById('preview-container');
         
-        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:3000'
-            : window.location.origin;
-        
-        // Helper to convert HEIC
-        async function convertHeic(file) {
-            const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-            if (!isHeic) return file;
+        // Helper to convert HEIC using SUPABASE EDGE FUNCTION!
+        async function uploadWithEdgeFunction(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('pathPrefix', 'products');
+
+            // Edge Function URL: https://<project-ref>.supabase.co/functions/v1/convert-heic
+            const edgeFunctionUrl = `${window.SUPABASE_URL}/functions/v1/convert-heic`;
             
-            // Wait for heic2any to load
-            let attempts = 0;
-            while (!window.heic2any && attempts < 50) {
-                await new Promise(r => setTimeout(r, 50));
-                attempts++;
-            }
-            
-            if (window.heic2any) {
-                try {
-                    console.log('Using heic2any');
-                    const blob = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
-                    const finalBlob = Array.isArray(blob) ? blob[0] : blob;
-                    return new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                } catch (err) {
-                    console.warn('heic2any failed:', err);
+            const res = await fetch(edgeFunctionUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`
                 }
+            });
+            
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Edge Function failed: ${res.statusText} - ${errText}`);
             }
             
-            // Fallback to ImageDecoder if available
-            if (typeof ImageDecoder !== 'undefined') {
-                try {
-                    console.log('Using ImageDecoder');
-                    const arrayBuffer = await file.arrayBuffer();
-                    const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
-                    let decoder = null;
-                    for (const type of mimeTypes) {
-                        try {
-                            decoder = new ImageDecoder({ data: arrayBuffer, type: type });
-                            break;
-                        } catch (err) {}
-                    }
-                    if (!decoder) throw new Error('No supported MIME type');
-                    const { image } = await decoder.decode();
-                    const canvas = document.createElement('canvas');
-                    canvas.width = image.displayWidth;
-                    canvas.height = image.displayHeight;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(image, 0, 0);
-                    const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                    return new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                } catch (err) {
-                    console.warn('ImageDecoder failed:', err);
-                }
-            }
-            
-            console.warn('Using original file');
-            return file;
+            return await res.json();
         }
         
         uploadBtn.addEventListener('click', async () => {
@@ -102,35 +62,17 @@
             }
             
             let file = fileInput.files[0];
-            previewContainer.innerHTML = '<p>Converting and uploading...</p>';
+            previewContainer.innerHTML = '<p>Uploading to Supabase Edge Function...</p>';
             
             try {
-                file = await convertHeic(file);
-                
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    const response = await fetch(`${API_URL}/api/admin/upload-image`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (!response.ok) throw new Error('Upload failed');
-                    const result = await response.json();
-                    previewContainer.innerHTML = `
-                        <h3>Upload Successful!</h3>
-                        <img src="${result.url}" class="preview-img" alt="Uploaded Image" />
-                        <div class="result-url">
-                            <strong>URL:</strong> ${result.url}
-                        </div>
-                    `;
-                } else {
-                    const previewUrl = URL.createObjectURL(file);
-                    previewContainer.innerHTML = `
-                        <h3>File converted successfully!</h3>
-                        <img src="${previewUrl}" class="preview-img" alt="Converted Image" />
-                        <p><em>Use your admin panel at ${window.location.origin}/admin.html for full functionality</em></p>
-                    `;
-                }
+                const result = await uploadWithEdgeFunction(file);
+                previewContainer.innerHTML = `
+                    <h3>Upload Successful!</h3>
+                    <img src="${result.url}" class="preview-img" alt="Uploaded Image" />
+                    <div class="result-url">
+                        <strong>URL:</strong> ${result.url}
+                    </div>
+                `;
             } catch (err) {
                 console.error('Error:', err);
                 previewContainer.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;

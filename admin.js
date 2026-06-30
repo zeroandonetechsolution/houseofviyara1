@@ -27,17 +27,32 @@ function dataURLToBlob(dataURL) {
   return new Blob([u8], { type: mime });
 }
 
-// Helper function to upload file using backend (for reliable HEIC/HEIF conversion)
+// Helper function to upload file using SUPABASE EDGE FUNCTION for HEIC/HEIF conversion!
 async function uploadViaBackend(file) {
-  console.log('🚀 Using backend upload for conversion');
+  console.log('🚀 Using SUPABASE EDGE FUNCTION for HEIC conversion!');
   const formData = new FormData();
   formData.append('image', file);
-  const data = await apiFetch('/api/admin/upload-image', {
+  formData.append('pathPrefix', 'products');
+
+  // YOUR SUPABASE EDGE FUNCTION URL HERE!
+  // Once deployed, it will be like https://<project-ref>.supabase.co/functions/v1/convert-heic
+  const edgeFunctionUrl = `${window.SUPABASE_URL}/functions/v1/convert-heic`;
+  
+  const res = await fetch(edgeFunctionUrl, {
     method: 'POST',
-    body: formData
+    body: formData,
+    headers: {
+      'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`
+    }
   });
-  if (!data.url) throw new Error('Backend upload failed');
-  console.log('✅ Backend upload successful, URL:', data.url);
+  
+  if (!res.ok) {
+    throw new Error(`Edge Function failed: ${res.statusText}`);
+  }
+  
+  const data = await res.json();
+  if (!data.url) throw new Error('Edge Function upload failed');
+  console.log('✅ Edge Function conversion/upload successful, URL:', data.url);
   return data.url;
 }
 
