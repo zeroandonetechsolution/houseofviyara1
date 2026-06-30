@@ -178,6 +178,31 @@ async function convertWithLibheif(file) {
     return jpegBlob;
 }
 
+// Helper to load libheif-js dynamically
+async function loadLibheif() {
+    if (typeof window.libheif !== 'undefined') return true;
+    console.log('📚 Loading libheif-js...');
+    const urls = [
+        'https://unpkg.com/libheif-js@1.17.1/libheif.js',
+        'https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.js'
+    ];
+    for (const url of urls) {
+        const loaded = await new Promise(resolve => {
+            const s = document.createElement('script');
+            s.src = url;
+            s.onload = () => resolve(true);
+            s.onerror = () => resolve(false);
+            document.head.appendChild(s);
+        });
+        if (loaded) {
+            // Wait a little more to ensure the library is initialized
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return typeof window.libheif !== 'undefined';
+        }
+    }
+    return false;
+}
+
 // Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
     console.log('🔄 Processing file:', file.name);
@@ -192,7 +217,8 @@ async function convertHeicToJpeg(file) {
     
     // Try conversion!
     try {
-        // Try libheif-js FIRST! (It's already loaded in admin.html!
+        // Try libheif-js FIRST! Load it if needed!
+        await loadLibheif();
         if (typeof window.libheif !== 'undefined') {
             try {
                 const jpegBlob = await convertWithLibheif(file);
