@@ -208,9 +208,14 @@ async function convertHeicToJpeg(file) {
         if (!heic2anyLoaded) {
             const loadPromise = new Promise(resolve => {
                 const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
+                // Try unpkg first, then jsdelivr, then cdnjs
+                script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js';
                 script.onload = () => resolve(true);
-                script.onerror = () => resolve(false);
+                script.onerror = () => {
+                    // Fallback to jsdelivr if unpkg fails
+                    script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
+                    script.onerror = () => resolve(false);
+                };
                 document.head.appendChild(script);
             });
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
