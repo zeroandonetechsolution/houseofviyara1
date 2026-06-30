@@ -643,11 +643,11 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
         <label>Product Videos (up to 5)</label>
         <div id="pf-videos-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input type="file" id="pf-video-files" accept="video/*" multiple style="flex:1;">
+            <input type="file" id="pf-video-files" accept="video/*,.mov,.avi,.mkv,.flv,.wmv,.webm" multiple style="flex:1;">
             <input type="text" id="pf-video-url" placeholder="Or paste a video URL" style="flex:1;">
             <button type="button" class="admin-btn admin-btn-sm" id="pf-add-video-url">Add URL</button>
         </div>
-        <small class="admin-form-hint">Add up to 5 videos (upload files or paste URLs)</small>
+        <small class="admin-form-hint">Add up to 5 videos (upload files or paste URLs) - supports MOV, AVI, MKV, FLV, WMV, WEBM</small>
       </div>
       <!-- Product Variants Section -->
       <div class="aform-group">
@@ -793,21 +793,30 @@ function readFileAsDataURL(file) {
 }
 
 function isHeicFile(file) {
-    const type = (file && file.type || '').toLowerCase();
-    return type === 'image/heic' || type === 'image/heif' || /\.(heic|heif)$/i.test(file.name || '');
+    if (!file) return false;
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    return (
+        type === 'image/heic' || 
+        type === 'image/heif' || 
+        type === 'image/heic-sequence' ||
+        type === 'image/heif-sequence' ||
+        name.endsWith('.heic') || 
+        name.endsWith('.heif')
+    );
 }
 
 function loadHeic2Any() {
     if (window.heic2any) return Promise.resolve(window.heic2any);
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
         script.async = true;
         script.onload = () => {
             if (window.heic2any) return resolve(window.heic2any);
-            reject(new Error('heic2any not available'));
+            reject(new Error('heic2any library not available'));
         };
-        script.onerror = () => reject(new Error('Failed to load heic2any'));
+        script.onerror = () => reject(new Error('Failed to load heic2any library'));
         document.head.appendChild(script);
     });
 }
@@ -822,34 +831,37 @@ function canvasToJpegDataURL(bitmap) {
 }
 
 async function convertImageFileToJpegDataURL(file) {
-    if (!file) throw new Error('No file provided');
+    if (!file) throw new Error('No file provided for conversion');
 
-    // Try native ImageDecoder first
+    // Try native ImageDecoder first if available
     if (window.ImageDecoder) {
         try {
-            const decoder = new ImageDecoder({ type: file.type || 'image/heic', data: file });
+            const decoder = new ImageDecoder({ 
+                type: file.type || 'image/heic', 
+                data: file 
+            });
             const frame = await decoder.decode();
             const bitmap = await createImageBitmap(frame.image);
             return canvasToJpegDataURL(bitmap);
         } catch (err) {
-            console.warn('ImageDecoder could not decode HEIC/HEIF file, retrying with fallback', err);
+            console.warn('Native ImageDecoder failed, trying heic2any library', err);
         }
     }
 
-    // Try heic2any fallback for browsers without native HEIC support
-    if (isHeicFile(file)) {
-        try {
-            await loadHeic2Any();
-            const convertedBlob = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
-            const bitmap = await createImageBitmap(convertedBlob);
-            return canvasToJpegDataURL(bitmap);
-        } catch (err) {
-            console.warn('heic2any conversion failed, falling back to raw data URL', err);
-        }
+    // Try heic2any fallback library
+    try {
+        await loadHeic2Any();
+        const convertedBlob = await window.heic2any({ 
+            blob: file, 
+            toType: 'image/jpeg', 
+            quality: 0.92 
+        });
+        const bitmap = await createImageBitmap(convertedBlob);
+        return canvasToJpegDataURL(bitmap);
+    } catch (err) {
+        console.error('All HEIC/HEIF conversion methods failed', err);
+        throw err;
     }
-
-    // Final fallback: return raw data URL
-    return await readFileAsDataURL(file);
 }
 
 async function readImageFileAsDataURL(file) {
@@ -857,9 +869,10 @@ async function readImageFileAsDataURL(file) {
         try {
             return await convertImageFileToJpegDataURL(file);
         } catch (err) {
-            console.warn('HEIC conversion failed, falling back to raw data URL', err);
+            console.error('HEIC/HEIF conversion failed, trying raw read', err);
         }
     }
+    // Fallback to raw data URL if conversion fails or not HEIC/HEIF
     return await readFileAsDataURL(file);
 }
 
