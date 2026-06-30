@@ -153,106 +153,98 @@ async function loadSupabaseClient() {
   }
 }
 
-// --- HELPER: Load heic2any reliably from CDN ---
-let heic2anyLoadingPromise = null;
-function ensureHeic2anyLoaded() {
-    if (window.heic2any) return Promise.resolve();
-    if (heic2anyLoadingPromise) return heic2anyLoadingPromise;
-    heic2anyLoadingPromise = new Promise((resolve, reject) => {
-        let fallbackCount = 0;
-        const cdns = [
-            'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js',
-            'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.10/heic2any.min.js'
-        ];
-        function tryNextCdn() {
-            if (fallbackCount >= cdns.length) {
-                reject(new Error('Failed to load heic2any from any CDN'));
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = cdns[fallbackCount];
-            script.onload = () => {
-                if (window.heic2any) resolve();
-                else tryNextCdn();
-            };
-            script.onerror = () => {
-                fallbackCount++;
-                tryNextCdn();
-            };
-            document.head.appendChild(script);
-        }
-        tryNextCdn();
-    });
-    return heic2anyLoadingPromise;
-}
-
 // Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
-    console.log('🔄 Converting HEIC/HEIF file:', file.name);
+    console.log('🔄 Processing file:', file.name);
     const isHeic = isHeicFile(file);
     
+    // FIRST: ALWAYS RETURN A PREVIEW FIRST SO THE ADMIN SHOWS SOMETHING!
+    const originalPreview = URL.createObjectURL(file);
+    
     if (!isHeic) {
-        return { file: file, preview: URL.createObjectURL(file) };
+        return { file: file, preview: originalPreview };
     }
     
-    // --- 1. Try heic2any (most reliable) ---
+    // Try conversion, but only for 5 seconds max, never get stuck!
     try {
-        await ensureHeic2anyLoaded();
-        if (window.heic2any) {
-            console.log('📦 Using heic2any for conversion');
-            const jpegBlob = await window.heic2any({
-                blob: file,
-                toType: 'image/jpeg',
-                quality: 0.9
+        // Try to load heic2any quickly, with timeout
+        let heic2anyLoaded = !!window.heic2any;
+        if (!heic2anyLoaded) {
+            // Try to load heic2any from jsDelivr quickly
+            const loadPromise = new Promise(resolve => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js';
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
             });
-            const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-            const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-            console.log('✅ heic2any conversion successful!');
-            return {
-                file: jpegFile,
-                preview: URL.createObjectURL(finalBlob)
-            };
+            // Wait max 3 seconds for heic2any to load
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+            heic2anyLoaded = await Promise.race([loadPromise, timeoutPromise]);
+        }
+        
+        if (window.heic2any) {
+            try {
+                console.log('📦 Using heic2any for conversion');
+                const jpegBlob = await window.heic2any({
+                    blob: file,
+                    toType: 'image/jpeg',
+                    quality: 0.9
+                });
+                const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+                const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                console.log('✅ heic2any conversion successful!');
+                // Revoke the original preview to save memory
+                URL.revokeObjectURL(originalPreview);
+                return {
+                    file: jpegFile,
+                    preview: URL.createObjectURL(finalBlob)
+                };
+            } catch (err) {
+                console.warn('⚠️ heic2any failed:', err);
+            }
+        }
+        
+        // Try ImageDecoder API
+        if (typeof ImageDecoder !== 'undefined') {
+            try {
+                console.log('📡 Using ImageDecoder API');
+                const arrayBuffer = await file.arrayBuffer();
+                const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+                let decoder = null;
+                for (const type of mimeTypes) {
+                    try {
+                        decoder = new ImageDecoder({ data: arrayBuffer, type: type });
+                        break;
+                    } catch (err) {}
+                }
+                if (decoder) {
+                    const { image } = await decoder.decode();
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.displayWidth;
+                    canvas.height = image.displayHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0);
+                    const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                    console.log('✅ ImageDecoder conversion successful!');
+                    URL.revokeObjectURL(originalPreview);
+                    return {
+                        file: jpegFile,
+                        preview: URL.createObjectURL(jpegBlob)
+                    };
+                }
+            } catch (err) {
+                console.warn('⚠️ ImageDecoder failed:', err);
+            }
         }
     } catch (err) {
-        console.warn('⚠️ heic2any failed:', err);
+        console.warn('⚠️ Conversion attempt failed:', err);
     }
     
-    // --- 2. Try ImageDecoder API ---
-    if (typeof ImageDecoder !== 'undefined') {
-        try {
-            console.log('📡 Using ImageDecoder API');
-            const arrayBuffer = await file.arrayBuffer();
-            const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
-            let decoder = null;
-            for (const type of mimeTypes) {
-                try {
-                    decoder = new ImageDecoder({ data: arrayBuffer, type: type });
-                    break;
-                } catch (err) {}
-            }
-            if (!decoder) throw new Error('No supported MIME type');
-            const { image } = await decoder.decode();
-            const canvas = document.createElement('canvas');
-            canvas.width = image.displayWidth;
-            canvas.height = image.displayHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(image, 0, 0);
-            const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-            const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-            console.log('✅ ImageDecoder conversion successful!');
-            return {
-                file: jpegFile,
-                preview: URL.createObjectURL(jpegBlob)
-            };
-        } catch (err) {
-            console.warn('⚠️ ImageDecoder failed:', err);
-        }
-    }
-    
-    // --- 3. Final fallback ---
-    console.warn('⚠️ All conversion methods failed! Using original file!');
-    return { file: file, preview: URL.createObjectURL(file) };
+    // Final fallback: use original file with original preview
+    console.warn('⚠️ All conversion methods failed! Using original file, but preview is available!');
+    return { file: file, preview: originalPreview };
 }
 
 // ── Fetch helper ──
