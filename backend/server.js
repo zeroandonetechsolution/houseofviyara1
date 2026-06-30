@@ -146,6 +146,12 @@ if (compression) app.use(compression());
 app.use(express.static(path.join(__dirname, '..'), {
     maxAge: '7d',
     setHeaders: (res, filePath) => {
+        // Ensure the service worker file is always revalidated so clients can pick up updates
+        if (path.basename(filePath) === 'sw.js') {
+            res.setHeader('Cache-Control', 'no-cache');
+            return;
+        }
+
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-cache');
         } else if (filePath.match(/\.(js|css|webp|jpg|png|svg|woff2)$/)) {

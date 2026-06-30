@@ -1,4 +1,5 @@
-const CACHE_VERSION = 'lifestyle-luxury-v5';
+// Bump this version when deploying changes so clients install a fresh service worker.
+const CACHE_VERSION = 'lifestyle-luxury-v6';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const MEDIA_CACHE = CACHE_VERSION + '-media';
 const MAX_MEDIA_ENTRIES = 60;

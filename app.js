@@ -419,14 +419,16 @@ const defaultCategories = [
     { id: 1, name: 'Maxis', slug: 'maxis' },
     { id: 2, name: 'Cord sets', slug: 'cord-sets' },
     { id: 3, name: 'Kurti', slug: 'kurti' },
-    { id: 4, name: 'Kurti sets', slug: 'kurti-sets' }
+    { id: 4, name: 'Kurti sets', slug: 'kurti-sets' },
+    { id: 5, name: 'Pure Cotton', slug: 'pure-cotton' }
 ];
 
 const defaultHeaderLinks = [
     { id: 1, label: 'Maxis', slug: 'maxis', href: 'Maxis.html' },
     { id: 2, label: 'Cord sets', slug: 'cord-sets', href: 'Cord sets.html' },
     { id: 3, label: 'Kurti', slug: 'kurti', href: 'Kurti.html' },
-    { id: 4, label: 'Kurti sets', slug: 'kurti-sets', href: 'Kurti sets.html' }
+    { id: 4, label: 'Kurti sets', slug: 'kurti-sets', href: 'Kurti sets.html' },
+    { id: 5, label: 'Pure Cotton', slug: 'pure-cotton', href: 'pure-cotton.html' }
 ];
 
 const defaultBanners = [
