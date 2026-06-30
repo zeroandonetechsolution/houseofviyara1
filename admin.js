@@ -66,36 +66,15 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   }
   if (!(file instanceof Blob) && !(file instanceof File)) throw new Error('Invalid file');
 
-  // --- 1. Try client-side HEIC/HEIF conversion first! (most reliable!) ---
+  // --- ALWAYS try client-side HEIC/HEIF conversion first! ---
   if (isHeicFile(file)) {
-    console.log('📦 HEIC/HEIF detected, trying client-side conversion first!');
-    try {
-      const converted = await convertHeicToJpeg(file);
-      // If conversion was successful (we got a JPEG), upload directly to Supabase
-      if (converted.file.type === 'image/jpeg') {
-        console.log('✅ Client-side conversion successful! Uploading JPEG directly to Supabase!');
-        if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
-        const filename = `${pathPrefix}/${Date.now()}_${converted.file.name}`;
-        const bucket = window.SUPABASE_BUCKET || 'public';
-        const { data, error } = await adminSupabase.storage.from(bucket).upload(filename, converted.file, { upsert: true });
-        if (error) {
-          console.warn('❌ Supabase storage upload error', error);
-          throw error;
-        }
-        const url = `${window.SUPABASE_URL}/storage/v1/object/public/${bucket}/${data.path}`;
-        console.log('✅ Final uploaded file URL:', url);
-        return url;
-      }
-    } catch (err) {
-      console.warn('⚠️ Client-side conversion failed, falling back to Edge Function:', err);
-    }
-    
-    // --- 2. If client-side fails, use Edge Function ---
-    console.log('📤 Using Supabase Edge Function for conversion/upload!');
-    return await uploadViaBackend(file);
+    console.log('📦 HEIC/HEIF detected, converting client-side!');
+    const converted = await convertHeicToJpeg(file);
+    // Upload the converted file (or original if conversion failed) to Supabase!
+    file = converted.file;
   }
   
-  // For regular files, use Supabase directly
+  // Upload to Supabase directly!
   if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
   const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
   const bucket = window.SUPABASE_BUCKET || 'public';
