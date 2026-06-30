@@ -797,6 +797,21 @@ function isHeicFile(file) {
     return type === 'image/heic' || type === 'image/heif' || /\.(heic|heif)$/i.test(file.name || '');
 }
 
+function loadHeic2Any() {
+    if (window.heic2any) return Promise.resolve(window.heic2any);
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js';
+        script.async = true;
+        script.onload = () => {
+            if (window.heic2any) return resolve(window.heic2any);
+            reject(new Error('heic2any not available'));
+        };
+        script.onerror = () => reject(new Error('Failed to load heic2any'));
+        document.head.appendChild(script);
+    });
+}
+
 function canvasToJpegDataURL(bitmap) {
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;
@@ -808,18 +823,33 @@ function canvasToJpegDataURL(bitmap) {
 
 async function convertImageFileToJpegDataURL(file) {
     if (!file) throw new Error('No file provided');
-    try {
-        if (window.ImageDecoder) {
+
+    // Try native ImageDecoder first
+    if (window.ImageDecoder) {
+        try {
             const decoder = new ImageDecoder({ type: file.type || 'image/heic', data: file });
             const frame = await decoder.decode();
             const bitmap = await createImageBitmap(frame.image);
             return canvasToJpegDataURL(bitmap);
+        } catch (err) {
+            console.warn('ImageDecoder could not decode HEIC/HEIF file, retrying with fallback', err);
         }
-    } catch (err) {
-        console.warn('ImageDecoder could not decode HEIC/HEIF file, retrying with createImageBitmap', err);
     }
-    const bitmap = await createImageBitmap(file);
-    return canvasToJpegDataURL(bitmap);
+
+    // Try heic2any fallback for browsers without native HEIC support
+    if (isHeicFile(file)) {
+        try {
+            await loadHeic2Any();
+            const convertedBlob = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+            const bitmap = await createImageBitmap(convertedBlob);
+            return canvasToJpegDataURL(bitmap);
+        } catch (err) {
+            console.warn('heic2any conversion failed, falling back to raw data URL', err);
+        }
+    }
+
+    // Final fallback: return raw data URL
+    return await readFileAsDataURL(file);
 }
 
 async function readImageFileAsDataURL(file) {
