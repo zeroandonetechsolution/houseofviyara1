@@ -93,6 +93,22 @@ async function loadSupabaseClient() {
   }
 }
 
+// Dynamically load heic2any if not already loaded
+async function loadHeic2any() {
+  if (window.heic2any) return;
+  console.log('Loading heic2any...');
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js';
+    script.onload = () => {
+      console.log('heic2any loaded');
+      resolve();
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
 // Convert HEIC/HEIF to JPEG
 async function convertHeicToJpeg(file) {
   console.log('🔄 Converting HEIC/HEIF file:', file.name);
@@ -103,70 +119,27 @@ async function convertHeicToJpeg(file) {
     return { file: file, preview: URL.createObjectURL(file) };
   }
 
-  // Try method 1: libheif-js library (most reliable)
-  if (window.libheif) {
-    try {
-      console.log('📦 Using libheif-js for conversion');
-      const arrayBuffer = await file.arrayBuffer();
-      const decoder = new window.libheif.HeifDecoder();
-      const images = decoder.decode(arrayBuffer);
-      
-      if (images.length === 0) throw new Error('No images found in HEIC file');
-      
-      const image = images[0];
-      const width = image.get_width();
-      const height = image.get_height();
-      
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      const imgData = ctx.createImageData(width, height);
-      
-      await new Promise((resolve, reject) => {
-        image.display(imgData, () => {
-          try {
-            ctx.putImageData(imgData, 0, 0);
-            resolve();
-          } catch (e) { reject(e); }
-        });
-      });
-      
-      const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-      const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-      
-      console.log('✅ libheif-js conversion successful!');
-      return {
-        file: jpegFile,
-        preview: URL.createObjectURL(jpegBlob)
-      };
-    } catch (err) {
-      console.warn('⚠️ libheif-js failed, trying heic2any:', err);
-    }
+  // Try method 1: heic2any library
+  try {
+    if (!window.heic2any) await loadHeic2any();
+    console.log('📦 Using heic2any for conversion');
+    const jpegBlob = await window.heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9
+    });
+    const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+    const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+    console.log('✅ heic2any conversion successful!');
+    return {
+      file: jpegFile,
+      preview: URL.createObjectURL(finalBlob)
+    };
+  } catch (err) {
+    console.warn('⚠️ heic2any conversion failed, trying ImageDecoder:', err);
   }
 
-  // Try method 2: heic2any library
-  if (window.heic2any) {
-    try {
-      console.log('📦 Using heic2any for conversion');
-      const jpegBlob = await window.heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.9
-      });
-      const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-      const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-      console.log('✅ heic2any conversion successful!');
-      return {
-        file: jpegFile,
-        preview: URL.createObjectURL(finalBlob)
-      };
-    } catch (err) {
-      console.warn('⚠️ heic2any conversion failed, trying ImageDecoder:', err);
-    }
-  }
-
-  // Try method 3: Native ImageDecoder API (modern browsers)
+  // Try method 2: Native ImageDecoder API (modern browsers)
   if (typeof ImageDecoder !== 'undefined') {
     try {
       console.log('📡 Using ImageDecoder API');
@@ -183,8 +156,8 @@ async function convertHeicToJpeg(file) {
         } catch (e) {}
       }
 
-      if (!decoder) throw new Error('No supported MIME type for ImageDecoder');
-
+      if (!decoder) throw new Error('No supported MIME type');
+      
       const { image } = await decoder.decode();
       const canvas = document.createElement('canvas');
       canvas.width = image.displayWidth;
