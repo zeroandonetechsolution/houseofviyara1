@@ -703,12 +703,22 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
 function pf_renderGallery() {
     const container = document.getElementById('pf-gallery-container');
     if (!container) return;
-    container.innerHTML = tempProductData.gallery.map((img, idx) => `
+    container.innerHTML = tempProductData.gallery.map((item, idx) => {
+        let imgSrc = 'https://via.placeholder.com/100?text=Image';
+        if (typeof item === 'string') {
+            imgSrc = item;
+        } else if (item && item.preview) {
+            imgSrc = item.preview;
+        } else if (item && item.file) {
+            // If no preview, show placeholder
+            imgSrc = 'https://via.placeholder.com/100?text=' + encodeURIComponent(item.file.name);
+        }
+        return `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${img}" style="width:100%;height:100px;object-fit:cover;">
+        <img src="${imgSrc}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Error'">
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `).join('');
+    `}).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -871,11 +881,16 @@ async function readImageFileAsDataURL(file) {
         try {
             return await convertImageFileToJpegDataURL(file);
         } catch (err) {
-            console.error('HEIC/HEIF conversion failed, trying raw read', err);
+            console.warn('HEIC/HEIF conversion failed for this file, falling back to raw read', err);
         }
     }
-    // Fallback to raw data URL if conversion fails or not HEIC/HEIF
-    return await readFileAsDataURL(file);
+    // Always fall back to raw data URL, even if conversion fails
+    try {
+        return await readFileAsDataURL(file);
+    } catch (err) {
+        console.error('Raw file read failed', err);
+        throw err;
+    }
 }
 
 // Setup product form
@@ -913,8 +928,18 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                const dataUrl = await readImageFileAsDataURL(file);
-                tempProductData.gallery.push(dataUrl);
+                // Try to get a preview dataURL
+                let preview = null;
+                try {
+                    preview = await readImageFileAsDataURL(file);
+                } catch (err) {
+                    console.warn('Preview conversion failed, will still upload original file', err);
+                }
+                // Store both the original file and preview
+                tempProductData.gallery.push({
+                    file: file,
+                    preview: preview
+                });
                 pf_renderGallery();
             } catch (err) {
                 console.error('File read error', err);
@@ -1091,15 +1116,21 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs (from file inputs) to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const img of gallery) {
-                if (img.startsWith('data:')) {
-                    const url = await supabaseUploadFile(img, 'products');
+            for (const item of gallery) {
+                if (typeof item === 'object' && item && item.file) {
+                    // Upload the original File object
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
-                } else {
-                    uploadedGallery.push(img);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    // Upload data URL
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    // Just a regular URL, keep it
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
@@ -1181,15 +1212,21 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs (from file inputs) to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const img of gallery) {
-                if (img.startsWith('data:')) {
-                    const url = await supabaseUploadFile(img, 'products');
+            for (const item of gallery) {
+                if (typeof item === 'object' && item && item.file) {
+                    // Upload the original File object
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
-                } else {
-                    uploadedGallery.push(img);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    // Upload data URL
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    // Just a regular URL, keep it
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
