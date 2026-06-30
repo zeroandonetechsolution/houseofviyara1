@@ -703,23 +703,17 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
 function pf_renderGallery() {
     const container = document.getElementById('pf-gallery-container');
     if (!container) return;
-    container.innerHTML = tempProductData.gallery.map((item, idx) => {
-        const preview = typeof item === 'string' ? item : item.preview;
-        return `
+    container.innerHTML = tempProductData.gallery.map((url, idx) => `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Image'">
+        <img src="${url}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=No+Preview'">
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `}).join('');
+    `).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const idx = parseInt(btn.dataset.index);
-            const removed = tempProductData.gallery.splice(idx, 1)[0];
-            // Release object URL to avoid memory leak
-            if (removed && removed.preview && typeof removed.preview !== 'string') {
-                URL.revokeObjectURL(removed.preview);
-            }
+            tempProductData.gallery.splice(idx, 1);
             pf_renderGallery();
         });
     });
@@ -812,9 +806,56 @@ function isHeicFile(file) {
     );
 }
 
-// Very simple: read file as data URL, no conversion unless absolutely needed
+// Load heic2any library
+function loadHeic2Any() {
+    if (window.heic2any) return Promise.resolve(window.heic2any);
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+        script.async = true;
+        script.onload = () => {
+            if (window.heic2any) return resolve(window.heic2any);
+            reject(new Error('heic2any library not available'));
+        };
+        script.onerror = () => reject(new Error('Failed to load heic2any library'));
+        document.head.appendChild(script);
+    });
+}
+
+// Convert HEIC file to JPEG data URL
+async function convertHeicToJpeg(file) {
+    try {
+        await loadHeic2Any();
+        const convertedBlob = await window.heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.92
+        });
+        // Handle case where heic2any returns array (for burst shots)
+        const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        const bitmap = await createImageBitmap(blobToUse);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.92);
+    } catch (err) {
+        console.warn('HEIC conversion failed, trying raw read:', err);
+        throw err;
+    }
+}
+
+// Read image file, convert HEIC to JPEG if needed
 async function readImageFileAsDataURL(file) {
-    // First try simple FileReader for any file
+    if (isHeicFile(file)) {
+        try {
+            return await convertHeicToJpeg(file);
+        } catch (err) {
+            console.warn('HEIC conversion failed, trying raw read:', err);
+        }
+    }
+    // Fallback: read raw file
     try {
         const dataUrl = await new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -824,21 +865,8 @@ async function readImageFileAsDataURL(file) {
         });
         return dataUrl;
     } catch (err) {
-        console.warn('Simple read failed, trying createImageBitmap fallback', err);
-    }
-    
-    // If that fails (for some HEIC files), try to draw on canvas if possible
-    try {
-        const bitmap = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(bitmap, 0, 0);
-        return canvas.toDataURL('image/jpeg', 0.92);
-    } catch (err2) {
-        console.error('All read methods failed', err2);
-        throw err2;
+        console.error('Failed to read file:', err);
+        throw err;
     }
 }
 
@@ -877,16 +905,12 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                // Create object URL for preview, store File for upload
-                const previewUrl = URL.createObjectURL(file);
-                tempProductData.gallery.push({
-                    file: file,
-                    preview: previewUrl
-                });
+                const dataUrl = await readImageFileAsDataURL(file);
+                tempProductData.gallery.push(dataUrl);
                 pf_renderGallery();
             } catch (err) {
-                console.error('File error', err);
-                showToast('Image file could not be processed', 'error');
+                console.error('File read error', err);
+                showToast('Image file could not be read', 'error');
             }
         }
     });
@@ -1059,21 +1083,15 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
+        // Upload any data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const item of gallery) {
-                if (typeof item === 'object' && item.file) {
-                    // Upload original File directly!
-                    const url = await supabaseUploadFile(item.file, 'products');
+            for (const url of gallery) {
+                if (url.startsWith('data:')) {
+                    const uploadedUrl = await supabaseUploadFile(url, 'products');
+                    uploadedGallery.push(uploadedUrl);
+                } else {
                     uploadedGallery.push(url);
-                    // Release object URL now that we're done with it
-                    if (item.preview) URL.revokeObjectURL(item.preview);
-                } else if (typeof item === 'string' && item.startsWith('data:')) {
-                    const url = await supabaseUploadFile(item, 'products');
-                    uploadedGallery.push(url);
-                } else if (typeof item === 'string') {
-                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
@@ -1155,21 +1173,15 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
+        // Upload any data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const item of gallery) {
-                if (typeof item === 'object' && item.file) {
-                    // Upload original File directly!
-                    const url = await supabaseUploadFile(item.file, 'products');
+            for (const url of gallery) {
+                if (url.startsWith('data:')) {
+                    const uploadedUrl = await supabaseUploadFile(url, 'products');
+                    uploadedGallery.push(uploadedUrl);
+                } else {
                     uploadedGallery.push(url);
-                    // Release object URL now that we're done with it
-                    if (item.preview) URL.revokeObjectURL(item.preview);
-                } else if (typeof item === 'string' && item.startsWith('data:')) {
-                    const url = await supabaseUploadFile(item, 'products');
-                    uploadedGallery.push(url);
-                } else if (typeof item === 'string') {
-                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
