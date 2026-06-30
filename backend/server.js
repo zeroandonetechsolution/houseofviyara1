@@ -90,6 +90,15 @@ const upload = multer({
 });
 app.use('/uploads', express.static(UPLOAD_DIR));
 
+// HEIC to JPEG conversion endpoint
+let sharp;
+try {
+    sharp = require('sharp');
+    console.log('Sharp loaded for HEIC conversion');
+} catch (e) {
+    console.warn('Sharp not available, HEIC conversion fallback disabled');
+}
+
 const usePostgres = Boolean(process.env.DATABASE_URL);
 let db;
 let pgPool;
@@ -558,14 +567,34 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+    let filePath = req.file.path;
+    let isHeic = /\.heic$/i.test(req.file.originalname) || /\.heif$/i.test(req.file.originalname);
+
+    if (isHeic && sharp) {
+        try {
+            // Convert HEIC to JPEG
+            const jpegPath = filePath.replace(/\.(heic|heif)$/i, '.jpg');
+            await sharp(filePath)
+                .jpeg({ quality: 90 })
+                .toFile(jpegPath);
+            // Remove original HEIC
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            filePath = jpegPath;
+            req.file.filename = path.basename(jpegPath);
+            req.file.originalname = req.file.originalname.replace(/\.(heic|heif)$/i, '.jpg');
+        } catch (conversionError) {
+            console.warn('HEIC conversion failed, keeping original:', conversionError);
+        }
+    }
+
     if (CLOUDINARY_ENABLED) {
         try {
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            const uploadResult = await cloudinary.uploader.upload(filePath, {
                 resource_type: 'auto',
                 folder: 'house-of-viyara'
             });
-            if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-                fs.unlinkSync(req.file.path);
+            if (filePath && fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
             }
             return res.json({ url: uploadResult.secure_url, provider: 'cloudinary' });
         } catch (error) {

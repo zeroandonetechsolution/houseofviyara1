@@ -32,6 +32,7 @@
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "sharp": "^0.33.5"
   }
 }
