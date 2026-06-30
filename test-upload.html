@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Test Image Upload</title>
+    <title>Test Image Upload (All Formats)</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 20px; }
         .upload-container { padding: 2rem; border: 2px dashed #ccc; border-radius: 10px; text-align: center; margin-bottom: 2rem; }
@@ -13,6 +13,9 @@
         .preview-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; }
         .result-url { margin-top: 1rem; padding: 10px; background: #f0f0f0; border-radius: 5px; word-wrap: break-word; }
     </style>
+    <!-- Add libheif-js and heic2any for production use -->
+    <script src="https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.min.js?v=1"></script>
+    <script src="https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=1"></script>
 </head>
 <body>
     <h1>Test Image Upload (All Formats)</h1>
@@ -32,38 +35,98 @@
             ? 'http://localhost:3000'
             : window.location.origin;
         
+        // Helper function to convert HEIC/HEIF to JPEG client-side (for production)
+        async function convertHeic(file) {
+            const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+            if (!isHeic) return file;
+            
+            // Try libheif-js first (most reliable)
+            if (window.libheif) {
+                try {
+                    console.log('Using libheif-js');
+                    const arrayBuffer = await file.arrayBuffer();
+                    const decoder = new window.libheif.HeifDecoder();
+                    const images = decoder.decode(arrayBuffer);
+                    
+                    if (!images.length) throw new Error('No images found');
+                    
+                    const image = images[0];
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.get_width();
+                    canvas.height = image.get_height();
+                    const ctx = canvas.getContext('2d');
+                    const imgData = ctx.createImageData(canvas.width, canvas.height);
+                    
+                    await new Promise((resolve, reject) => {
+                        image.display(imgData, () => {
+                            ctx.putImageData(imgData, 0, 0);
+                            resolve();
+                        });
+                    });
+                    
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                } catch (err) {
+                    console.warn('libheif-js failed, trying heic2any:', err);
+                }
+            }
+            
+            // Try heic2any second
+            if (window.heic2any) {
+                try {
+                    console.log('Using heic2any');
+                    const blob = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+                    const finalBlob = Array.isArray(blob) ? blob[0] : blob;
+                    return new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                } catch (err) {
+                    console.warn('heic2any failed:', err);
+                }
+            }
+            
+            // Fallback to original
+            console.warn('Using original file');
+            return file;
+        }
+        
         uploadBtn.addEventListener('click', async () => {
             if (!fileInput.files.length) {
                 alert('Please select an image');
                 return;
             }
             
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('image', file);
+            let file = fileInput.files[0];
             
-            previewContainer.innerHTML = '<p>Uploading...</p>';
+            previewContainer.innerHTML = '<p>Converting and uploading...</p>';
             
             try {
-                const response = await fetch(`${API_URL}/api/admin/upload-image`, {
-                    method: 'POST',
-                    body: formData
-                });
+                file = await convertHeic(file);
                 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    throw new Error(`Upload failed: ${errText}`);
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // Use backend API on localhost
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const response = await fetch(`${API_URL}/api/admin/upload-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) throw new Error('Upload failed');
+                    const result = await response.json();
+                    previewContainer.innerHTML = `
+                        <h3>Upload Successful!</h3>
+                        <img src="${result.url}" class="preview-img" alt="Uploaded Image" />
+                        <div class="result-url">
+                            <strong>URL:</strong> ${result.url}
+                        </div>
+                    `;
+                } else {
+                    // On production, just show preview and note to use admin panel
+                    const previewUrl = URL.createObjectURL(file);
+                    previewContainer.innerHTML = `
+                        <h3>File converted successfully!</h3>
+                        <img src="${previewUrl}" class="preview-img" alt="Converted Image" />
+                        <p><em>Use your admin panel at ${window.location.origin}/admin.html for full functionality</em></p>
+                    `;
                 }
-                
-                const result = await response.json();
-                previewContainer.innerHTML = `
-                    <h3>Upload Successful!</h3>
-                    <img src="${result.url}" class="preview-img" alt="Uploaded Image" />
-                    <div class="result-url">
-                        <strong>URL:</strong> ${result.url}
-                    </div>
-                `;
-                console.log('Result:', result);
             } catch (err) {
                 console.error('Error:', err);
                 previewContainer.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
