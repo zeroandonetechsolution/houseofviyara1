@@ -703,17 +703,23 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
 function pf_renderGallery() {
     const container = document.getElementById('pf-gallery-container');
     if (!container) return;
-    container.innerHTML = tempProductData.gallery.map((img, idx) => `
+    container.innerHTML = tempProductData.gallery.map((item, idx) => {
+        const preview = typeof item === 'string' ? item : item.preview;
+        return `
       <div class="gallery-item" style="position:relative;width:100px;height:100px;border:2px solid #eee;border-radius:8px;overflow:hidden;">
-        <img src="${img}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=No+Preview'">
+        <img src="${preview}" style="width:100%;height:100px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/100?text=Image'">
         <button type="button" class="pf-remove-gallery-btn" data-index="${idx}" style="position:absolute;top:2px;right:2px;background:#FF007A;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
       </div>
-    `).join('');
+    `}).join('');
     // Reattach event listeners
     document.querySelectorAll('.pf-remove-gallery-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const idx = parseInt(btn.dataset.index);
-            tempProductData.gallery.splice(idx, 1);
+            const removed = tempProductData.gallery.splice(idx, 1)[0];
+            // Release object URL to avoid memory leak
+            if (removed && removed.preview && typeof removed.preview !== 'string') {
+                URL.revokeObjectURL(removed.preview);
+            }
             pf_renderGallery();
         });
     });
@@ -871,12 +877,16 @@ function setupProductForm() {
         for (const file of files) {
             if (tempProductData.gallery.length >= 10) break;
             try {
-                const dataUrl = await readImageFileAsDataURL(file);
-                tempProductData.gallery.push(dataUrl);
+                // Create object URL for preview, store File for upload
+                const previewUrl = URL.createObjectURL(file);
+                tempProductData.gallery.push({
+                    file: file,
+                    preview: previewUrl
+                });
                 pf_renderGallery();
             } catch (err) {
-                console.error('File read error', err);
-                showToast('Image file could not be read', 'error');
+                console.error('File error', err);
+                showToast('Image file could not be processed', 'error');
             }
         }
     });
@@ -1049,15 +1059,21 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs (from file inputs) to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const img of gallery) {
-                if (img.startsWith('data:')) {
-                    const url = await supabaseUploadFile(img, 'products');
+            for (const item of gallery) {
+                if (typeof item === 'object' && item.file) {
+                    // Upload original File directly!
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
-                } else {
-                    uploadedGallery.push(img);
+                    // Release object URL now that we're done with it
+                    if (item.preview) URL.revokeObjectURL(item.preview);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
@@ -1139,15 +1155,21 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any data URLs (from file inputs) to Supabase Storage
+        // Upload any files or data URLs to Supabase Storage
         if (adminSupabase) {
             const uploadedGallery = [];
-            for (const img of gallery) {
-                if (img.startsWith('data:')) {
-                    const url = await supabaseUploadFile(img, 'products');
+            for (const item of gallery) {
+                if (typeof item === 'object' && item.file) {
+                    // Upload original File directly!
+                    const url = await supabaseUploadFile(item.file, 'products');
                     uploadedGallery.push(url);
-                } else {
-                    uploadedGallery.push(img);
+                    // Release object URL now that we're done with it
+                    if (item.preview) URL.revokeObjectURL(item.preview);
+                } else if (typeof item === 'string' && item.startsWith('data:')) {
+                    const url = await supabaseUploadFile(item, 'products');
+                    uploadedGallery.push(url);
+                } else if (typeof item === 'string') {
+                    uploadedGallery.push(item);
                 }
             }
             gallery = uploadedGallery;
