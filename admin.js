@@ -836,9 +836,11 @@ async function convertImageFileToJpegDataURL(file) {
     // Try native ImageDecoder first if available
     if (window.ImageDecoder) {
         try {
+            // Read file as ArrayBuffer first for ImageDecoder
+            const arrayBuffer = await file.arrayBuffer();
             const decoder = new ImageDecoder({ 
                 type: file.type || 'image/heic', 
-                data: file 
+                data: arrayBuffer 
             });
             const frame = await decoder.decode();
             const bitmap = await createImageBitmap(frame.image);
