@@ -121,91 +121,51 @@ async function convertHeicToJpeg(file) {
     const isHeic = isHeicFile(file);
     
     if (!isHeic) {
-        // Not HEIC, just return original file
         return { file: file, preview: URL.createObjectURL(file) };
     }
     
-    // --- Method 1: libheif-js (MOST RELIABLE) ---
-    if (window.libheif) {
-        try {
-            console.log('📦 Using libheif-js for conversion');
-            const arrayBuffer = await file.arrayBuffer();
-            const decoder = new window.libheif.HeifDecoder();
-            const images = decoder.decode(arrayBuffer);
-            
-            if (!images.length) throw new Error('No images found in HEIC/HEIF file');
-            
-            const image = images[0];
-            const width = image.get_width();
-            const height = image.get_height();
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            const imgData = ctx.createImageData(width, height);
-            
-            await new Promise((resolve, reject) => {
-                image.display(imgData, () => {
-                    try {
-                        ctx.putImageData(imgData, 0, 0);
-                        resolve();
-                    } catch (err) {
-                        reject(err);
-                    }
-                });
-            });
-            
-            const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-            const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-            
-            return {
-                file: jpegFile,
-                preview: URL.createObjectURL(jpegBlob)
-            };
-        } catch (err) {
-            console.warn('⚠️ libheif-js failed, trying heic2any:', err);
-        }
+    // Wait for heic2any to load, if needed
+    let attempts = 0;
+    while (!window.heic2any && attempts < 50) {
+        await new Promise(r => setTimeout(r, 50));
+        attempts++;
     }
     
-    // --- Method 2: heic2any ---
+    // Try heic2any first (most reliable)
     if (window.heic2any) {
         try {
-            console.log('📦 Using heic2any for client-side conversion');
+            console.log('📦 Using heic2any');
             const jpegBlob = await window.heic2any({
                 blob: file,
                 toType: 'image/jpeg',
                 quality: 0.9
             });
-            
             const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
             const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-            
+            console.log('✅ heic2any conversion successful!');
             return {
                 file: jpegFile,
                 preview: URL.createObjectURL(finalBlob)
             };
         } catch (err) {
-            console.warn('⚠️ heic2any failed, trying ImageDecoder:', err);
+            console.warn('⚠️ heic2any failed:', err);
         }
     }
     
-    // --- Method 3: Native ImageDecoder API ---
+    // Try ImageDecoder API
     if (typeof ImageDecoder !== 'undefined') {
         try {
-            console.log('📡 Using ImageDecoder API');
+            console.log('📡 Using ImageDecoder');
             const arrayBuffer = await file.arrayBuffer();
             const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
             let decoder = null;
-            
             for (const type of mimeTypes) {
                 try {
                     decoder = new ImageDecoder({ data: arrayBuffer, type: type });
                     break;
                 } catch (err) {}
             }
-            
             if (!decoder) throw new Error('No supported MIME type');
-            
             const { image } = await decoder.decode();
             const canvas = document.createElement('canvas');
             canvas.width = image.displayWidth;
@@ -214,7 +174,7 @@ async function convertHeicToJpeg(file) {
             ctx.drawImage(image, 0, 0);
             const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
             const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-            
+            console.log('✅ ImageDecoder conversion successful!');
             return {
                 file: jpegFile,
                 preview: URL.createObjectURL(jpegBlob)
@@ -224,12 +184,9 @@ async function convertHeicToJpeg(file) {
         }
     }
     
-    // --- Final fallback ---
-    console.log('⚠️ All conversion methods failed, using original file');
-    return {
-        file: file,
-        preview: URL.createObjectURL(file)
-    };
+    // Final fallback
+    console.log('⚠️ Using original file');
+    return { file: file, preview: URL.createObjectURL(file) };
 }
 
 // ── Fetch helper ──

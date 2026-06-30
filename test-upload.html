@@ -13,9 +13,15 @@
         .preview-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; }
         .result-url { margin-top: 1rem; padding: 10px; background: #f0f0f0; border-radius: 5px; word-wrap: break-word; }
     </style>
-    <!-- Add libheif-js and heic2any for production use -->
-    <script src="https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.min.js?v=1"></script>
-    <script src="https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=1"></script>
+    <!-- Load heic2any with multiple CDN fallbacks -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js?v=2"></script>
+    <script>
+        if (!window.heic2any) {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=2';
+            document.head.appendChild(script);
+        }
+    </script>
 </head>
 <body>
     <h1>Test Image Upload (All Formats)</h1>
@@ -35,43 +41,18 @@
             ? 'http://localhost:3000'
             : window.location.origin;
         
-        // Helper function to convert HEIC/HEIF to JPEG client-side (for production)
+        // Helper to convert HEIC
         async function convertHeic(file) {
             const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
             if (!isHeic) return file;
             
-            // Try libheif-js first (most reliable)
-            if (window.libheif) {
-                try {
-                    console.log('Using libheif-js');
-                    const arrayBuffer = await file.arrayBuffer();
-                    const decoder = new window.libheif.HeifDecoder();
-                    const images = decoder.decode(arrayBuffer);
-                    
-                    if (!images.length) throw new Error('No images found');
-                    
-                    const image = images[0];
-                    const canvas = document.createElement('canvas');
-                    canvas.width = image.get_width();
-                    canvas.height = image.get_height();
-                    const ctx = canvas.getContext('2d');
-                    const imgData = ctx.createImageData(canvas.width, canvas.height);
-                    
-                    await new Promise((resolve, reject) => {
-                        image.display(imgData, () => {
-                            ctx.putImageData(imgData, 0, 0);
-                            resolve();
-                        });
-                    });
-                    
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                    return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-                } catch (err) {
-                    console.warn('libheif-js failed, trying heic2any:', err);
-                }
+            // Wait for heic2any to load
+            let attempts = 0;
+            while (!window.heic2any && attempts < 50) {
+                await new Promise(r => setTimeout(r, 50));
+                attempts++;
             }
             
-            // Try heic2any second
             if (window.heic2any) {
                 try {
                     console.log('Using heic2any');
@@ -83,7 +64,33 @@
                 }
             }
             
-            // Fallback to original
+            // Fallback to ImageDecoder if available
+            if (typeof ImageDecoder !== 'undefined') {
+                try {
+                    console.log('Using ImageDecoder');
+                    const arrayBuffer = await file.arrayBuffer();
+                    const mimeTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+                    let decoder = null;
+                    for (const type of mimeTypes) {
+                        try {
+                            decoder = new ImageDecoder({ data: arrayBuffer, type: type });
+                            break;
+                        } catch (err) {}
+                    }
+                    if (!decoder) throw new Error('No supported MIME type');
+                    const { image } = await decoder.decode();
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.displayWidth;
+                    canvas.height = image.displayHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0);
+                    const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    return new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+                } catch (err) {
+                    console.warn('ImageDecoder failed:', err);
+                }
+            }
+            
             console.warn('Using original file');
             return file;
         }
@@ -95,14 +102,12 @@
             }
             
             let file = fileInput.files[0];
-            
             previewContainer.innerHTML = '<p>Converting and uploading...</p>';
             
             try {
                 file = await convertHeic(file);
                 
                 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    // Use backend API on localhost
                     const formData = new FormData();
                     formData.append('image', file);
                     const response = await fetch(`${API_URL}/api/admin/upload-image`, {
@@ -119,7 +124,6 @@
                         </div>
                     `;
                 } else {
-                    // On production, just show preview and note to use admin panel
                     const previewUrl = URL.createObjectURL(file);
                     previewContainer.innerHTML = `
                         <h3>File converted successfully!</h3>

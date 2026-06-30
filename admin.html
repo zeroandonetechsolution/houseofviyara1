@@ -11,10 +11,28 @@
     <link rel="stylesheet" href="admin.css">
 </head>
 <body class="admin-page">
-    <!-- Load libheif-js AND heic2any with strong cache-busting -->
-    <script src="https://cdn.jsdelivr.net/npm/libheif-js@1.17.1/libheif.min.js?v=1"></script>
-    <script src="https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=1"></script>
-    <script src="supabase-config.js?v=9"></script>
-    <script src="admin.js?v=45"></script>
+    <!-- Use heic2any only with multiple CDNs as fallback and strong cache-busting -->
+    <!-- Primary CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js?v=2"></script>
+    <!-- Fallback CDN 1 -->
+    <script>
+        if (!window.heic2any) {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js?v=2';
+            document.head.appendChild(script);
+        }
+    </script>
+    <!-- Fallback CDN 2 -->
+    <script>
+        setTimeout(() => {
+            if (!window.heic2any) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.10/heic2any.min.js?v=2';
+                document.head.appendChild(script);
+            }
+        }, 100);
+    </script>
+    <script src="supabase-config.js?v=10"></script>
+    <script src="admin.js?v=46"></script>
 </body>
 </html>
