@@ -120,6 +120,40 @@ async function uploadAdminImage(fileInput, urlInput) {
     return data.url;
 }
 
+async function ensureDefaultCategories() {
+    try {
+        await loadSupabaseClient();
+        if (!adminSupabase) return;
+
+        const { data: existingCategories, error } = await adminSupabase.from('categories').select('slug');
+        if (error) {
+            console.error('Error fetching existing categories:', error);
+            return;
+        }
+
+        const existingSlugs = existingCategories.map(c => c.slug);
+        const defaultCategories = [
+            { name: 'Maxis', slug: 'maxis', icon: 'fas fa-female', display_order: 1 },
+            { name: 'Cord sets', slug: 'cord-sets', icon: 'fas fa-tshirt', display_order: 2 },
+            { name: 'Kurti', slug: 'kurti', icon: 'fas fa-star', display_order: 3 },
+            { name: 'Kurti sets', slug: 'kurti-sets', icon: 'fas fa-shopping-bag', display_order: 4 },
+            { name: 'Pure Cotton', slug: 'pure-cotton', icon: 'fas fa-leaf', display_order: 5 }
+        ];
+
+        for (const category of defaultCategories) {
+            if (!existingSlugs.includes(category.slug)) {
+                const { error: insertError } = await adminSupabase.from('categories').insert(category);
+                if (insertError) {
+                    console.error(`Error inserting category ${category.name}:`, insertError);
+                } else {
+                    console.log(`Successfully inserted category: ${category.name}`);
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Failed to ensure default categories:', e);
+    }
+}
 // ═══════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════
@@ -132,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (preloader) setTimeout(() => preloader.classList.add('fade-out'), 1200);
         renderShell();
         navigateTo('dashboard');
+        ensureDefaultCategories(); // Ensure default categories are present
     }
 });
 

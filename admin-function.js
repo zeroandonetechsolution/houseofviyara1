@@ -75,7 +75,13 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
 }
 
 const defaultData = {
-  categories: [],
+  categories: [
+    { id: 1, name: 'Maxis', slug: 'maxis', banner_image: '' },
+    { id: 2, name: 'Cord sets', slug: 'cord-sets', banner_image: '' },
+    { id: 3, name: 'Kurti', slug: 'kurti', banner_image: '' },
+    { id: 4, name: 'Kurti sets', slug: 'kurti-sets', banner_image: '' },
+    { id: 5, name: 'Pure Cotton', slug: 'pure-cotton', banner_image: '' }
+  ],
   header_links: [
     { id: 1, label: 'All', slug: 'all', href: 'collections.html' },
     { id: 2, label: 'Saree', slug: 'saree', href: 'saree.html' },
@@ -83,6 +89,7 @@ const defaultData = {
     { id: 4, label: 'Ethnic Wear', slug: 'ethnic', href: 'ethnic.html' },
     { id: 5, label: 'Party Wear', slug: 'party', href: 'party.html' },
     { id: 6, label: 'Casual Wear', slug: 'casual', href: 'casual.html' }
+    , { id: 7, label: 'Pure Cotton', slug: 'pure-cotton', href: 'pure-cotton.html' }
   ],
   products: [],
   banners: [
@@ -346,7 +353,13 @@ function renderProductsTable(products) {
 }
 
 async function openProductForm(id, clone = false) {
-  const categories = await supabaseSelect('categories', 'id', true);
+  let categories = [];
+  try {
+    categories = await supabaseSelect('categories', 'id', true) || [];
+  } catch (e) {
+    console.warn('Could not load categories from Supabase, falling back to defaults', e);
+    categories = defaultData.categories || [];
+  }
   const product = id ? await supabaseSelectOne('products', id) : {};
   editItemId = id && !clone ? id : null;
   const heading = clone ? 'Add Similar Product' : id ? 'Edit Product' : 'Add Product';
@@ -465,7 +478,7 @@ async function renderCategories() {
   document.getElementById('topbar-actions').innerHTML = `<button class="admin-btn admin-btn-primary" onclick="openCategoryForm()"><i class="fas fa-plus"></i> Add Category</button>`;
   document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><div class="admin-table-wrap">Loading categories...</div></div>`;
   try {
-    const categories = await supabaseSelect('categories');
+    const categories = await supabaseSelect('categories') || defaultData.categories;
     document.getElementById('admin-content').innerHTML = `
       <div class="admin-section-card">
         <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Preview</th><th>Name</th><th>Slug</th><th>Action</th></tr></thead><tbody>
@@ -474,7 +487,14 @@ async function renderCategories() {
       </div>`;
   } catch (e) {
     console.warn('Category load failed', e);
-    document.getElementById('admin-content').innerHTML = `<div class="admin-section-card"><p>Unable to load categories.</p></div>`;
+    // Fallback: show default categories if Supabase is unavailable
+    const fallback = defaultData.categories || [];
+    document.getElementById('admin-content').innerHTML = `
+      <div class="admin-section-card">
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Preview</th><th>Name</th><th>Slug</th><th>Action</th></tr></thead><tbody>
+          ${fallback.map(cat => `<tr><td>${cat.banner_image ? `<img src="${cat.banner_image}" class="admin-thumb" onerror="this.src='https://via.placeholder.com/80x60?text=No+Image'">` : '—'}</td><td>${cat.name}</td><td>${cat.slug}</td><td><button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openCategoryForm(${cat.id})">Edit</button><button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteCategory(${cat.id})">Delete</button></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>`;
   }
 }
 

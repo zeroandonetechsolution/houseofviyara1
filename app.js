@@ -404,6 +404,8 @@ const DEFAULT_PRODUCTS = [
     { id: 16, name: 'Bohemian Maxi', description: 'Free-spirited bohemian style maxi dress.', price: 3500, offer_price: 3500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true },
     { id: 17, name: 'Cord Set - Neon', description: 'Bold neon cord set for a fun, trendy look.', price: 2800, offer_price: 2800, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false }
 ];
+// Sample product for new Pure Cotton category
+DEFAULT_PRODUCTS.push({ id: 18, name: 'Pure Cotton Summer Dress', description: 'Soft 100% cotton dress, breathable and lightweight.', price: 1999, offer_price: 1999, category: 'pure-cotton', image_url: 'https://images.unsplash.com/photo-1520975908598-8b3d1d3f9e2c?w=800&q=80', is_trending: false });
 const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
 
 const STORE_KEYS = {
@@ -427,8 +429,8 @@ const defaultHeaderLinks = [
     { id: 1, label: 'Maxis', slug: 'maxis', href: 'Maxis.html' },
     { id: 2, label: 'Cord sets', slug: 'cord-sets', href: 'Cord sets.html' },
     { id: 3, label: 'Kurti', slug: 'kurti', href: 'Kurti.html' },
-    { id: 4, label: 'Kurti sets', slug: 'kurti-sets', href: 'Kurti sets.html' },
-    { id: 5, label: 'Pure Cotton', slug: 'pure-cotton', href: 'pure-cotton.html' }
+    { id: 4, label: 'Kurti sets', slug: 'kurti-sets', href: 'Kurti sets.html' }
+    , { id: 5, label: 'Pure Cotton', slug: 'pure-cotton', href: 'pure-cotton.html' }
 ];
 
 const defaultBanners = [
