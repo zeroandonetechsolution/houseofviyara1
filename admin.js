@@ -115,14 +115,39 @@ async function loadSupabaseClient() {
   }
 }
 
-// Convert HEIC/HEIF to JPEG (preview only, upload will use backend for conversion)
+// Convert HEIC/HEIF to JPEG (preview and upload)
 async function convertHeicToJpeg(file) {
-  console.log('🔄 Processing HEIC/HEIF file:', file.name);
-  const isHeic = isHeicFile(file);
-  
-  // For preview purposes, just show a generic placeholder or the original blob
-  // The actual upload will use the backend which has sharp to convert it
-  return { file: file, preview: URL.createObjectURL(file) };
+    console.log('🔄 Converting HEIC/HEIF file:', file.name);
+    const isHeic = isHeicFile(file);
+    
+    if (!isHeic) {
+        // Not HEIC, just return original file
+        return { file: file, preview: URL.createObjectURL(file) };
+    }
+    
+    // Use heic2any for client-side conversion
+    try {
+        console.log('📦 Using heic2any for client-side conversion');
+        const jpegBlob = await window.heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9
+        });
+        
+        const finalBlob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+        const jpegFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+        
+        return {
+            file: jpegFile,
+            preview: URL.createObjectURL(finalBlob)
+        };
+    } catch (err) {
+        console.warn('⚠️ Client-side conversion failed, falling back to original:', err);
+        return {
+            file: file,
+            preview: URL.createObjectURL(file)
+        };
+    }
 }
 
 // ── Fetch helper ──
