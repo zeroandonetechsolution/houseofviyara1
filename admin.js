@@ -841,6 +841,19 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
           <input class="aform-input" id="pf-stock" type="number" value="${p.stock || 10}" placeholder="10">
         </div>
       </div>
+      <!-- Simple Color & Size Options -->
+      <div class="aform-row">
+        <div class="aform-group">
+          <label>Colors (comma-separated)</label>
+          <input class="aform-input" id="pf-colors" value="${Array.isArray(p.colors) ? p.colors.join(', ') : (p.colors || '')}" placeholder="e.g. Red, Blue, Green">
+          <small class="admin-form-hint">List all available colors separated by commas</small>
+        </div>
+        <div class="aform-group">
+          <label>Sizes (comma-separated)</label>
+          <input class="aform-input" id="pf-sizes" value="${Array.isArray(p.sizes) ? p.sizes.join(', ') : (p.sizes || '')}" placeholder="e.g. S, M, L, XL">
+          <small class="admin-form-hint">List all available sizes separated by commas</small>
+        </div>
+      </div>
       <!-- Gallery Images Section -->
       <div class="aform-group">
         <label>Product Gallery Images (up to 10)</label>
@@ -1348,6 +1361,12 @@ async function handleAddProduct() {
         const image_url = gallery.length > 0 ? gallery[0] : '';
         const video_url = videos.length > 0 ? videos[0] : '';
 
+        // Parse colors and sizes
+        const colorsInput = document.getElementById('pf-colors').value.trim();
+        const sizesInput = document.getElementById('pf-sizes').value.trim();
+        const colors = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(c => c) : [];
+        const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
+
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').insert({
                 name,
@@ -1361,6 +1380,8 @@ async function handleAddProduct() {
                 gallery,
                 videos,
                 variants,
+                colors,
+                sizes,
                 is_trending: document.getElementById('pf-trending').checked
             });
             if (error) throw error;
@@ -1379,6 +1400,8 @@ async function handleAddProduct() {
                     gallery,
                     videos,
                     variants,
+                    colors,
+                    sizes,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });
@@ -1470,6 +1493,12 @@ async function handleEditProduct(id) {
         const image_url = gallery.length > 0 ? gallery[0] : '';
         const video_url = videos.length > 0 ? videos[0] : '';
 
+        // Parse colors and sizes
+        const colorsInput = document.getElementById('pf-colors').value.trim();
+        const sizesInput = document.getElementById('pf-sizes').value.trim();
+        const colors = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(c => c) : [];
+        const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
+
         if (adminSupabase) {
             const { error } = await adminSupabase.from('products').update({
                 name,
@@ -1483,6 +1512,8 @@ async function handleEditProduct(id) {
                 gallery,
                 videos,
                 variants,
+                colors,
+                sizes,
                 is_trending: document.getElementById('pf-trending').checked
             }).eq('id', id);
             if (error) throw error;
@@ -1501,6 +1532,8 @@ async function handleEditProduct(id) {
                     gallery,
                     videos,
                     variants,
+                    colors,
+                    sizes,
                     is_trending: document.getElementById('pf-trending').checked
                 })
             });

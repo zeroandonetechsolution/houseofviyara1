@@ -3035,6 +3035,12 @@ input:checked + .slider:before { transform: translateX(26px); }
         border-radius: 12px;
         box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         margin-bottom: 15px;
+        aspect-ratio: auto; /* Allow image to use natural aspect ratio on mobile */
+        min-height: 400px;
+    }
+    
+    .gallery-item {
+        object-fit: contain; /* Show full image without cropping */
     }
 
     .pdp-gallery-nav {

@@ -996,23 +996,45 @@ function normalizeProductVariants(product) {
         }));
     }
 
+    // Generate variants from simple colors and sizes
+    const rawColors = Array.isArray(product?.colors) && product.colors.length ? product.colors : ['Default'];
     const rawSizes = Array.isArray(product?.sizes) && product.sizes.length ? product.sizes : ['One Size'];
-    return rawSizes.map((size, index) => ({
-        id: `${product?.id || 'default'}-${size || 'one-size'}-${index + 1}`,
-        color: 'Default',
-        size: size || 'One Size',
-        stock: Number(product?.stock || 10),
-        image_url: product?.image_url || '',
-        gallery: Array.isArray(product?.gallery) && product.gallery.length ? product.gallery : [product?.image_url || '']
-    }));
+    
+    // Generate all color × size combinations
+    const generatedVariants = [];
+    let index = 0;
+    for (const color of rawColors) {
+        for (const size of rawSizes) {
+            index++;
+            generatedVariants.push({
+                id: `${product?.id || 'default'}-${color || 'default'}-${size || 'one-size'}-${index}`,
+                color: color || 'Default',
+                size: size || 'One Size',
+                stock: Number(product?.stock || 10),
+                image_url: product?.image_url || '',
+                gallery: Array.isArray(product?.gallery) && product.gallery.length ? product.gallery : [product?.image_url || '']
+            });
+        }
+    }
+    return generatedVariants;
 }
 
 function getProductColors(product) {
+    // Use product.colors field if available
+    if (Array.isArray(product.colors) && product.colors.length) {
+        return product.colors;
+    }
+    // Fall back to variants
     const variants = normalizeProductVariants(product);
     return [...new Set(variants.map(v => v.color || 'Default'))];
 }
 
 function getAvailableSizes(product, color) {
+    // Use product.sizes field if available
+    if (Array.isArray(product.sizes) && product.sizes.length) {
+        return product.sizes;
+    }
+    // Fall back to variants
     const variants = normalizeProductVariants(product);
     const selectedColor = color || 'Default';
     return variants.filter(v => (v.color || 'Default') === selectedColor).map(v => v.size || 'One Size');
