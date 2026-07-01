@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Catalog | House Of Viyara</title>
+    <title>Cord Sets | House Of Viyara</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
         <div class="loader-text" id="loader-text">Loading luxury...</div>
     </div>
     <div id="page-transition" aria-hidden="true">
-        <div class="page-transition-logo">CATALOG</div>
+        <div class="page-transition-logo">CORD SETS</div>
         <div class="page-transition-text">Loading products...</div>
     </div>
     <script src="../loader.js"></script>
@@ -37,10 +37,10 @@
             <nav class="nav">
                 <ul class="nav-links">
                     <li><a href="../Maxis.html">Maxis</a></li>
-                    <li><a href="../Cord sets.html">Cord Sets</a></li>
+                    <li><a href="../Cord sets.html" class="active">Cord Sets</a></li>
                     <li><a href="../Kurti.html">Kurti</a></li>
                     <li><a href="../Kurti sets.html">Kurti Sets</a></li>
-                    <li><a href="catalog.html" class="active">Catalog</a></li>
+                    <li><a href="catalog.html">Catalog</a></li>
                 </ul>
             </nav>
             <div class="header-search-container">
@@ -65,6 +65,12 @@
 
     <!-- Main Content -->
     <main class="catalog-container">
+        <!-- Category Hero -->
+        <section class="category-hero">
+            <h1>Cord Sets Collection</h1>
+            <p>Stylish and comfortable cord sets for modern fashion</p>
+        </section>
+
         <!-- Filter & Sort Section -->
         <section class="catalog-controls">
             <div class="filter-sort-wrapper">
@@ -74,12 +80,12 @@
                     </button>
                     <div class="filter-panel" id="filter-panel">
                         <div class="filter-group">
-                            <h4>Category</h4>
-                            <label><input type="checkbox" value="maxis" class="category-filter"> Maxis</label>
-                            <label><input type="checkbox" value="cord-sets" class="category-filter"> Cord Sets</label>
-                            <label><input type="checkbox" value="kurti" class="category-filter"> Kurti</label>
-                            <label><input type="checkbox" value="kurti-sets" class="category-filter"> Kurti Sets</label>
-                            <label><input type="checkbox" value="pure-cotton" class="category-filter"> Pure Cotton</label>
+                            <h4>Browse Categories</h4>
+                            <a href="pure-cotton.html" class="category-link">Pure Cotton</a>
+                            <a href="maxis.html" class="category-link">Maxis</a>
+                            <a href="kurtis.html" class="category-link">Kurtis</a>
+                            <a href="kurti-sets.html" class="category-link">Kurti Sets</a>
+                            <a href="cord-sets.html" class="category-link">Cord Sets</a>
                         </div>
                         <div class="filter-group">
                             <h4>Sort By</h4>
@@ -182,6 +188,10 @@
     <!-- Scripts -->
     <script src="../supabase-config.js"></script>
     <script src="../app.js"></script>
+    <script>
+        // Category-specific configuration
+        const CATEGORY_FILTER = 'cord-sets';
+    </script>
     <script src="catalog.js"></script>
 </body>
 </html>

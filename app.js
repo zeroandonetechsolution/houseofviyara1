@@ -2086,7 +2086,8 @@ window.openCart = function() {
         renderCartItems();
         return;
     }
-    window.location.href = 'cart.html';
+    const prefix = window.location.pathname.includes('/catalog/') ? '../' : '';
+    window.location.href = prefix + 'cart.html';
 }
 
 window.openCheckout = window.openCart;

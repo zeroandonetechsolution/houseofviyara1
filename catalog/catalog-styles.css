@@ -23,6 +23,34 @@
 }
 
 /* ============================================
+   CATEGORY HERO
+   ============================================ */
+
+.category-hero {
+    text-align: center;
+    padding: 40px 20px;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, rgba(139, 90, 60, 0.05), rgba(212, 175, 55, 0.05));
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.category-hero h1 {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.category-hero p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+/* ============================================
    CATALOG CONTAINER
    ============================================ */
 
@@ -134,7 +162,24 @@
     color: var(--primary-color);
 }
 
-.filter-group input[type="checkbox"] {
+.category-link {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.category-link:hover {
+    color: var(--primary-color);
+    background: rgba(139, 90, 60, 0.1);
+}
+
+.filter-group input[type="checkbox"],
+.filter-group input[type="radio"] {
     cursor: pointer;
     width: 16px;
     height: 16px;

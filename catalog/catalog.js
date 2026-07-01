@@ -9,20 +9,6 @@ let maxPrice = 10000;
 let currentSort = 'newest';
 let isGridView = true;
 
-// DOM Elements
-const catalogGrid = document.getElementById('catalog-grid');
-const filterPanel = document.getElementById('filter-panel');
-const filterToggleBtn = document.getElementById('filter-toggle');
-const priceFilter = document.getElementById('price-filter');
-const priceValue = document.getElementById('price-value');
-const sortSelect = document.getElementById('sort-select');
-const gridViewBtn = document.getElementById('grid-view-btn');
-const listViewBtn = document.getElementById('list-view-btn');
-const catalogSearchInput = document.getElementById('catalog-search-input');
-const resultsCount = document.getElementById('results-count');
-const noResults = document.getElementById('no-results');
-const categoryFilters = document.querySelectorAll('.category-filter');
-
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -43,52 +29,109 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ============================================
 
 function setupEventListeners() {
-    // Filter toggle
-    filterToggleBtn.addEventListener('click', () => {
-        filterPanel.classList.toggle('active');
-    });
+    // Filter toggle - SIMPLIFIED AND GUARANTEED TO WORK
+    const filterToggleBtn = document.getElementById('filter-toggle');
+    const filterPanel = document.getElementById('filter-panel');
+    
+    if (filterToggleBtn && filterPanel) {
+        console.log('✅ Filter button and panel found');
+        filterToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔘 Filter button clicked');
+            filterPanel.classList.toggle('active');
+            console.log('📋 Filter panel active:', filterPanel.classList.contains('active'));
+        });
+    } else {
+        console.error('❌ Filter button or panel not found');
+    }
 
     // Category filters
+    const categoryFilters = document.querySelectorAll('.category-filter');
     categoryFilters.forEach(checkbox => {
-        checkbox.addEventListener('change', applyFilters);
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                const val = e.target.value;
+                let targetPage = '';
+                if (val === 'maxis') targetPage = 'maxis.html';
+                else if (val === 'cord-sets') targetPage = 'cord-sets.html';
+                else if (val === 'kurti') targetPage = 'kurtis.html';
+                else if (val === 'kurti-sets') targetPage = 'kurti-sets.html';
+                else if (val === 'pure-cotton') targetPage = 'pure-cotton.html';
+                
+                if (targetPage) {
+                    window.location.href = targetPage;
+                }
+            } else {
+                applyFilters();
+            }
+        });
     });
 
     // Price filter
-    priceFilter.addEventListener('input', (e) => {
-        maxPrice = parseInt(e.target.value);
-        priceValue.textContent = maxPrice.toLocaleString();
-        applyFilters();
-    });
+    const priceFilter = document.getElementById('price-filter');
+    const priceValue = document.getElementById('price-value');
+    if (priceFilter && priceValue) {
+        priceFilter.addEventListener('input', (e) => {
+            maxPrice = parseInt(e.target.value);
+            priceValue.textContent = maxPrice.toLocaleString();
+            applyFilters();
+        });
+    }
 
-    // Sort
-    sortSelect.addEventListener('change', (e) => {
-        currentSort = e.target.value;
-        applyFilters();
+    // Sort dropdown
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Sort radio buttons in filter panel
+    const sortRadios = document.querySelectorAll('input[name="sort"]');
+    sortRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            if (sortSelect) {
+                sortSelect.value = currentSort;
+            }
+            applyFilters();
+        });
     });
 
     // View toggle
-    gridViewBtn.addEventListener('click', () => {
-        isGridView = true;
-        gridViewBtn.classList.add('active');
-        listViewBtn.classList.remove('active');
-        catalogGrid.classList.remove('list-view');
-        renderCatalog(filteredProducts);
-    });
+    const gridViewBtn = document.getElementById('grid-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const catalogGrid = document.getElementById('catalog-grid');
+    
+    if (gridViewBtn && listViewBtn && catalogGrid) {
+        gridViewBtn.addEventListener('click', () => {
+            isGridView = true;
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            catalogGrid.classList.remove('list-view');
+            renderCatalog(filteredProducts);
+        });
 
-    listViewBtn.addEventListener('click', () => {
-        isGridView = false;
-        listViewBtn.classList.add('active');
-        gridViewBtn.classList.remove('active');
-        catalogGrid.classList.add('list-view');
-        renderCatalog(filteredProducts);
-    });
+        listViewBtn.addEventListener('click', () => {
+            isGridView = false;
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+            catalogGrid.classList.add('list-view');
+            renderCatalog(filteredProducts);
+        });
+    }
 
     // Search
-    catalogSearchInput.addEventListener('input', debounce(applyFilters, 300));
+    const catalogSearchInput = document.getElementById('catalog-search-input');
+    if (catalogSearchInput) {
+        catalogSearchInput.addEventListener('input', debounce(applyFilters, 300));
+    }
 
     // Close filter panel when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.filter-section')) {
+        if (filterPanel && !e.target.closest('.filter-section')) {
             filterPanel.classList.remove('active');
         }
     });
@@ -107,6 +150,8 @@ async function initCatalog() {
         
         if (!catalogProducts || catalogProducts.length === 0) {
             console.warn('⚠️ No products found');
+            const resultsCount = document.getElementById('results-count');
+            if (resultsCount) resultsCount.textContent = 'No products found';
             showNoResults();
             return;
         }
@@ -121,7 +166,8 @@ async function initCatalog() {
         updateResultsCount();
     } catch (error) {
         console.error('❌ Error loading catalog:', error);
-        resultsCount.textContent = 'Error loading products. Please refresh the page.';
+        const resultsCount = document.getElementById('results-count');
+        if (resultsCount) resultsCount.textContent = 'Error loading products. Please refresh the page.';
     }
 }
 
@@ -132,16 +178,27 @@ async function initCatalog() {
 function applyFilters() {
     const searchTerm = catalogSearchInput.value.toLowerCase();
     
-    // Get selected categories
-    selectedCategories = Array.from(categoryFilters)
-        .filter(cb => cb.checked)
-        .map(cb => cb.value);
+    // Check if we're on a category-specific page
+    const isCategoryPage = typeof CATEGORY_FILTER !== 'undefined';
+    
+    // Get selected categories from checkboxes (only on main catalog page)
+    if (!isCategoryPage) {
+        selectedCategories = Array.from(categoryFilters)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+    } else {
+        // On category page, use the CATEGORY_FILTER
+        selectedCategories = [CATEGORY_FILTER];
+    }
 
     // Filter products
     filteredProducts = catalogProducts.filter(product => {
         // Category filter
         const categoryMatch = selectedCategories.length === 0 || 
-            selectedCategories.some(cat => product.category?.toLowerCase().includes(cat));
+            selectedCategories.some(cat => {
+                const productCategory = (product.category || '').toLowerCase();
+                return productCategory.includes(cat) || cat.includes(productCategory);
+            });
         
         // Price filter
         const price = product.sale_price || product.price || 0;
@@ -205,6 +262,9 @@ function applySorting() {
 // ============================================
 
 function renderCatalog(products) {
+    const catalogGrid = document.getElementById('catalog-grid');
+    if (!catalogGrid) return;
+    
     catalogGrid.innerHTML = '';
 
     if (products.length === 0) {
@@ -354,6 +414,9 @@ function toggleWishlistFromCatalog(e, productId) {
 }
 
 function updateResultsCount() {
+    const resultsCount = document.getElementById('results-count');
+    if (!resultsCount) return;
+    
     if (filteredProducts.length === 0) {
         resultsCount.textContent = 'No products found';
     } else {
@@ -362,8 +425,10 @@ function updateResultsCount() {
 }
 
 function showNoResults() {
-    catalogGrid.innerHTML = '';
-    noResults.style.display = 'block';
+    const catalogGrid = document.getElementById('catalog-grid');
+    const noResults = document.getElementById('no-results');
+    if (catalogGrid) catalogGrid.innerHTML = '';
+    if (noResults) noResults.style.display = 'block';
 }
 
 // Utility: Debounce function
@@ -374,19 +439,5 @@ function debounce(func, delay) {
         timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
 }
-
-// ============================================
-// UPDATE WISHLIST BADGE
-// ============================================
-
-function updateWishlistBadge() {
-    const badge = document.getElementById('wishlist-badge');
-    if (badge) {
-        badge.textContent = wishlist.length;
-    }
-}
-
-// Initial wishlist badge update
-updateWishlistBadge();
 
 console.log('✅ Catalog.js loaded successfully');

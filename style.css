@@ -1327,6 +1327,7 @@ video.lazy-loaded {
     border-radius: 50%;
     color: #fff;
     transition: all 0.2s ease;
+    text-decoration: none;
 }
 .social-icons a:hover {
     border-color: var(--accent-yellow);
