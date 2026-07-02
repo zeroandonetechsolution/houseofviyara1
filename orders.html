@@ -367,9 +367,12 @@
                                 ${order.status}
                             </span>
                             ${order.payment_status === 'Paid' ? `
-                                <button class="btn btn-secondary" onclick='downloadInvoice(${JSON.stringify(order)})'>
-                                    <i class="fas fa-file-invoice"></i> Download Invoice
-                                </button>
+                                <a href="invoice.html?orderId=${order.id}" class="btn btn-secondary">
+                                    <i class="fas fa-file-invoice"></i> View Invoice
+                                </a>
+                                <a href="#" class="btn" style="background: #25D366; color: #fff;" onclick='shareOrderOnWhatsApp(${JSON.stringify(order)})'>
+                                    <i class="fab fa-whatsapp"></i> Share
+                                </a>
                             ` : ''}
                         </div>
                     </div>
@@ -438,13 +441,48 @@
                     <p><strong>Payment:</strong> ${order.payment_status || 'Pending'}</p>
                     ${order.payment_status === 'Paid' ? `
                         <div style="margin-top: 15px;">
-                            <button class="btn btn-secondary" onclick='downloadInvoice(${JSON.stringify(order)})'>
-                                <i class="fas fa-file-invoice"></i> Download Invoice
-                            </button>
+                            <a href="invoice.html?orderId=${order.id}" class="btn btn-secondary">
+                                <i class="fas fa-file-invoice"></i> View Invoice
+                            </a>
                         </div>
                     ` : ''}
                 `;
             }
+        }
+
+        function shareOrderOnWhatsApp(order) {
+            // Replace this with your actual WhatsApp number (include country code, e.g., 91XXXXXXXXXX)
+            const whatsappNumber = '919514518197'; 
+            
+            let message = `*New Order Received!* 🛍️\n\n`;
+            message += `*Order ID:* ${order.id}\n`;
+            message += `*Customer Name:* ${order.customer || 'N/A'}\n`;
+            
+            if (order.email) {
+                message += `*Email:* ${order.email}\n`;
+            }
+            
+            if (order.shipping_address) {
+                message += `*Shipping Address:*\n`;
+                message += `${order.shipping_address.street || ''}\n`;
+                message += `${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}\n`;
+                if (order.shipping_address.phone) {
+                    message += `*Phone:* ${order.shipping_address.phone}\n`;
+                }
+            }
+            
+            message += `\n*Order Items:*\n`;
+            order.items.forEach((item, idx) => {
+                message += `${idx + 1}. ${item.name}${item.variant ? ' (' + item.variant + ')' : ''} × ${item.qty} = ₹${item.price * item.qty}\n`;
+            });
+            
+            message += `\n*Total Amount:* ₹${order.total}\n`;
+            message += `*Payment Status:* ${order.payment_status || 'Paid'}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
         }
 
         // Check for success message from payment

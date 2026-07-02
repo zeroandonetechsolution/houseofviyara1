@@ -325,7 +325,8 @@
             </div>
             
             <div class="success-actions">
-                <button class="btn btn-primary" onclick="downloadInvoice()"><i class="fas fa-file-invoice"></i> Download Invoice</button>
+                <a href="invoice.html" id="invoice-link" class="btn btn-primary"><i class="fas fa-file-invoice"></i> View Invoice</a>
+                <a href="#" id="whatsapp-link" class="btn" style="background: #25D366; color: #fff;"><i class="fab fa-whatsapp"></i> Share Order on WhatsApp</a>
                 <a href="orders.html" class="btn btn-secondary"><i class="fas fa-box"></i> View Orders</a>
                 <a href="index.html" class="btn"><i class="fas fa-home"></i> Continue Shopping</a>
             </div>
@@ -431,7 +432,53 @@
             document.getElementById('payment-content').style.display = 'none';
             document.getElementById('success-content').style.display = 'block';
             document.getElementById('success-orderid').innerText = orderId || 'N/A';
+            document.getElementById('invoice-link').href = `invoice.html?orderId=${orderId}`;
+            
+            // Set WhatsApp link
+            setupWhatsAppLink(currentOrder, orderId);
+            
             processing.style.display = 'none';
+        }
+
+        function setupWhatsAppLink(order, orderId) {
+            if (!order) return;
+            
+            // Replace this with your actual WhatsApp number (include country code, e.g., 91XXXXXXXXXX)
+            const whatsappNumber = '919514518197'; 
+            
+            let message = `*New Order Received!* 🛍️\n\n`;
+            message += `*Order ID:* ${orderId}\n`;
+            message += `*Customer Name:* ${order.customer || 'N/A'}\n`;
+            
+            if (order.email) {
+                message += `*Email:* ${order.email}\n`;
+            }
+            
+            if (order.shipping_address) {
+                message += `*Shipping Address:*\n`;
+                message += `${order.shipping_address.street || ''}\n`;
+                message += `${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}\n`;
+                if (order.shipping_address.phone) {
+                    message += `*Phone:* ${order.shipping_address.phone}\n`;
+                }
+            }
+            
+            message += `\n*Order Items:*\n`;
+            order.items.forEach((item, idx) => {
+                message += `${idx + 1}. ${item.name}${item.variant ? ' (' + item.variant + ')' : ''} × ${item.qty} = ₹${item.price * item.qty}\n`;
+            });
+            
+            message += `\n*Total Amount:* ₹${order.total}\n`;
+            message += `*Payment Status:* ${order.payment_status || 'Paid'}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink) {
+                whatsappLink.href = whatsappUrl;
+                whatsappLink.target = '_blank';
+            }
         }
 
         function downloadInvoice() {
