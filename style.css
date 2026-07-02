@@ -1086,6 +1086,9 @@ video.lazy-loaded {
     display: flex;
     flex-direction: column;
 }
+.cart-drawer.active {
+    right: 0;
+}
 
 .cart-header {
     padding: 24px;

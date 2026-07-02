@@ -2127,8 +2127,58 @@ window.openCart = function() {
 window.openCheckout = window.openCart;
 
 window.closeCart = function() {
-    document.getElementById('cart-drawer').classList.remove('active');
-    document.getElementById('cart-overlay').classList.remove('active');
+    const drawer = document.getElementById('cart-drawer');
+    const overlay = document.getElementById('cart-overlay');
+    if (drawer) drawer.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+window.openCheckoutModal = function() {
+    const modal = document.getElementById('checkout-modal');
+    const overlay = document.getElementById('checkout-overlay');
+    const itemsContainer = document.getElementById('checkout-items');
+    const subtotalEl = document.getElementById('checkout-subtotal');
+    const grandtotalEl = document.getElementById('checkout-grandtotal');
+    
+    if (!modal) {
+        // If there's no checkout modal, go to cart.html
+        openCart();
+        return;
+    }
+    
+    // Close cart drawer if open
+    const cartDrawer = document.getElementById('cart-drawer');
+    const cartOverlay = document.getElementById('cart-drawer-overlay');
+    if (cartDrawer) cartDrawer.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
+    
+    // Render items
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const total = subtotal + 100;
+    
+    if (itemsContainer) {
+        itemsContainer.innerHTML = cart.map(item => `
+            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>${item.name} (${item.variantLabel || 'Default'}) x ${item.quantity}</span>
+                <span>₹${item.price * item.quantity}</span>
+            </div>
+        `).join('');
+    }
+    
+    if (subtotalEl) subtotalEl.innerText = `₹${subtotal}`;
+    if (grandtotalEl) grandtotalEl.innerText = `₹${total}`;
+    
+    modal.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+window.closeCheckoutModal = function() {
+    const modal = document.getElementById('checkout-modal');
+    const overlay = document.getElementById('checkout-overlay');
+    if (modal) modal.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
     document.body.style.overflow = '';
 }
 
@@ -2202,7 +2252,13 @@ function setupEventListeners() {
 
     // Checkout
     const checkoutBtn = document.querySelector('.checkout-btn');
-    if (checkoutBtn) checkoutBtn.onclick = completeCheckout;
+    if (checkoutBtn) checkoutBtn.onclick = openCheckoutModal;
+    
+    // Close Checkout Modal
+    const closeCheckoutBtn = document.getElementById('close-checkout-btn');
+    const checkoutOverlay = document.getElementById('checkout-overlay');
+    if (closeCheckoutBtn) closeCheckoutBtn.onclick = closeCheckoutModal;
+    if (checkoutOverlay) checkoutOverlay.onclick = closeCheckoutModal;
 }
 
 // --- Settings Implementation ---

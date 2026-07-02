@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Track Your Order | House Of Viyara</title>
+    <title>Your Orders | House Of Viyara</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -119,7 +119,12 @@
         </div>
     </div>
 
-    <main style="padding: 40px; max-width: 800px; margin: 0 auto;">
+    <main style="padding: 40px; max-width: 1000px; margin: 0 auto;">
+        <div class="card" style="padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000; margin-bottom: 30px;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">YOUR ORDERS</h2>
+            <div id="orders-list"></div>
+        </div>
+
         <div class="card" style="padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
             <h2 style="font-size: 2.5rem; margin-bottom: 20px;">TRACK ORDER</h2>
             <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 30px;">
@@ -180,6 +185,7 @@
             </div>
             <div class="footer-links">
                 <h4>LEGAL</h4>
+                
                 <ul>
                     <li><a href="privacy-policy.html">Privacy Policy</a></li>
                     <li><a href="terms.html">Terms of Service</a></li>
@@ -219,8 +225,174 @@
         </a>
     </nav>
 
-    <script src="app.js?v=4" defer></script>
+    <script src="app.js?v=9" defer></script>
     <script>
+        function downloadInvoice(order) {
+            // Generate invoice HTML
+            const invoiceDate = new Date().toLocaleDateString('en-IN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            let itemsHtml = '';
+            let subtotal = 0;
+            order.items.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                itemsHtml += `
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 8px;">${item.name} (${item.variant || 'Default'})</td>
+                        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.qty}</td>
+                        <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${item.price}</td>
+                        <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${itemTotal}</td>
+                    </tr>
+                `;
+            });
+
+            const invoiceContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice - ${order.id}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; }
+        .invoice-header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+        .invoice-header h1 { margin: 0; text-transform: uppercase; }
+        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .customer-info, .order-info { width: 45%; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: #f0f0f0; border: 1px solid #000; padding: 10px; text-align: left; }
+        .total-row { font-weight: bold; font-size: 1.2rem; }
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <h1>House Of Viyara</h1>
+        <p>Premium Clothing & Fashion</p>
+        <h2 style="margin-top: 20px; color: #FF007A;">INVOICE</h2>
+    </div>
+    
+    <div class="invoice-details">
+        <div class="customer-info">
+            <h3>Bill To:</h3>
+            <p><strong>${order.customer || 'Customer'}</strong></p>
+            <p>${order.email || ''}</p>
+            ${order.shipping_address ? `
+                <p>${order.shipping_address.street || ''}</p>
+                <p>${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}</p>
+                <p>Phone: ${order.shipping_address.phone || ''}</p>
+            ` : ''}
+        </div>
+        <div class="order-info" style="text-align: right;">
+            <p><strong>Order ID:</strong> ${order.id}</p>
+            <p><strong>Transaction ID:</strong> ${order.txnid}</p>
+            <p><strong>Date:</strong> ${invoiceDate}</p>
+            <p><strong>Status:</strong> <span style="color: #00FF94;">${order.status}</span></p>
+        </div>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Price</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itemsHtml}
+            <tr>
+                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right;"><strong>Subtotal</strong></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${subtotal}</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right;"><strong>Shipping</strong></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹100</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right; background: #FFD100;">GRAND TOTAL</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: right; background: #FFD100;">₹${order.total}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>Thank you for shopping with House Of Viyara!</p>
+        <p>This is a computer-generated invoice and does not require a signature.</p>
+    </div>
+</body>
+</html>`;
+
+            // Create and download the invoice
+            const blob = new Blob([invoiceContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice_${order.id}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function renderOrders() {
+            const ordersContainer = document.getElementById('orders-list');
+            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            
+            if (!orders.length) {
+                ordersContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-box-open" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                        <h3>No orders yet</h3>
+                        <p style="color: #666;">Start shopping to place your first order!</p>
+                        <a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Shop Now</a>
+                    </div>
+                `;
+                return;
+            }
+
+            ordersContainer.innerHTML = orders.map(order => `
+                <div style="border: 4px solid #000; padding: 20px; margin-bottom: 20px; background: #f9f9f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--accent-pink);">${order.id}</h3>
+                            <p style="margin: 5px 0 0; color: #666;">${order.date}</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span style="padding: 5px 15px; background: var(--accent-yellow); border: 2px solid #000; font-weight: 800;">
+                                ${order.status}
+                            </span>
+                            ${order.payment_status === 'Paid' ? `
+                                <button class="btn btn-secondary" onclick='downloadInvoice(${JSON.stringify(order)})'>
+                                    <i class="fas fa-file-invoice"></i> Download Invoice
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <strong>Customer:</strong> ${order.customer}
+                        </div>
+                        <div>
+                            <strong>Total:</strong> ₹${order.total}
+                        </div>
+                        <div>
+                            <strong>Payment:</strong> ${order.payment_status || 'Pending'}
+                        </div>
+                    </div>
+                    <div style="border-top: 2px solid #ddd; padding-top: 15px;">
+                        <strong>Items:</strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            ${order.items.map(item => `<li>${item.name} (${item.variant || 'Default'}) × ${item.qty} = ₹${item.price * item.qty}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function updateTrackingTimeline(status) {
             const steps = [
                 { id: 'timeline-confirmed', active: true },
@@ -263,9 +435,34 @@
                     <p><strong>Amount:</strong> ₹${order.total}</p>
                     <p><strong>Date:</strong> ${order.date}</p>
                     <p><strong>Payment:</strong> ${order.payment_status || 'Pending'}</p>
+                    ${order.payment_status === 'Paid' ? `
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-secondary" onclick='downloadInvoice(${JSON.stringify(order)})'>
+                                <i class="fas fa-file-invoice"></i> Download Invoice
+                            </button>
+                        </div>
+                    ` : ''}
                 `;
             }
         }
+
+        // Check for success message from payment
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            const successModal = document.getElementById('success-modal');
+            if (successModal) {
+                const orderIdSpan = document.getElementById('order-id');
+                if (orderIdSpan && urlParams.get('txnid')) {
+                    orderIdSpan.innerText = urlParams.get('txnid');
+                }
+                successModal.classList.add('active');
+                // Clear URL params
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // Render orders on page load
+        renderOrders();
     </script>
 
     <style>
@@ -283,4 +480,3 @@
     </style>
 </body>
 </html>
-
