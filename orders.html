@@ -478,6 +478,33 @@
             opacity: 1;
             background: var(--accent-blue);
         }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            main {
+                padding: 20px 15px !important;
+            }
+            .card {
+                padding: 20px !important;
+                border-width: 4px !important;
+                box-shadow: 6px 6px 0px #000 !important;
+            }
+            .card h2 {
+                font-size: 1.8rem !important;
+            }
+            .form-group {
+                flex-direction: column !important;
+            }
+            .form-group .brutal-input {
+                width: 100% !important;
+            }
+            .form-group .btn {
+                width: 100% !important;
+            }
+            #tracking-status {
+                font-size: 1.5rem !important;
+            }
+        }
     </style>
 </body>
 </html>

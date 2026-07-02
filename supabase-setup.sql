@@ -27,6 +27,8 @@ CREATE TABLE products (
     stock INTEGER DEFAULT 10,
     rating NUMERIC DEFAULT 4.5,
     is_trending BOOLEAN DEFAULT false NOT NULL,
+    colors TEXT[] DEFAULT '{}',
+    sizes TEXT[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

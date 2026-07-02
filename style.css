@@ -2149,6 +2149,105 @@ input:checked + .slider:before { transform: translateX(26px); }
         margin-top: 40px;
         padding-top: 20px;
     }
+
+    /* Cart Drawer Mobile */
+    .cart-drawer {
+        width: 100%;
+        right: -100%;
+        border-left: 4px solid #000;
+    }
+    .cart-drawer.active {
+        right: 0;
+    }
+    .cart-header {
+        padding: 16px;
+    }
+    .cart-items {
+        padding: 16px;
+    }
+    .cart-item {
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+    }
+    .cart-item img {
+        width: 70px;
+        height: 70px;
+    }
+    .cart-item-info h4 {
+        font-size: 0.95rem;
+    }
+    .cart-footer {
+        padding: 16px;
+    }
+    .cart-item-qty button {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    /* Cart Page Mobile */
+    .cart-page-content {
+        padding: 16px 12px 80px;
+    }
+    .cart-page-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+        gap: 12px;
+    }
+    .cart-page-item img {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        aspect-ratio: 1;
+    }
+    .cart-page-item-actions {
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Checkout Modal Mobile */
+    .checkout-modal {
+        width: 95%;
+        max-width: none;
+        padding: 20px 15px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .checkout-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .checkout-form .card, .checkout-summary .card {
+        padding: 15px !important;
+    }
+    .checkout-content h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Buttons Mobile */
+    .btn {
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+
+    /* Modals General Mobile */
+    .modal-overlay {
+        padding: 10px;
+    }
+    .auth-modal, .success-modal {
+        width: 95%;
+        max-width: none;
+    }
+    .close-modal-btn {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+    }
 }
 
 /* Very Small Devices */
