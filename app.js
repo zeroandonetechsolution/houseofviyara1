@@ -620,11 +620,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (window.location.pathname.includes('wishlist.html')) {
         renderWishlist();
-    } else if (window.location.pathname.includes('product.html')) {
+    } else if (window.location.pathname.includes('product.html') && !window.location.pathname.includes('/catalog/')) {
         initProductDetails();
     } else if (window.location.pathname.includes('cart.html')) {
         renderCartPage();
-    } else {
+    } else if (!window.location.pathname.includes('/catalog/')) {
         renderProducts();
         await renderCategories();
         await initHeroCarousel();
@@ -763,12 +763,24 @@ async function renderHeaderNavigation() {
         href: getCategoryFileName(cat.slug)
     }));
     const currentSlug = getCurrentHeaderSlug();
+    
+    // Check if we're in the catalog folder
+    const isInCatalog = window.location.pathname.includes('/catalog/');
+    const prefix = isInCatalog ? '' : '';
 
     const headerNavLists = document.querySelectorAll('header .nav-links');
     headerNavLists.forEach(nav => {
-        nav.innerHTML = navLinks.map(link => `
-            <li><a href="${link.href}" class="${currentSlug === link.slug ? 'active' : ''}">${link.label}</a></li>
-        `).join('');
+        nav.innerHTML = navLinks.map(link => {
+            if (isInCatalog) {
+                // If in catalog, link to catalog.html with category filter
+                const isActive = new URLSearchParams(window.location.search).get('category') === link.slug || 
+                                 window.location.pathname.includes('/catalog/') && currentSlug === link.slug;
+                return `<li><a href="catalog.html?category=${link.slug}" class="${isActive ? 'active' : ''}">${link.label}</a></li>`;
+            } else {
+                // Normal main site behavior
+                return `<li><a href="${link.href}" class="${currentSlug === link.slug ? 'active' : ''}">${link.label}</a></li>`;
+            }
+        }).join('');
     });
 
     const mobileNav = document.querySelector('.mobile-nav-links');
