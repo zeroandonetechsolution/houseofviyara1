@@ -437,6 +437,12 @@
             // Set WhatsApp link
             setupWhatsAppLink(currentOrder, orderId);
             
+            // Auto open WhatsApp
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink && whatsappLink.href) {
+                window.open(whatsappLink.href, '_blank');
+            }
+            
             processing.style.display = 'none';
         }
 
