@@ -225,117 +225,118 @@
         </a>
     </nav>
 
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <script src="app.js?v=9" defer></script>
     <script>
+        const { jsPDF } = window.jspdf;
+        
         function downloadInvoice(order) {
-            // Generate invoice HTML
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HOUSE OF VIYARA', pageWidth / 2, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Premium Clothing & Fashion', pageWidth / 2, 28, { align: 'center' });
+            
+            // Invoice title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 0, 122);
+            doc.text('INVOICE', pageWidth / 2, 40, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Invoice date
             const invoiceDate = new Date().toLocaleDateString('en-IN', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
             });
             
-            let itemsHtml = '';
+            // Order info
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Bill To:', 14, 55);
+            doc.setFont('helvetica', 'normal');
+            doc.text(order.customer || 'Customer', 14, 62);
+            if (order.email) doc.text(order.email, 14, 69);
+            if (order.shipping_address) {
+                doc.text(order.shipping_address.street || '', 14, 76);
+                doc.text(`${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}`, 14, 83);
+                if (order.shipping_address.phone) doc.text(`Phone: ${order.shipping_address.phone}`, 14, 90);
+            }
+            
+            // Right side order details
+            doc.setFont('helvetica', 'bold');
+            doc.text('Order Details:', pageWidth - 70, 55, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Order ID: ${order.id}`, pageWidth - 14, 62, { align: 'right' });
+            doc.text(`Transaction ID: ${order.txnid}`, pageWidth - 14, 69, { align: 'right' });
+            doc.text(`Date: ${invoiceDate}`, pageWidth - 14, 76, { align: 'right' });
+            doc.text(`Status: ${order.status}`, pageWidth - 14, 83, { align: 'right' });
+            
+            // Items table
+            const tableStartY = order.shipping_address ? 105 : 95;
+            const tableData = [];
             let subtotal = 0;
+            
             order.items.forEach(item => {
                 const itemTotal = item.price * item.qty;
                 subtotal += itemTotal;
-                itemsHtml += `
-                    <tr>
-                        <td style="border: 1px solid #000; padding: 8px;">${item.name} (${item.variant || 'Default'})</td>
-                        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.qty}</td>
-                        <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${item.price}</td>
-                        <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${itemTotal}</td>
-                    </tr>
-                `;
+                tableData.push([
+                    `${item.name} (${item.variant || 'Default'})`,
+                    item.qty.toString(),
+                    `₹${item.price}`,
+                    `₹${itemTotal}`
+                ]);
             });
-
-            const invoiceContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Invoice - ${order.id}</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; }
-        .invoice-header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
-        .invoice-header h1 { margin: 0; text-transform: uppercase; }
-        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .customer-info, .order-info { width: 45%; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th { background: #f0f0f0; border: 1px solid #000; padding: 10px; text-align: left; }
-        .total-row { font-weight: bold; font-size: 1.2rem; }
-        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="invoice-header">
-        <h1>House Of Viyara</h1>
-        <p>Premium Clothing & Fashion</p>
-        <h2 style="margin-top: 20px; color: #FF007A;">INVOICE</h2>
-    </div>
-    
-    <div class="invoice-details">
-        <div class="customer-info">
-            <h3>Bill To:</h3>
-            <p><strong>${order.customer || 'Customer'}</strong></p>
-            <p>${order.email || ''}</p>
-            ${order.shipping_address ? `
-                <p>${order.shipping_address.street || ''}</p>
-                <p>${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}</p>
-                <p>Phone: ${order.shipping_address.phone || ''}</p>
-            ` : ''}
-        </div>
-        <div class="order-info" style="text-align: right;">
-            <p><strong>Order ID:</strong> ${order.id}</p>
-            <p><strong>Transaction ID:</strong> ${order.txnid}</p>
-            <p><strong>Date:</strong> ${invoiceDate}</p>
-            <p><strong>Status:</strong> <span style="color: #00FF94;">${order.status}</span></p>
-        </div>
-    </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th style="text-align: center;">Qty</th>
-                <th style="text-align: right;">Price</th>
-                <th style="text-align: right;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${itemsHtml}
-            <tr>
-                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right;"><strong>Subtotal</strong></td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹${subtotal}</td>
-            </tr>
-            <tr>
-                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right;"><strong>Shipping</strong></td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: right;">₹100</td>
-            </tr>
-            <tr class="total-row">
-                <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: right; background: #FFD100;">GRAND TOTAL</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: right; background: #FFD100;">₹${order.total}</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <div class="footer">
-        <p>Thank you for shopping with House Of Viyara!</p>
-        <p>This is a computer-generated invoice and does not require a signature.</p>
-    </div>
-</body>
-</html>`;
-
-            // Create and download the invoice
-            const blob = new Blob([invoiceContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `invoice_${order.id}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            
+            doc.autoTable({
+                head: [['Item', 'Qty', 'Price', 'Total']],
+                body: tableData,
+                startY: tableStartY,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 10
+                }
+            });
+            
+            // Totals
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Subtotal:', pageWidth - 70, finalY);
+            doc.text(`₹${subtotal}`, pageWidth - 14, finalY, { align: 'right' });
+            
+            doc.text('Shipping:', pageWidth - 70, finalY + 7);
+            doc.text('₹100', pageWidth - 14, finalY + 7, { align: 'right' });
+            
+            doc.setFontSize(13);
+            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(255, 209, 0);
+            doc.rect(pageWidth - 80, finalY + 12, 66, 10, 'F');
+            doc.text('GRAND TOTAL:', pageWidth - 70, finalY + 20);
+            doc.text(`₹${order.total}`, pageWidth - 14, finalY + 20, { align: 'right' });
+            
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Thank you for shopping with House Of Viyara!', pageWidth / 2, finalY + 35, { align: 'center' });
+            doc.text('This is a computer-generated invoice and does not require a signature.', pageWidth / 2, finalY + 42, { align: 'center' });
+            
+            // Download
+            doc.save(`invoice_${order.id}.pdf`);
         }
 
         function renderOrders() {

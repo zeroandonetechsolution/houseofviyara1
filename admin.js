@@ -2314,7 +2314,7 @@ function renderOrdersTable(orders) {
     <div class="admin-section-card">
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Order ID</th><th>Items</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th><th>Update</th></tr></thead>
+          <thead><tr><th>Order ID</th><th>Items</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th><th>Update</th><th>Actions</th></tr></thead>
           <tbody>
             ${orders.map(o => `
               <tr id="order-row-${o.id}">
@@ -2337,6 +2337,16 @@ function renderOrdersTable(orders) {
                     <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                     <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                   </select>
+                </td>
+                <td>
+                  <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick='openOrderDetailsModal(${JSON.stringify(o).replace(/'/g, "\\'")})'>
+                    <i class="fas fa-eye"></i> View
+                  </button>
+                  ${o.payment_status === 'Paid' ? `
+                    <button class="admin-btn admin-btn-sm admin-btn-primary" onclick='downloadOrderInvoice(${JSON.stringify(o).replace(/'/g, "\\'")})'>
+                      <i class="fas fa-file-invoice"></i> Invoice
+                    </button>
+                  ` : ''}
                 </td>
               </tr>`).join('')}
           </tbody>
@@ -2369,6 +2379,219 @@ async function updateOrderStatus(orderId, status, selectEl) {
     } catch (e) {
         showToast('Failed to update order status', 'error');
     }
+}
+
+function openOrderDetailsModal(order) {
+    const sa = order.shipping_address || {};
+    const items = order.items || [];
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    
+    openModal(`
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h2 style="margin-bottom: 20px; color: #FF007A;">Order Details</h2>
+            
+            <!-- Order Info Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 15px; background: #f9f9f9; border: 3px solid #000;">
+                <div>
+                    <div style="font-weight: 900; font-size: 1.2rem;">Order ID: ${order.id}</div>
+                    <div style="color: #666;">Date: ${new Date(order.created_at).toLocaleString('en-IN')}</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="status-badge status-${(order.status || '').toLowerCase()}" style="margin-right: 8px;">${order.status}</span>
+                    <span class="payment-badge payment-${(order.payment_status || '').toLowerCase()}">${order.payment_status}</span>
+                </div>
+            </div>
+            
+            <!-- Customer Info & Shipping Address -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div style="border: 2px solid #000; padding: 15px;">
+                    <h4 style="margin-bottom: 10px; text-transform: uppercase; font-weight: 900;">Customer Info</h4>
+                    <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customer || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${order.email || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>Phone:</strong> ${sa.phone || 'N/A'}</p>
+                </div>
+                <div style="border: 2px solid #000; padding: 15px;">
+                    <h4 style="margin-bottom: 10px; text-transform: uppercase; font-weight: 900;">Shipping Address</h4>
+                    <p style="margin: 5px 0;"><strong>Address:</strong> ${sa.street || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>City:</strong> ${sa.city || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>State:</strong> ${sa.state || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>PIN:</strong> ${sa.pin || 'N/A'}</p>
+                </div>
+            </div>
+            
+            <!-- Order Items -->
+            <div style="border: 2px solid #000; padding: 15px; margin-bottom: 25px;">
+                <h4 style="margin-bottom: 15px; text-transform: uppercase; font-weight: 900;">Order Items</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid #000; padding: 10px; text-align: left;">Item</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: center;">Variant</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: center;">Qty</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: right;">Price</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 10px;"><strong>${item.name}</strong></td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: center;">${item.variant || 'Default'}</td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: center;">${item.qty}</td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: right;">₹${item.price}</td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: right;">₹${item.price * item.qty}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Price Summary -->
+            <div style="border: 2px solid #000; padding: 15px; background: #f9f9f9;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700;">
+                    <span>Subtotal:</span>
+                    <span>₹${subtotal}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700;">
+                    <span>Shipping:</span>
+                    <span>₹100</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 3px solid #000; font-weight: 900; font-size: 1.3rem; color: #FF007A;">
+                    <span>Grand Total:</span>
+                    <span>₹${order.total_amount}</span>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                ${order.payment_status === 'Paid' ? `
+                    <button class="admin-btn admin-btn-primary" onclick='downloadOrderInvoice(${JSON.stringify(order).replace(/'/g, "\\'")})'>
+                        <i class="fas fa-file-invoice"></i> Download Invoice
+                    </button>
+                ` : ''}
+                <button class="admin-btn admin-btn-ghost" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    `);
+}
+
+function downloadOrderInvoice(order) {
+    // Check if jsPDF is available
+    if (typeof window.jspdf === 'undefined') {
+        // Dynamically load jsPDF and jspdf-autotable
+        const script1 = document.createElement('script');
+        script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script1.onload = () => {
+            const script2 = document.createElement('script');
+            script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+            script2.onload = () => generateOrderInvoice(order);
+            document.head.appendChild(script2);
+        };
+        document.head.appendChild(script1);
+    } else {
+        generateOrderInvoice(order);
+    }
+}
+
+function generateOrderInvoice(order) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('HOUSE OF VIYARA', pageWidth / 2, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Premium Clothing & Fashion', pageWidth / 2, 28, { align: 'center' });
+    
+    // Invoice title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 0, 122);
+    doc.text('INVOICE', pageWidth / 2, 40, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    
+    // Invoice date
+    const invoiceDate = new Date().toLocaleDateString('en-IN', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    // Order info
+    const sa = order.shipping_address || {};
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', 14, 55);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer || 'Customer', 14, 62);
+    if (order.email) doc.text(order.email, 14, 69);
+    if (sa.street) doc.text(sa.street, 14, 76);
+    if (sa.city) doc.text(`${sa.city}, ${sa.state || ''} - ${sa.pin || ''}`, 14, 83);
+    if (sa.phone) doc.text(`Phone: ${sa.phone}`, 14, 90);
+    
+    // Right side order details
+    doc.setFont('helvetica', 'bold');
+    doc.text('Order Details:', pageWidth - 70, 55, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Order ID: ${order.id}`, pageWidth - 14, 62, { align: 'right' });
+    doc.text(`Transaction ID: ${order.txnid || 'N/A'}`, pageWidth - 14, 69, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, pageWidth - 14, 76, { align: 'right' });
+    doc.text(`Status: ${order.status}`, pageWidth - 14, 83, { align: 'right' });
+    
+    // Items table
+    const items = order.items || [];
+    const tableStartY = sa.street ? 105 : 95;
+    const tableData = items.map(item => [
+        `${item.name} (${item.variant || 'Default'})`,
+        item.qty.toString(),
+        `₹${item.price}`,
+        `₹${item.price * item.qty}`
+    ]);
+    
+    doc.autoTable({
+        head: [['Item', 'Qty', 'Price', 'Total']],
+        body: tableData,
+        startY: tableStartY,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: 0,
+            fontStyle: 'bold'
+        },
+        bodyStyles: {
+            fontSize: 10
+        }
+    });
+    
+    // Totals
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Subtotal:', pageWidth - 70, finalY);
+    doc.text(`₹${subtotal}`, pageWidth - 14, finalY, { align: 'right' });
+    
+    doc.text('Shipping:', pageWidth - 70, finalY + 7);
+    doc.text('₹100', pageWidth - 14, finalY + 7, { align: 'right' });
+    
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.setFillColor(255, 209, 0);
+    doc.rect(pageWidth - 80, finalY + 12, 66, 10, 'F');
+    doc.text('GRAND TOTAL:', pageWidth - 70, finalY + 20);
+    doc.text(`₹${order.total_amount}`, pageWidth - 14, finalY + 20, { align: 'right' });
+    
+    // Footer
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for shopping with House Of Viyara!', pageWidth / 2, finalY + 35, { align: 'center' });
+    doc.text('This is a computer-generated invoice and does not require a signature.', pageWidth / 2, finalY + 42, { align: 'center' });
+    
+    // Download
+    doc.save(`invoice_${order.id}.pdf`);
 }
 
 // ═══════════════════════════════════════
