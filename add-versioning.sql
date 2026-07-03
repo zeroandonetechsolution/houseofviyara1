@@ -107,5 +107,12 @@ CREATE TRIGGER increment_version_hero_images
 AFTER INSERT OR UPDATE OR DELETE ON hero_images
 FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
 
--- Add system_config to realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS system_config;
+-- Add system_config to realtime (safe even if already added)
+DO $$
+BEGIN
+  EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE system_config';
+EXCEPTION
+  WHEN duplicate_object THEN
+    RAISE NOTICE 'Table system_config is already in publication supabase_realtime';
+END
+$$;
