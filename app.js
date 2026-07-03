@@ -271,6 +271,69 @@ async function fetchHeaderLinksPrefer() {
     return getStore(STORE_KEYS.header_links, []);
 }
 
+async function fetchOrdersPrefer() {
+    const localOrders = getStore(STORE_KEYS.orders, []);
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
+        try {
+            const { data, error } = await appSupabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (!error && data) {
+                // Merge Supabase orders with local orders, Supabase takes precedence
+                const supabaseOrderIds = new Set(data.map(o => o.id));
+                const mergedOrders = [
+                    ...data.map(o => ({
+                        ...o,
+                        id: o.id,
+                        customer: o.customer,
+                        email: o.email,
+                        phone: o.phone,
+                        items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+                        total: o.total_amount,
+                        status: o.status,
+                        payment_status: o.payment_status,
+                        shipping_address: typeof o.shipping_address === 'string' ? JSON.parse(o.shipping_address) : o.shipping_address,
+                        date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+                    })),
+                    ...localOrders.filter(o => !supabaseOrderIds.has(o.id))
+                ];
+                saveStore(STORE_KEYS.orders, mergedOrders);
+                return mergedOrders;
+            }
+        } catch (e) { console.warn('appSupabase orders fetch failed', e); }
+    }
+    return localOrders;
+}
+
+async function fetchOrderByIdPrefer(orderId) {
+    const localOrders = getStore(STORE_KEYS.orders, []);
+    const localOrder = localOrders.find(o => o.id === orderId);
+    if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
+        try {
+            const { data, error } = await appSupabase.from('orders').select('*').eq('id', orderId).limit(1).single();
+            if (!error && data) {
+                const order = {
+                    ...data,
+                    id: data.id,
+                    customer: data.customer,
+                    email: data.email,
+                    phone: data.phone,
+                    items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items,
+                    total: data.total_amount,
+                    status: data.status,
+                    payment_status: data.payment_status,
+                    shipping_address: typeof data.shipping_address === 'string' ? JSON.parse(data.shipping_address) : data.shipping_address,
+                    date: data.created_at ? new Date(data.created_at).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+                };
+                // Update local storage
+                const updatedOrders = localOrders.map(o => o.id === orderId ? order : o);
+                if (!localOrders.find(o => o.id === orderId)) updatedOrders.unshift(order);
+                saveStore(STORE_KEYS.orders, updatedOrders);
+                return order;
+            }
+        } catch (e) { console.warn('appSupabase order by id fetch failed', e); }
+    }
+    return localOrder;
+}
+
 async function fetchHeroImagesPrefer() {
     if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
@@ -2110,6 +2173,8 @@ async function completeCheckout() {
 }
 
 window.completeCheckout = completeCheckout;
+window.fetchOrdersPrefer = fetchOrdersPrefer;
+window.fetchOrderByIdPrefer = fetchOrderByIdPrefer;
 
 function renderCartPage() {
     const container = document.getElementById('cart-page-content');

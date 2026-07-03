@@ -229,7 +229,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
-    <script src="app.js?v=15" defer></script>
+    <script src="app.js?v=16" defer></script>
     <script>
         const { jsPDF } = window.jspdf;
         
@@ -339,9 +339,9 @@
             doc.save(`invoice_${order.id}.pdf`);
         }
 
-        function renderOrders() {
+        async function renderOrders() {
             const ordersContainer = document.getElementById('orders-list');
-            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            const orders = await window.fetchOrdersPrefer();
             
             if (!orders.length) {
                 ordersContainer.innerHTML = `
@@ -413,15 +413,14 @@
             });
         }
 
-        function trackOrder() {
+        async function trackOrder() {
             const orderId = document.getElementById('order-search-input').value.trim().toUpperCase();
             if (!orderId) {
                 alert('Please enter an order ID to search.');
                 return;
             }
 
-            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
-            const order = orders.find(o => o.id.toUpperCase() === orderId);
+            const order = await window.fetchOrderByIdPrefer(orderId);
             if (!order) {
                 alert('Order not found. Make sure you used the exact order ID.');
                 return;
@@ -501,7 +500,9 @@
         }
 
         // Render orders on page load
-        renderOrders();
+        (async function() {
+            await renderOrders();
+        })();
     </script>
 
     <style>
