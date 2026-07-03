@@ -476,7 +476,14 @@ function renderLogin() {
 function handleLogin() {
     const user = document.getElementById('al-user').value.trim();
     const pass = document.getElementById('al-pass').value;
-    if (user === 'admin' && pass === 'admin') {
+    
+    // Load admins
+    const admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    
+    // Check if any admin matches
+    const validAdmin = admins.find(a => a.username === user && a.password === pass);
+    
+    if (validAdmin) {
         adminToken = 'hov-admin-token';
         localStorage.setItem('hov_admin_token', adminToken);
         renderShell();
@@ -532,6 +539,9 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-cookies" onclick="navigateTo('cookies')">
             <i class="fas fa-cookie-bite"></i><span>Cookie Management</span>
           </a>
+          <a class="admin-nav-item" id="nav-create-admin" onclick="navigateTo('create-admin')">
+            <i class="fas fa-user-plus"></i><span>Create Admin</span>
+          </a>
           <a class="admin-nav-item" id="nav-versions" onclick="navigateTo('versions')">
             <i class="fas fa-code-branch"></i><span>Versions</span>
           </a>
@@ -577,14 +587,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', customers: 'Customers/Visitors', cookies: 'Cookie Management', versions: 'Versions' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', customers: 'Customers/Visitors', cookies: 'Cookie Management', 'create-admin': 'Create Admin', versions: 'Versions' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, customers: renderCustomers, cookies: renderCookies, versions: renderVersions };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, customers: renderCustomers, cookies: renderCookies, 'create-admin': renderCreateAdmin, versions: renderVersions };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -692,6 +702,124 @@ function renderCookies() {
       </div>
     </div>
     `;
+}
+
+// ═══════════════════════════════════════
+// CREATE ADMIN
+// ═══════════════════════════════════════
+function renderCreateAdmin() {
+    const content = document.getElementById('admin-content');
+    // Load existing admins
+    let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    
+    content.innerHTML = `
+    <div class="admin-section-card" style="margin-bottom: 30px;">
+        <div class="admin-section-card-header">
+            <h3>Create New Admin</h3>
+        </div>
+        <div class="admin-form" style="max-width: 500px; padding-top: 20px;">
+            <div class="aform-group">
+                <label>Username <span style="color: var(--primary-color);">*</span></label>
+                <input class="aform-input" type="text" id="new-admin-username" placeholder="Enter username">
+            </div>
+            <div class="aform-group">
+                <label>Password <span style="color: var(--primary-color);">*</span></label>
+                <input class="aform-input" type="password" id="new-admin-password" placeholder="Enter password">
+            </div>
+            <div class="aform-group">
+                <label>Confirm Password <span style="color: var(--primary-color);">*</span></label>
+                <input class="aform-input" type="password" id="new-admin-confirm-password" placeholder="Confirm password">
+            </div>
+            <div class="aform-actions" style="justify-content: flex-start;">
+                <button class="admin-btn admin-btn-primary" id="create-admin-btn"><i class="fas fa-plus"></i> Create Admin</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-section-card">
+        <div class="admin-section-card-header">
+            <h3>Existing Admins</h3>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>ID</th><th>Username</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${admins.map((a, idx) => `
+                      <tr>
+                        <td><strong>${idx + 1}</strong></td>
+                        <td>${a.username}</td>
+                        <td>
+                            ${a.username !== 'admin' ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteAdmin(${idx})"><i class="fas fa-trash"></i> Delete</button>` : '<span style="opacity: 0.6; font-weight: bold;">Can\'t delete main admin</span>'}
+                        </td>
+                      </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
+    
+    // Add event listener to create button
+    const createBtn = document.getElementById('create-admin-btn');
+    if (createBtn) {
+        createBtn.addEventListener('click', handleCreateAdmin);
+    }
+}
+
+function handleCreateAdmin() {
+    const usernameInput = document.getElementById('new-admin-username');
+    const passwordInput = document.getElementById('new-admin-password');
+    const confirmPasswordInput = document.getElementById('new-admin-confirm-password');
+    
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    // Validation
+    if (!username || !password || !confirmPassword) {
+        showToast('Please fill in all fields!', 'error');
+        return;
+    }
+    if (password !== confirmPassword) {
+        showToast('Passwords don\'t match!', 'error');
+        return;
+    }
+    if (password.length < 4) {
+        showToast('Password must be at least 4 characters long!', 'error');
+        return;
+    }
+    
+    // Get existing admins
+    let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    
+    // Check if username already exists
+    if (admins.some(a => a.username === username)) {
+        showToast('Username already exists!', 'error');
+        return;
+    }
+    
+    // Add new admin
+    admins.push({
+        username: username,
+        password: password // In a real app, we should hash the password!
+    });
+    localStorage.setItem('hov_admins', JSON.stringify(admins));
+    
+    // Clear inputs and refresh
+    usernameInput.value = '';
+    passwordInput.value = '';
+    confirmPasswordInput.value = '';
+    showToast('Admin created successfully!', 'success');
+    renderCreateAdmin();
+}
+
+function deleteAdmin(index) {
+    confirmAction('Are you sure you want to delete this admin?', () => {
+        let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+        admins.splice(index, 1);
+        localStorage.setItem('hov_admins', JSON.stringify(admins));
+        showToast('Admin deleted successfully!', 'success');
+        renderCreateAdmin();
+    });
 }
 
 // ═══════════════════════════════════════
