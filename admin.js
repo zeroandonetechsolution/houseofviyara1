@@ -526,6 +526,12 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
+          <a class="admin-nav-item" id="nav-customers" onclick="navigateTo('customers')">
+            <i class="fas fa-users"></i><span>Customers/Visitors</span>
+          </a>
+          <a class="admin-nav-item" id="nav-cookies" onclick="navigateTo('cookies')">
+            <i class="fas fa-cookie-bite"></i><span>Cookie Management</span>
+          </a>
           <a class="admin-nav-item" id="nav-versions" onclick="navigateTo('versions')">
             <i class="fas fa-code-branch"></i><span>Versions</span>
           </a>
@@ -571,14 +577,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', versions: 'Versions' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', customers: 'Customers/Visitors', cookies: 'Cookie Management', versions: 'Versions' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, versions: renderVersions };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, customers: renderCustomers, cookies: renderCookies, versions: renderVersions };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -608,6 +614,145 @@ function openModal(html) {
 function closeModal() {
     document.getElementById('admin-modal').classList.remove('open');
     document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════
+// COOKIE MANAGEMENT
+// ═══════════════════════════════════════
+function renderCookies() {
+    const content = document.getElementById('admin-content');
+    // Initialize sample consents if not present
+    if (!localStorage.getItem('sample_cookie_consents')) {
+        localStorage.setItem('sample_cookie_consents', JSON.stringify([
+            {id: 1, user: "Anonymous", consent: "Accept All", date: new Date().toLocaleDateString('en-IN')},
+            {id: 2, user: "john@example.com", consent: "Essential Only", date: new Date(Date.now()-86400000).toLocaleDateString('en-IN')}
+        ]));
+    }
+    const sampleConsents = JSON.parse(localStorage.getItem('sample_cookie_consents'));
+    
+    content.innerHTML = `
+    <div class="admin-stats-grid">
+      <div class="stat-card stat-yellow">
+        <div class="stat-icon"><i class="fas fa-cookie-bite"></i></div>
+        <div class="stat-info"><div class="stat-value">${sampleConsents.length}</div><div class="stat-label">Total Consents</div></div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><div class="stat-value">${sampleConsents.filter(c => c.consent === 'Accept All').length}</div><div class="stat-label">Accept All</div></div>
+      </div>
+      <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+        <div class="stat-info"><div class="stat-value">${sampleConsents.filter(c => c.consent === 'Essential Only').length}</div><div class="stat-label">Essential Only</div></div>
+      </div>
+    </div>
+
+    <div class="admin-section-card">
+      <div class="admin-section-card-header">
+        <h3>Recent Cookie Consents</h3>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>User</th><th>Consent Choice</th><th>Date</th></tr></thead>
+          <tbody>
+            ${sampleConsents.map(c => `
+              <tr>
+                <td><strong>${c.id}</strong></td>
+                <td>${c.user}</td>
+                <td><span class="status-badge ${c.consent === 'Accept All' ? 'status-paid' : 'status-pending'}">${c.consent}</span></td>
+                <td>${c.date}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="admin-section-card">
+      <div class="admin-section-card-header">
+        <h3>Cookie Settings</h3>
+      </div>
+      <div style="padding:15px 0;">
+        <div class="aform-check">
+          <input type="checkbox" id="cookie-analytics" checked>
+          <label for="cookie-analytics"><i class="fas fa-chart-bar"></i> Enable Analytics Cookies</label>
+        </div>
+        <div class="aform-check">
+          <input type="checkbox" id="cookie-marketing">
+          <label for="cookie-marketing"><i class="fas fa-bullhorn"></i> Enable Marketing Cookies</label>
+        </div>
+        <div class="aform-check">
+          <input type="checkbox" id="cookie-preferences" checked>
+          <label for="cookie-preferences"><i class="fas fa-sliders-h"></i> Enable Preference Cookies</label>
+        </div>
+        <div style="margin-top:20px;">
+          <button class="admin-btn admin-btn-primary" onclick="showToast('Cookie settings saved!', 'success');"><i class="fas fa-save"></i> Save Settings</button>
+          <button class="admin-btn admin-btn-outline-fire" onclick="if(confirm('Reset all consents?')) {localStorage.removeItem('sample_cookie_consents'); renderCookies(); showToast('Consents reset!', 'success');}">
+            <i class="fas fa-undo"></i> Reset All Consents
+          </button>
+        </div>
+      </div>
+    </div>
+    `;
+}
+
+// ═══════════════════════════════════════
+// CUSTOMERS/VISITORS
+// ═══════════════════════════════════════
+function renderCustomers() {
+    const content = document.getElementById('admin-content');
+    // Sample customers data (in real app, would fetch from DB)
+    const customers = [
+        {id: 1, name: "John Doe", email: "john@example.com", phone: "+91 9876543210", orders: 3, totalSpent: 4500, joined: new Date(Date.now()-30*86400000).toLocaleDateString('en-IN')},
+        {id: 2, name: "Jane Smith", email: "jane@example.com", phone: "+91 9876543211", orders: 5, totalSpent: 8900, joined: new Date(Date.now()-60*86400000).toLocaleDateString('en-IN')},
+        {id: 3, name: "Guest User", email: "-", phone: "-", orders: 0, totalSpent: 0, joined: new Date(Date.now()-7*86400000).toLocaleDateString('en-IN')}
+    ];
+    
+    content.innerHTML = `
+    <div class="admin-stats-grid">
+      <div class="stat-card stat-pink">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-info"><div class="stat-value">${customers.length}</div><div class="stat-label">Total Visitors</div></div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+        <div class="stat-info"><div class="stat-value">${customers.filter(c => c.orders > 0).length}</div><div class="stat-label">Paying Customers</div></div>
+      </div>
+      <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info"><div class="stat-value">${customers.reduce((sum, c) => sum + c.orders, 0)}</div><div class="stat-label">Total Orders</div></div>
+      </div>
+      <div class="stat-card stat-yellow">
+        <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+        <div class="stat-info"><div class="stat-value">₹${customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString('en-IN')}</div><div class="stat-label">Total Revenue</div></div>
+      </div>
+    </div>
+
+    <div class="admin-section-card">
+      <div class="admin-section-card-header">
+        <h3>Visitors & Customers</h3>
+        <div style="display:flex;gap:10px;">
+          <input class="admin-search-input" type="text" placeholder="Search customers..." style="width:250px;">
+          <button class="admin-btn admin-btn-primary"><i class="fas fa-download"></i> Export</button>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Total Spent</th><th>Joined</th></tr></thead>
+          <tbody>
+            ${customers.map(c => `
+              <tr>
+                <td><strong>${c.id}</strong></td>
+                <td>${c.name}</td>
+                <td>${c.email}</td>
+                <td>${c.phone}</td>
+                <td><span class="status-badge status-confirmed">${c.orders}</span></td>
+                <td><strong>₹${c.totalSpent}</strong></td>
+                <td>${c.joined}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    `;
 }
 
 // ═══════════════════════════════════════

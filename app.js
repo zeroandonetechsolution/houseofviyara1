@@ -708,6 +708,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     await initAuth();
 
+    // Auto-open auth modal for unauthenticated users
+    if (!user) {
+        setTimeout(() => {
+            openAuthModal();
+        }, 500);
+    }
+
     cart = loadUserScopedData(AUTH_KEYS.cart, []);
     wishlist = loadUserScopedData(AUTH_KEYS.wishlist, []);
     updateCartBadge();

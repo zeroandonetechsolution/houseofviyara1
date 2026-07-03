@@ -36,6 +36,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cookie-banner.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FFD100">
@@ -109,14 +110,9 @@
         <div class="auth-content">
             <h2>WELCOME BACK</h2>
             <p>Login to House Of Viyara for a personalized experience.</p>
-            <div id="google-login-btn" style="margin: 20px 0; min-height: 40px;"></div>
+            <div id="google-login-btn" style="margin: 20px auto; min-height: 40px; display: flex; justify-content: center;"></div>
             <p id="auth-user-status" style="font-size: 0.85rem; opacity: 0.7; text-align: center; margin-top: 0; margin-bottom: 20px;">Sign in with Google to continue.</p>
             <button id="auth-logout-btn" type="button" class="logout-btn" style="display: none; margin: 0 auto 20px; width: 100%;">Log out</button>
-            <div style="text-align: center; margin-top: -10px; margin-bottom: 20px;">
-                <a href="admin.html" class="admin-access-link" style="font-size: 0.8rem; font-weight: 800; text-decoration: underline; color: var(--primary-color); opacity: 0.7; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-user-shield"></i> ADMIN PORTAL
-                </a>
-            </div>
         </div>
     </div>
 <div class="mobile-menu" id="mobile-menu">
@@ -256,7 +252,7 @@
                     <li><a href="Cord sets.html">Cord sets</a></li>
                     <li><a href="Kurti.html">Kurti</a></li>
                     <li><a href="Kurti sets.html">Kurti sets</a></li>
-                    <!-- Pure Cotton removed from footer -->
+                    <li><a href="pure-cotton.html">Pure Cotton</a></li>
                 </ul>
             </div>
             <div class="footer-links">
@@ -264,19 +260,25 @@
                 <ul>
                     <li><a href="orders.html">Track Order</a></li>
                     <li><a href="return-policy.html">Returns & Exchanges</a></li>
-                    <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="shipping-delivery.html">Shipping Info</a></li>
+                    <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="size-guide.html">Size Guide</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
                 </ul>
             </div>
             <div class="footer-links">
-                <h4>LEGAL</h4>
+                <h4>COMPANY</h4>
                 <ul>
+                    <li><a href="about-us.html">About Us</a></li>
                     <li><a href="privacy-policy.html">Privacy Policy</a></li>
                     <li><a href="terms.html">Terms of Service</a></li>
-                    <li><a href="data-safety.html">Data Safety</a></li>
+                    <li><a href="refund-cancellation.html">Refund & Cancellation</a></li>
+                    <li><a href="cookie-policy.html">Cookie Policy</a></li>
+                    <li><a href="admin.html" style="display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-user-shield"></i> Admin Portal</a></li>
                 </ul>
             </div>
         </div>
+
         <div class="footer-bottom">
             <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
             <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
@@ -420,6 +422,80 @@
         </a>
     </nav>
 
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="cookie-banner">
+        <div class="cookie-banner-content">
+            <h2>🍪 We Value Your Privacy</h2>
+            <p>House Of Viyara uses cookies to improve your shopping experience, remember your preferences, analyze website traffic, and enhance our services. Some cookies are essential for the website to function, while others help us understand how visitors use our store.</p>
+            <div class="cookie-banner-actions">
+                <button id="cookie-accept-all" class="cookie-btn cookie-btn-primary">Accept All</button>
+                <button id="cookie-essential-only" class="cookie-btn cookie-btn-secondary">Essential Only</button>
+                <button id="cookie-settings-link" class="cookie-btn cookie-btn-text">Cookie Policy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Settings Modal -->
+    <div id="cookie-modal-overlay" class="cookie-modal-overlay">
+        <div class="cookie-modal" role="dialog" aria-modal="true" aria-labelledby="cookie-modal-title">
+            <div class="cookie-modal-header">
+                <h2 id="cookie-modal-title">Cookie Settings</h2>
+                <button id="cookie-close-modal" class="cookie-close-btn" aria-label="Close cookie settings">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="cookie-modal-content">
+                <!-- Essential Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Essential Cookies</h3>
+                        <p>Always Active. Cannot be disabled.</p>
+                    </div>
+                    <div class="cookie-category-status">Always Active</div>
+                </div>
+                <!-- Analytics Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Analytics Cookies</h3>
+                        <p>Help us understand how visitors use our website.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-analytics" checked>
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Marketing Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Marketing Cookies</h3>
+                        <p>Used to show relevant ads and content to you.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-marketing">
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Preference Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Preference Cookies</h3>
+                        <p>Remember your preferences and settings.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-preferences" checked>
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="cookie-modal-actions">
+                <button id="cookie-reject-optional" class="cookie-btn cookie-btn-secondary">Reject Optional</button>
+                <button id="cookie-save-prefs" class="cookie-btn cookie-btn-secondary">Save Preferences</button>
+                <button id="cookie-accept-all-modal" class="cookie-btn cookie-btn-primary">Accept All</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js?v=16" defer></script>
+    <script src="cookie-banner.js" defer></script>
 </body>
 </html>
