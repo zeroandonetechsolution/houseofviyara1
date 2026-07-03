@@ -2022,6 +2022,10 @@ async function completeCheckout() {
         return;
     }
 
+    // Close all modals/drawers
+    closeCheckoutModal();
+    closeCart();
+
     const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
     const txnid = 'TXN' + Date.now();
     const orderId = `LS-${Date.now()}`;
@@ -2071,6 +2075,8 @@ async function completeCheckout() {
 
     window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;
 }
+
+window.completeCheckout = completeCheckout;
 
 function renderCartPage() {
     const container = document.getElementById('cart-page-content');
