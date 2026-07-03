@@ -66,6 +66,22 @@ async function loadSupabaseClient() {
         USE_SUPABASE = true;
         console.log('Supabase client loaded');
 
+        // Fetch current global version from database to ensure we have the latest
+        try {
+            const { data: currentConfig } = await appSupabase
+                .from('system_config')
+                .select('global_version')
+                .eq('id', 'global')
+                .maybeSingle();
+            if (currentConfig && currentConfig.global_version) {
+                currentGlobalVersion = currentConfig.global_version;
+                localStorage.setItem('current_global_version', currentGlobalVersion);
+                console.log('📦 Loaded current global version from database:', currentGlobalVersion);
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not load current global version from database:', e);
+        }
+
         // Subscribe to realtime changes
         setupRealtimeSubscriptions();
 
@@ -164,42 +180,6 @@ async function setupRealtimeSubscriptions() {
         });
 
     console.log('✅ Realtime subscriptions set up!');
-}
-
-async function incrementGlobalVersion() {
-    if (!appSupabase) return;
-    try {
-        // First get current version
-        const { data: currentConfig, error: fetchError } = await appSupabase
-            .from('system_config')
-            .select('global_version')
-            .eq('id', 'global')
-            .maybeSingle();
-        
-        if (fetchError) {
-            console.error('❌ Error fetching system config:', fetchError);
-            return;
-        }
-        
-        const newVersion = (currentConfig?.global_version || 1) + 1;
-        
-        // Update or insert
-        const { error: upsertError } = await appSupabase
-            .from('system_config')
-            .upsert({
-                id: 'global',
-                global_version: newVersion,
-                last_updated: new Date().toISOString()
-            });
-        
-        if (upsertError) {
-            console.error('❌ Error incrementing global version:', upsertError);
-        } else {
-            console.log('✅ Global version incremented to:', newVersion);
-        }
-    } catch (e) {
-        console.error('❌ Error in incrementGlobalVersion:', e);
-    }
 }
 
 // Fetch products preferring Supabase, then API_URL, then localStorage
@@ -2111,15 +2091,13 @@ async function completeCheckout() {
                 payment_gateway: 'demo'
             };
             console.log('🚀 Sending payload to Supabase:', payload);
-            const { data, error } = await appSupabase.from('orders').insert(payload).select();
-            if (error) {
-                console.error('❌ Error saving order to Supabase:', error);
-                alert('Error saving order to database: ' + error.message);
-            } else {
-                console.log('✅ Order saved to Supabase successfully:', data);
-                // Increment global version to trigger real-time reload
-                await incrementGlobalVersion();
-            }
+                const { data, error } = await appSupabase.from('orders').insert(payload).select();
+                if (error) {
+                    console.error('❌ Error saving order to Supabase:', error);
+                    alert('Error saving order to database: ' + error.message);
+                } else {
+                    console.log('✅ Order saved to Supabase successfully:', data);
+                }
         } else {
             console.warn('⚠️ Supabase not available, saving only to localStorage');
         }

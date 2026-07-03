@@ -366,42 +366,6 @@
         }
         initPaymentSupabase();
 
-        async function incrementGlobalVersionInSupabase() {
-            if (!paymentSupabase) return;
-            try {
-                // First get current version
-                const { data: currentConfig, error: fetchError } = await paymentSupabase
-                    .from('system_config')
-                    .select('global_version')
-                    .eq('id', 'global')
-                    .maybeSingle();
-                
-                if (fetchError) {
-                    console.error('❌ Error fetching system config:', fetchError);
-                    return;
-                }
-                
-                const newVersion = (currentConfig?.global_version || 1) + 1;
-                
-                // Update or insert
-                const { error: upsertError } = await paymentSupabase
-                    .from('system_config')
-                    .upsert({
-                        id: 'global',
-                        global_version: newVersion,
-                        last_updated: new Date().toISOString()
-                    });
-                
-                if (upsertError) {
-                    console.error('❌ Error incrementing global version:', upsertError);
-                } else {
-                    console.log('✅ Global version incremented to:', newVersion);
-                }
-            } catch (e) {
-                console.error('❌ Error in incrementGlobalVersionInSupabase:', e);
-            }
-        }
-
         // Load order from localStorage
         let currentOrder = null;
         const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
@@ -493,8 +457,6 @@
                     console.error('Error updating order in Supabase:', error);
                 } else {
                     console.log('Order updated in Supabase successfully');
-                    // Increment global version to trigger real-time reload in admin panel
-                    await incrementGlobalVersionInSupabase();
                 }
             } catch (e) {
                 console.error('Supabase order update failed:', e);

@@ -188,42 +188,6 @@ async function loadSupabaseClient() {
   }
 }
 
-async function incrementGlobalVersion() {
-  if (!adminSupabase) return;
-  try {
-    // First get current version
-    const { data: currentConfig, error: fetchError } = await adminSupabase
-      .from('system_config')
-      .select('global_version')
-      .eq('id', 'global')
-      .maybeSingle();
-    
-    if (fetchError) {
-      console.error('❌ Error fetching system config:', fetchError);
-      return;
-    }
-    
-    const newVersion = (currentConfig?.global_version || 1) + 1;
-    
-    // Update or insert
-    const { error: upsertError } = await adminSupabase
-      .from('system_config')
-      .upsert({
-        id: 'global',
-        global_version: newVersion,
-        last_updated: new Date().toISOString()
-      });
-    
-    if (upsertError) {
-      console.error('❌ Error incrementing global version:', upsertError);
-    } else {
-      console.log('✅ Global version incremented to:', newVersion);
-    }
-  } catch (e) {
-    console.error('❌ Error in incrementGlobalVersion:', e);
-  }
-}
-
 // Helper to convert any blob/file to data URL
 function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
@@ -2609,8 +2573,6 @@ async function updateOrderStatus(orderId, status, selectEl) {
         if (adminSupabase) {
             const { error } = await adminSupabase.from('orders').update({ status }).eq('id', orderId);
             if (error) throw error;
-            // Increment global version to trigger real-time reload
-            await incrementGlobalVersion();
         } else {
             await apiFetch('/api/admin/update-order', {
                 method: 'POST',
