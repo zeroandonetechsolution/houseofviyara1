@@ -89,6 +89,65 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   return url;
 }
 
+// Delete file from Supabase Storage
+async function deleteSupabaseFile(url) {
+  if (!url || !url.includes('storage/v1/object/public/')) {
+    console.log('ℹ️ Not a Supabase storage URL, skipping delete:', url);
+    return;
+  }
+  
+  try {
+    await loadSupabaseClient();
+    if (!adminSupabase) throw new Error('Supabase not initialized');
+    
+    const bucket = window.SUPABASE_BUCKET || 'public';
+    const basePath = `/storage/v1/object/public/${bucket}/`;
+    const pathIndex = url.indexOf(basePath);
+    
+    if (pathIndex === -1) {
+      console.log('ℹ️ Could not parse Supabase storage URL:', url);
+      return;
+    }
+    
+    const filePath = url.substring(pathIndex + basePath.length);
+    console.log('🗑️ Deleting file from Supabase:', filePath);
+    
+    const { error } = await adminSupabase.storage.from(bucket).remove([filePath]);
+    
+    if (error) {
+      console.warn('❌ Error deleting file from Supabase:', error);
+    } else {
+      console.log('✅ File deleted from Supabase:', filePath);
+    }
+  } catch (e) {
+    console.error('Error in deleteSupabaseFile:', e);
+  }
+}
+
+// Helper to extract all media URLs from a product
+function getProductMediaUrls(product) {
+  const urls = [];
+  
+  if (product.image_url) urls.push(product.image_url);
+  if (product.video_url) urls.push(product.video_url);
+  
+  if (Array.isArray(product.gallery)) {
+    urls.push(...product.gallery.filter(Boolean));
+  }
+  
+  if (Array.isArray(product.videos)) {
+    urls.push(...product.videos.filter(Boolean));
+  }
+  
+  if (Array.isArray(product.variants)) {
+    product.variants.forEach(variant => {
+      if (variant.image_url) urls.push(variant.image_url);
+    });
+  }
+  
+  return urls;
+}
+
 // Load Supabase client
 async function loadSupabaseClient() {
   if (adminSupabase) return true;
@@ -467,6 +526,9 @@ function renderShell() {
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
+          <a class="admin-nav-item" id="nav-versions" onclick="navigateTo('versions')">
+            <i class="fas fa-code-branch"></i><span>Versions</span>
+          </a>
         </nav>
         <div class="admin-sidebar-footer">
           <a href="index.html" class="sidebar-footer-link"><i class="fas fa-external-link-alt"></i> View Store</a>
@@ -509,14 +571,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', versions: 'Versions' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, versions: renderVersions };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -573,16 +635,19 @@ async function renderDashboard() {
     const content = document.getElementById('admin-content');
     try {
         await loadSupabaseClient();
-        let stats, orders;
+        let stats, orders, systemConfig;
         if (adminSupabase) {
-            const [productsRes, ordersRes] = await Promise.all([
+            const [productsRes, ordersRes, configRes] = await Promise.all([
                 adminSupabase.from('products').select('id, is_trending'),
-                adminSupabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false })
+                adminSupabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false }),
+                adminSupabase.from('system_config').select('*').single()
             ]);
             if (productsRes.error) throw productsRes.error;
             if (ordersRes.error) throw ordersRes.error;
+            if (configRes.error) throw configRes.error;
             const products = productsRes.data;
             orders = ordersRes.data;
+            systemConfig = configRes.data;
             stats = {
                 totalSales: orders.filter(o => o.payment_status === 'Paid').reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
                 totalOrders: orders.length,
@@ -593,11 +658,16 @@ async function renderDashboard() {
         } else {
             stats = await apiFetch('/api/admin/stats');
             orders = await apiFetch('/api/admin/orders');
+            systemConfig = { global_version: 1 };
         }
         const recentOrders = orders.slice(0, 8);
 
         content.innerHTML = `
         <div class="admin-stats-grid">
+          <div class="stat-card stat-yellow">
+            <div class="stat-icon"><i class="fas fa-code-branch"></i></div>
+            <div class="stat-info"><div class="stat-value">v${systemConfig.global_version}</div><div class="stat-label">Global Version</div></div>
+          </div>
           <div class="stat-card stat-green">
             <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
             <div class="stat-info"><div class="stat-value">₹${Number(stats.totalSales || 0).toLocaleString('en-IN')}</div><div class="stat-label">Total Revenue</div></div>
@@ -790,6 +860,20 @@ async function deleteProduct(id, name) {
         try {
             await loadSupabaseClient();
             if (adminSupabase) {
+                // First get the product to get its media URLs
+                const { data: product, error: fetchError } = await adminSupabase.from('products').select('*').eq('id', id).single();
+                if (fetchError) throw fetchError;
+                
+                // Delete all media files
+                if (product) {
+                    const mediaUrls = getProductMediaUrls(product);
+                    console.log('🗑️ Deleting all media for product:', mediaUrls);
+                    for (const url of mediaUrls) {
+                        await deleteSupabaseFile(url);
+                    }
+                }
+                
+                // Then delete the product
                 const { error } = await adminSupabase.from('products').delete().eq('id', id);
                 if (error) throw error;
             } else {
@@ -1253,6 +1337,9 @@ async function openAddProduct() {
     }
 }
 
+// Store original product data when editing
+let originalProductData = null;
+
 async function openEditProduct(id) {
     try {
         let p;
@@ -1271,6 +1358,8 @@ async function openEditProduct(id) {
             p = await apiFetch(`/api/products/${id}`);
             categories = await apiFetch('/api/categories');
         }
+        // Store original product data for later comparison
+        originalProductData = { ...p };
         // Set temp data
         tempProductData.gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
         tempProductData.videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
@@ -1517,6 +1606,27 @@ async function handleEditProduct(id) {
                 is_trending: document.getElementById('pf-trending').checked
             }).eq('id', id);
             if (error) throw error;
+            
+            // Delete unused old media files
+            if (originalProductData) {
+                const oldMediaUrls = getProductMediaUrls(originalProductData);
+                const newProduct = {
+                    image_url,
+                    video_url,
+                    gallery,
+                    videos,
+                    variants
+                };
+                const newMediaUrls = getProductMediaUrls(newProduct);
+                const urlsToDelete = oldMediaUrls.filter(url => !newMediaUrls.includes(url));
+                
+                if (urlsToDelete.length > 0) {
+                    console.log('🗑️ Deleting unused media files:', urlsToDelete);
+                    for (const url of urlsToDelete) {
+                        await deleteSupabaseFile(url);
+                    }
+                }
+            }
         } else {
             await apiFetch(`/api/admin/products/${id}`, {
                 method: 'PUT',
@@ -2353,6 +2463,102 @@ function renderOrdersTable(orders) {
         </table>
       </div>
     </div>`;
+}
+
+// ═══════════════════════════════════════
+// VERSIONS
+// ═══════════════════════════════════════
+async function renderVersions() {
+    const content = document.getElementById('admin-content');
+    try {
+        await loadSupabaseClient();
+        let systemConfig;
+        let products, categories, banners, orders, headerLinks, heroImages;
+        
+        if (adminSupabase) {
+            const [configRes, productsRes, categoriesRes, bannersRes, ordersRes, headerRes, heroRes] = await Promise.all([
+                adminSupabase.from('system_config').select('*').single(),
+                adminSupabase.from('products').select('id, name, updated_at'),
+                adminSupabase.from('categories').select('id, name, updated_at'),
+                adminSupabase.from('banners').select('id, title, updated_at'),
+                adminSupabase.from('orders').select('id, status, updated_at'),
+                adminSupabase.from('header_links').select('id, name, updated_at'),
+                adminSupabase.from('hero_images').select('id, alt, updated_at')
+            ]);
+            if (configRes.error) throw configRes.error;
+            systemConfig = configRes.data;
+            products = productsRes.data || [];
+            categories = categoriesRes.data || [];
+            banners = bannersRes.data || [];
+            orders = ordersRes.data || [];
+            headerLinks = headerRes.data || [];
+            heroImages = heroRes.data || [];
+        } else {
+            systemConfig = { global_version: 1, last_updated: new Date() };
+            products = []; categories = []; banners = []; orders = []; headerLinks = []; heroImages = [];
+        }
+        
+        content.innerHTML = `
+        <div class="admin-section-card" style="margin-bottom: 30px;">
+          <h3 style="margin-top:0;">🌍 Global Version</h3>
+          <div style="display:flex; gap:30px; flex-wrap:wrap;">
+            <div style="padding:20px; background:linear-gradient(135deg, #FFE5B4, #FFD700); border:3px solid #000; border-radius:10px; min-width:200px;">
+              <div style="font-size:48px; font-weight:bold; color:#000;">v${systemConfig.global_version}</div>
+              <div style="color:#333; margin-top:8px; font-weight:500;">Last Updated</div>
+              <div style="color:#555;">${new Date(systemConfig.last_updated).toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="admin-section-card">
+          <h3 style="margin-top:0;">📦 All Table Versions (Last Updated)</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Table Name</th>
+                  <th>Total Records</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Products</strong></td>
+                  <td>${products.length}</td>
+                  <td>${products.length ? new Date(Math.max(...products.map(p => new Date(p.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Categories</strong></td>
+                  <td>${categories.length}</td>
+                  <td>${categories.length ? new Date(Math.max(...categories.map(c => new Date(c.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Banners</strong></td>
+                  <td>${banners.length}</td>
+                  <td>${banners.length ? new Date(Math.max(...banners.map(b => new Date(b.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Orders</strong></td>
+                  <td>${orders.length}</td>
+                  <td>${orders.length ? new Date(Math.max(...orders.map(o => new Date(o.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Header Links</strong></td>
+                  <td>${headerLinks.length}</td>
+                  <td>${headerLinks.length ? new Date(Math.max(...headerLinks.map(h => new Date(h.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Hero Images</strong></td>
+                  <td>${heroImages.length}</td>
+                  <td>${heroImages.length ? new Date(Math.max(...heroImages.map(h => new Date(h.updated_at)))).toLocaleString('en-IN') : 'N/A'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    } catch (e) {
+        content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load versions.</p><code>${e.message}</code></div>`;
+    }
 }
 
 async function updateOrderStatus(orderId, status, selectEl) {

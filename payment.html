@@ -342,6 +342,8 @@
     <!-- jsPDF Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
     
     <script>
         const { jsPDF } = window.jspdf;
@@ -351,6 +353,18 @@
         const email = urlParams.get('email');
         const name = urlParams.get('name');
         const orderId = urlParams.get('orderId');
+
+        // Initialize Supabase client
+        let paymentSupabase = null;
+        function initPaymentSupabase() {
+            if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+                if (createClient) {
+                    paymentSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                }
+            }
+        }
+        initPaymentSupabase();
 
         // Load order from localStorage
         let currentOrder = null;
@@ -417,7 +431,7 @@
 
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Update order status
+            // Update order status in localStorage
             const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
             const orderIndex = orders.findIndex(o => o.txnid === txnid);
             if (orderIndex !== -1) {
@@ -426,6 +440,26 @@
                 orders[orderIndex].paid_at = new Date().toISOString();
                 localStorage.setItem('hov_orders', JSON.stringify(orders));
                 currentOrder = orders[orderIndex];
+            }
+
+            // Update order in Supabase
+            if (paymentSupabase && orderId) {
+                try {
+                    const { error } = await paymentSupabase
+                        .from('orders')
+                        .update({
+                            status: 'Confirmed',
+                            payment_status: 'Paid'
+                        })
+                        .eq('id', orderId);
+                    if (error) {
+                        console.error('Error updating order in Supabase:', error);
+                    } else {
+                        console.log('Order updated in Supabase successfully');
+                    }
+                } catch (e) {
+                    console.error('Supabase order update failed:', e);
+                }
             }
 
             // Show success content

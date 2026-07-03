@@ -8,9 +8,21 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS header_links;
 DROP TABLE IF EXISTS hero_images;
+DROP TABLE IF EXISTS system_config;
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- System config table to track global version
+CREATE TABLE system_config (
+    id TEXT PRIMARY KEY DEFAULT 'global',
+    global_version BIGINT DEFAULT 1,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Initialize system config
+INSERT INTO system_config (id, global_version) VALUES ('global', 1)
+ON CONFLICT (id) DO UPDATE SET last_updated = CURRENT_TIMESTAMP;
 
 -- Create products table with proper defaults
 CREATE TABLE products (
@@ -29,7 +41,8 @@ CREATE TABLE products (
     is_trending BOOLEAN DEFAULT false NOT NULL,
     colors TEXT[] DEFAULT '{}',
     sizes TEXT[] DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create categories table
@@ -40,7 +53,8 @@ CREATE TABLE categories (
     icon TEXT DEFAULT 'fas fa-tag',
     banner_image TEXT,
     display_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create banners table
@@ -53,7 +67,8 @@ CREATE TABLE banners (
     cta_link TEXT DEFAULT 'collections.html',
     is_active BOOLEAN DEFAULT true NOT NULL,
     display_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create orders table
@@ -68,7 +83,8 @@ CREATE TABLE orders (
     payment_status TEXT DEFAULT 'Unpaid',
     payu_response JSONB,
     payment_gateway TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create header links table
@@ -79,7 +95,8 @@ CREATE TABLE header_links (
     href TEXT NOT NULL,
     display_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create hero images table
@@ -90,7 +107,8 @@ CREATE TABLE hero_images (
     display_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true NOT NULL,
     duration INTEGER DEFAULT 3000, -- in milliseconds
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Enable Row Level Security
@@ -127,6 +145,53 @@ alter publication supabase_realtime add table banners;
 alter publication supabase_realtime add table orders;
 alter publication supabase_realtime add table header_links;
 alter publication supabase_realtime add table hero_images;
+alter publication supabase_realtime add table system_config;
+
+-- Function to update updated_at column
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Function to increment global version
+CREATE OR REPLACE FUNCTION increment_global_version()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE system_config
+    SET global_version = global_version + 1,
+        last_updated = CURRENT_TIMESTAMP
+    WHERE id = 'global';
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply triggers to all tables
+-- Products
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_products AFTER INSERT OR UPDATE OR DELETE ON products FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
+
+-- Categories
+CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_categories AFTER INSERT OR UPDATE OR DELETE ON categories FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
+
+-- Banners
+CREATE TRIGGER update_banners_updated_at BEFORE UPDATE ON banners FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_banners AFTER INSERT OR UPDATE OR DELETE ON banners FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
+
+-- Orders
+CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_orders AFTER INSERT OR UPDATE OR DELETE ON orders FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
+
+-- Header Links
+CREATE TRIGGER update_header_links_updated_at BEFORE UPDATE ON header_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_header_links AFTER INSERT OR UPDATE OR DELETE ON header_links FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
+
+-- Hero Images
+CREATE TRIGGER update_hero_images_updated_at BEFORE UPDATE ON hero_images FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER increment_version_hero_images AFTER INSERT OR UPDATE OR DELETE ON hero_images FOR EACH STATEMENT EXECUTE FUNCTION increment_global_version();
 
 -- Insert sample data (10 products)
 INSERT INTO products (name, description, price, offer_price, category, image_url, video_url, gallery, videos, is_trending)

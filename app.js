@@ -4,6 +4,7 @@ let wishlist = [];
 let user = JSON.parse(localStorage.getItem('lifestyle_user')) || null;
 let googleClientId = '';
 const FALLBACK_GOOGLE_CLIENT_ID = '1089096335322-36amhoadv49hb4mt8eh6f3rf1f49mag3.apps.googleusercontent.com';
+let currentGlobalVersion = parseInt(localStorage.getItem('current_global_version')) || 1;
 
 // DEBUG: Check Supabase config
 console.log('🔍 window.SUPABASE_URL:', window.SUPABASE_URL);
@@ -82,6 +83,28 @@ async function setupRealtimeSubscriptions() {
     }
 
     console.log('📡 Setting up Realtime subscriptions...');
+
+    // Subscribe to system config (version) changes
+    appSupabase
+        .channel('system-config-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'system_config' },
+            async (payload) => {
+                console.log('🔄 System config changed:', payload);
+                if (payload.new && payload.new.global_version) {
+                    const newVersion = payload.new.global_version;
+                    if (newVersion > currentGlobalVersion) {
+                        console.log(`🆕 New version available: ${newVersion}, reloading...`);
+                        localStorage.setItem('current_global_version', newVersion);
+                        currentGlobalVersion = newVersion;
+                        location.reload(); // Auto reload the page
+                    }
+                }
+            }
+        )
+        .subscribe((status) => {
+            console.log('📡 System config channel status:', status);
+        });
 
     // Subscribe to products changes
     appSupabase
@@ -2016,9 +2039,35 @@ async function completeCheckout() {
         payment_status: 'Pending'
     };
 
+    // Save to localStorage
     const orders = getStore(STORE_KEYS.orders, []);
     orders.unshift(order);
     saveStore(STORE_KEYS.orders, orders);
+
+    // Save to Supabase if available
+    try {
+        const supabaseReady = await loadSupabaseClient();
+        if (supabaseReady && appSupabase) {
+            const { error } = await appSupabase.from('orders').insert({
+                id: orderId,
+                user_id: user?.id || null,
+                items: order.items,
+                total_amount: amount,
+                status: 'Pending',
+                shipping_address: checkout.shipping_address,
+                txnid: txnid,
+                payment_status: 'Unpaid', // Supabase default is 'Unpaid'
+                payment_gateway: 'demo'
+            });
+            if (error) {
+                console.error('Error saving order to Supabase:', error);
+            } else {
+                console.log('Order saved to Supabase successfully');
+            }
+        }
+    } catch (e) {
+        console.error('Supabase order save failed:', e);
+    }
 
     window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;
 }
