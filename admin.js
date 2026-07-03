@@ -473,12 +473,22 @@ function renderLogin() {
     document.getElementById('al-pass').addEventListener('keydown', e => e.key === 'Enter' && handleLogin());
 }
 
-function handleLogin() {
+async function handleLogin() {
     const user = document.getElementById('al-user').value.trim();
     const pass = document.getElementById('al-pass').value;
     
-    // Load admins
-    const admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    // Load admins from Supabase
+    await loadSupabaseClient();
+    let admins = [];
+    if (adminSupabase) {
+        const { data } = await adminSupabase.from('admins').select('*');
+        admins = data || [];
+    }
+    
+    // Fallback to localStorage if Supabase fails
+    if (admins.length === 0) {
+        admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    }
     
     // Check if any admin matches
     const validAdmin = admins.find(a => a.username === user && a.password === pass);
@@ -707,10 +717,24 @@ function renderCookies() {
 // ═══════════════════════════════════════
 // CREATE ADMIN
 // ═══════════════════════════════════════
-function renderCreateAdmin() {
+async function renderCreateAdmin() {
     const content = document.getElementById('admin-content');
-    // Load existing admins
-    let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    
+    // Show loading
+    content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    
+    // Load existing admins from Supabase
+    await loadSupabaseClient();
+    let admins = [];
+    if (adminSupabase) {
+        const { data } = await adminSupabase.from('admins').select('*').order('id', { ascending: true });
+        admins = data || [];
+    }
+    
+    // Fallback to localStorage if Supabase fails
+    if (admins.length === 0) {
+        admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    }
     
     content.innerHTML = `
     <div class="admin-section-card" style="margin-bottom: 30px;">
@@ -746,10 +770,10 @@ function renderCreateAdmin() {
                 <tbody>
                     ${admins.map((a, idx) => `
                       <tr>
-                        <td><strong>${idx + 1}</strong></td>
+                        <td><strong>${a.id || idx + 1}</strong></td>
                         <td>${a.username}</td>
                         <td>
-                            ${a.username !== 'admin' ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteAdmin(${idx})"><i class="fas fa-trash"></i> Delete</button>` : '<span style="opacity: 0.6; font-weight: bold;">Can\'t delete main admin</span>'}
+                            ${a.username !== 'admin' ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteAdmin(${a.id}, ${idx})"><i class="fas fa-trash"></i> Delete</button>` : '<span style="opacity: 0.6; font-weight: bold;">Can\'t delete main admin</span>'}
                         </td>
                       </tr>`).join('')}
                 </tbody>
@@ -765,7 +789,7 @@ function renderCreateAdmin() {
     }
 }
 
-function handleCreateAdmin() {
+async function handleCreateAdmin() {
     const usernameInput = document.getElementById('new-admin-username');
     const passwordInput = document.getElementById('new-admin-password');
     const confirmPasswordInput = document.getElementById('new-admin-confirm-password');
@@ -788,8 +812,15 @@ function handleCreateAdmin() {
         return;
     }
     
-    // Get existing admins
-    let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    // Load existing admins to check for duplicates
+    await loadSupabaseClient();
+    let admins = [];
+    if (adminSupabase) {
+        const { data } = await adminSupabase.from('admins').select('*');
+        admins = data || [];
+    } else {
+        admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+    }
     
     // Check if username already exists
     if (admins.some(a => a.username === username)) {
@@ -797,12 +828,22 @@ function handleCreateAdmin() {
         return;
     }
     
-    // Add new admin
-    admins.push({
-        username: username,
-        password: password // In a real app, we should hash the password!
-    });
-    localStorage.setItem('hov_admins', JSON.stringify(admins));
+    // Try to add new admin to Supabase first
+    if (adminSupabase) {
+        const { error } = await adminSupabase.from('admins').insert([
+            { username: username, password: password }
+        ]);
+        if (error) {
+            console.error('Supabase insert error:', error);
+            showToast('Failed to create admin!', 'error');
+            return;
+        }
+    } else {
+        // Fallback to localStorage
+        let localAdmins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+        localAdmins.push({ username: username, password: password });
+        localStorage.setItem('hov_admins', JSON.stringify(localAdmins));
+    }
     
     // Clear inputs and refresh
     usernameInput.value = '';
@@ -812,11 +853,24 @@ function handleCreateAdmin() {
     renderCreateAdmin();
 }
 
-function deleteAdmin(index) {
-    confirmAction('Are you sure you want to delete this admin?', () => {
-        let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
-        admins.splice(index, 1);
-        localStorage.setItem('hov_admins', JSON.stringify(admins));
+async function deleteAdmin(id, index) {
+    confirmAction('Are you sure you want to delete this admin?', async () => {
+        // Try to delete from Supabase first
+        await loadSupabaseClient();
+        if (adminSupabase && id) {
+            const { error } = await adminSupabase.from('admins').delete().eq('id', id);
+            if (error) {
+                console.error('Supabase delete error:', error);
+                showToast('Failed to delete admin!', 'error');
+                return;
+            }
+        } else {
+            // Fallback to localStorage
+            let admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
+            admins.splice(index, 1);
+            localStorage.setItem('hov_admins', JSON.stringify(admins));
+        }
+        
         showToast('Admin deleted successfully!', 'success');
         renderCreateAdmin();
     });
