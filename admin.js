@@ -640,14 +640,14 @@ async function renderDashboard() {
             const [productsRes, ordersRes, configRes] = await Promise.all([
                 adminSupabase.from('products').select('id, is_trending'),
                 adminSupabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false }),
-                adminSupabase.from('system_config').select('*').single()
+                adminSupabase.from('system_config').select('*').eq('id', 'global').maybeSingle()
             ]);
             if (productsRes.error) throw productsRes.error;
             if (ordersRes.error) throw ordersRes.error;
-            if (configRes.error) throw configRes.error;
-            const products = productsRes.data;
-            orders = ordersRes.data;
-            systemConfig = configRes.data;
+            // If system_config doesn't exist yet, use default
+            systemConfig = configRes.data || { global_version: 1, last_updated: new Date() };
+            const products = productsRes.data || [];
+            orders = ordersRes.data || [];
             stats = {
                 totalSales: orders.filter(o => o.payment_status === 'Paid').reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
                 totalOrders: orders.length,
@@ -2477,7 +2477,7 @@ async function renderVersions() {
         
         if (adminSupabase) {
             const [configRes, productsRes, categoriesRes, bannersRes, ordersRes, headerRes, heroRes] = await Promise.all([
-                adminSupabase.from('system_config').select('*').single(),
+                adminSupabase.from('system_config').select('*').eq('id', 'global').maybeSingle(),
                 adminSupabase.from('products').select('id, name, updated_at'),
                 adminSupabase.from('categories').select('id, name, updated_at'),
                 adminSupabase.from('banners').select('id, title, updated_at'),
@@ -2485,8 +2485,8 @@ async function renderVersions() {
                 adminSupabase.from('header_links').select('id, name, updated_at'),
                 adminSupabase.from('hero_images').select('id, alt, updated_at')
             ]);
-            if (configRes.error) throw configRes.error;
-            systemConfig = configRes.data;
+            // If system_config doesn't exist yet, use default
+            systemConfig = configRes.data || { global_version: 1, last_updated: new Date() };
             products = productsRes.data || [];
             categories = categoriesRes.data || [];
             banners = bannersRes.data || [];
