@@ -188,6 +188,42 @@ async function loadSupabaseClient() {
   }
 }
 
+async function incrementGlobalVersion() {
+  if (!adminSupabase) return;
+  try {
+    // First get current version
+    const { data: currentConfig, error: fetchError } = await adminSupabase
+      .from('system_config')
+      .select('global_version')
+      .eq('id', 'global')
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error('❌ Error fetching system config:', fetchError);
+      return;
+    }
+    
+    const newVersion = (currentConfig?.global_version || 1) + 1;
+    
+    // Update or insert
+    const { error: upsertError } = await adminSupabase
+      .from('system_config')
+      .upsert({
+        id: 'global',
+        global_version: newVersion,
+        last_updated: new Date().toISOString()
+      });
+    
+    if (upsertError) {
+      console.error('❌ Error incrementing global version:', upsertError);
+    } else {
+      console.log('✅ Global version incremented to:', newVersion);
+    }
+  } catch (e) {
+    console.error('❌ Error in incrementGlobalVersion:', e);
+  }
+}
+
 // Helper to convert any blob/file to data URL
 function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
@@ -2380,8 +2416,13 @@ async function renderOrders() {
         await loadSupabaseClient();
         let orders;
         if (adminSupabase) {
+            console.log('📡 Fetching orders from Supabase');
             const { data, error } = await adminSupabase.from('orders').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Error fetching orders:', error);
+                throw error;
+            }
+            console.log('✅ Orders from Supabase:', data);
             orders = data.map(o => ({
                 ...o,
                 items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
@@ -2407,6 +2448,7 @@ async function renderOrders() {
 
         window._allOrders = orders;
     } catch (e) {
+        console.error('❌ Failed to load orders:', e);
         content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load orders.</p><code>${e.message}</code></div>`;
     }
 }
@@ -2567,6 +2609,8 @@ async function updateOrderStatus(orderId, status, selectEl) {
         if (adminSupabase) {
             const { error } = await adminSupabase.from('orders').update({ status }).eq('id', orderId);
             if (error) throw error;
+            // Increment global version to trigger real-time reload
+            await incrementGlobalVersion();
         } else {
             await apiFetch('/api/admin/update-order', {
                 method: 'POST',
@@ -2614,14 +2658,14 @@ function openOrderDetailsModal(order) {
                     <h4 style="margin-bottom: 10px; text-transform: uppercase; font-weight: 900;">Customer Info</h4>
                     <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customer || 'N/A'}</p>
                     <p style="margin: 5px 0;"><strong>Email:</strong> ${order.email || 'N/A'}</p>
-                    <p style="margin: 5px 0;"><strong>Phone:</strong> ${sa.phone || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>Phone:</strong> ${order.phone || sa.phone || 'N/A'}</p>
                 </div>
                 <div style="border: 2px solid #000; padding: 15px;">
                     <h4 style="margin-bottom: 10px; text-transform: uppercase; font-weight: 900;">Shipping Address</h4>
-                    <p style="margin: 5px 0;"><strong>Address:</strong> ${sa.street || 'N/A'}</p>
-                    <p style="margin: 5px 0;"><strong>City:</strong> ${sa.city || 'N/A'}</p>
-                    <p style="margin: 5px 0;"><strong>State:</strong> ${sa.state || 'N/A'}</p>
-                    <p style="margin: 5px 0;"><strong>PIN:</strong> ${sa.pin || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>Address:</strong> ${order.street || sa.street || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>City:</strong> ${order.city || sa.city || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>State:</strong> ${order.state || sa.state || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>PIN:</strong> ${order.pincode || sa.pin || 'N/A'}</p>
                 </div>
             </div>
             
@@ -2728,15 +2772,21 @@ function generateOrderInvoice(order) {
     
     // Order info
     const sa = order.shipping_address || {};
+    const street = order.street || sa.street;
+    const city = order.city || sa.city;
+    const state = order.state || sa.state;
+    const pincode = order.pincode || sa.pin;
+    const phone = order.phone || sa.phone;
+    
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Bill To:', 14, 55);
     doc.setFont('helvetica', 'normal');
     doc.text(order.customer || 'Customer', 14, 62);
     if (order.email) doc.text(order.email, 14, 69);
-    if (sa.street) doc.text(sa.street, 14, 76);
-    if (sa.city) doc.text(`${sa.city}, ${sa.state || ''} - ${sa.pin || ''}`, 14, 83);
-    if (sa.phone) doc.text(`Phone: ${sa.phone}`, 14, 90);
+    if (street) doc.text(street, 14, 76);
+    if (city) doc.text(`${city}, ${state || ''} - ${pincode || ''}`, 14, 83);
+    if (phone) doc.text(`Phone: ${phone}`, 14, 90);
     
     // Right side order details
     doc.setFont('helvetica', 'bold');

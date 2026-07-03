@@ -166,6 +166,42 @@ async function setupRealtimeSubscriptions() {
     console.log('✅ Realtime subscriptions set up!');
 }
 
+async function incrementGlobalVersion() {
+    if (!appSupabase) return;
+    try {
+        // First get current version
+        const { data: currentConfig, error: fetchError } = await appSupabase
+            .from('system_config')
+            .select('global_version')
+            .eq('id', 'global')
+            .maybeSingle();
+        
+        if (fetchError) {
+            console.error('❌ Error fetching system config:', fetchError);
+            return;
+        }
+        
+        const newVersion = (currentConfig?.global_version || 1) + 1;
+        
+        // Update or insert
+        const { error: upsertError } = await appSupabase
+            .from('system_config')
+            .upsert({
+                id: 'global',
+                global_version: newVersion,
+                last_updated: new Date().toISOString()
+            });
+        
+        if (upsertError) {
+            console.error('❌ Error incrementing global version:', upsertError);
+        } else {
+            console.log('✅ Global version incremented to:', newVersion);
+        }
+    } catch (e) {
+        console.error('❌ Error in incrementGlobalVersion:', e);
+    }
+}
+
 // Fetch products preferring Supabase, then API_URL, then localStorage
 async function fetchProductsPrefer() {
     if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
@@ -2048,29 +2084,48 @@ async function completeCheckout() {
     orders.unshift(order);
     saveStore(STORE_KEYS.orders, orders);
 
+    console.log('📦 Starting checkout, order:', order);
+
     // Save to Supabase if available
     try {
         const supabaseReady = await loadSupabaseClient();
+        console.log('✅ Supabase ready?', supabaseReady);
+        console.log('✅ appSupabase?', !!appSupabase);
         if (supabaseReady && appSupabase) {
-            const { error } = await appSupabase.from('orders').insert({
+            const payload = {
                 id: orderId,
                 user_id: user?.id || null,
+                customer: checkout.name,
+                email: checkout.email,
+                phone: checkout.phone || '',
+                street: checkout.shipping_address.street,
+                city: checkout.shipping_address.city,
+                state: checkout.shipping_address.state,
+                pincode: checkout.shipping_address.pin,
                 items: order.items,
                 total_amount: amount,
                 status: 'Pending',
                 shipping_address: checkout.shipping_address,
                 txnid: txnid,
-                payment_status: 'Unpaid', // Supabase default is 'Unpaid'
+                payment_status: 'Pending',
                 payment_gateway: 'demo'
-            });
+            };
+            console.log('🚀 Sending payload to Supabase:', payload);
+            const { data, error } = await appSupabase.from('orders').insert(payload).select();
             if (error) {
-                console.error('Error saving order to Supabase:', error);
+                console.error('❌ Error saving order to Supabase:', error);
+                alert('Error saving order to database: ' + error.message);
             } else {
-                console.log('Order saved to Supabase successfully');
+                console.log('✅ Order saved to Supabase successfully:', data);
+                // Increment global version to trigger real-time reload
+                await incrementGlobalVersion();
             }
+        } else {
+            console.warn('⚠️ Supabase not available, saving only to localStorage');
         }
     } catch (e) {
-        console.error('Supabase order save failed:', e);
+        console.error('❌ Supabase order save failed:', e);
+        alert('Error saving order: ' + e.message);
     }
 
     window.location.href = `payment.html?txnid=${txnid}&amount=${amount}&email=${encodeURIComponent(checkout.email)}&name=${encodeURIComponent(checkout.name)}&orderId=${encodeURIComponent(orderId)}`;

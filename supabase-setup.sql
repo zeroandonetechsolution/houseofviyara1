@@ -75,14 +75,22 @@ CREATE TABLE banners (
 CREATE TABLE orders (
     id TEXT PRIMARY KEY,
     user_id TEXT,
+    customer TEXT,
+    email TEXT,
+    phone TEXT,
+    street TEXT,
+    city TEXT,
+    state TEXT,
+    pincode TEXT,
     items JSONB,
     total_amount NUMERIC,
     status TEXT DEFAULT 'Pending',
     shipping_address JSONB,
     txnid TEXT,
-    payment_status TEXT DEFAULT 'Unpaid',
+    payment_status TEXT DEFAULT 'Pending',
     payu_response JSONB,
     payment_gateway TEXT,
+    paid_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
