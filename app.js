@@ -488,26 +488,26 @@ const API_URL = ''; // no backend API calls in static mode
 
 // Default product catalog for local mode.
 const DEFAULT_PRODUCTS = [
-    { id: 1, name: 'Floral Maxi Dress', description: 'Elegant floor-length maxi with delicate floral print.', price: 4500, offer_price: 4500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true },
-    { id: 2, name: 'Satin Evening Maxi', description: 'Luxurious satin maxi perfect for special occasions.', price: 6200, offer_price: 6200, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
-    { id: 3, name: 'Cotton Summer Maxi', description: 'Lightweight breathable cotton maxi for sunny days.', price: 2800, offer_price: 2800, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false },
-    { id: 4, name: 'Cord Set - Pastel', description: 'Comfortable two-piece cord set in soft pastel colors.', price: 3500, offer_price: 3500, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true },
-    { id: 5, name: 'Cord Set - Printed', description: 'Trendy printed cord set for casual outings.', price: 1999, offer_price: 1999, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false },
-    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true },
-    { id: 7, name: 'Floral Anarkali Kurti', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false },
-    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false },
-    { id: 9, name: 'Embroidered Silk Kurti', description: 'Festive wear silk kurti with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false },
-    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true },
-    { id: 11, name: 'Kurti Set with Dupatta', description: 'Complete kurti set with matching dupatta and bottoms.', price: 4500, offer_price: 4500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true },
-    { id: 12, name: 'Party Wear Kurti Set', description: 'Glitzy kurti set perfect for parties and celebrations.', price: 5200, offer_price: 5200, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false },
-    { id: 13, name: 'Cotton Kurti Set', description: 'Breathable cotton kurti set for daily wear.', price: 2800, offer_price: 2800, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false },
-    { id: 14, name: 'Printed Kurti Set', description: 'Vibrant printed kurti set with contrasting dupatta.', price: 3600, offer_price: 3600, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false },
-    { id: 15, name: 'Embroidered Kurti Set', description: 'Premium kurti set with intricate embroidery work.', price: 6500, offer_price: 6500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false },
-    { id: 16, name: 'Bohemian Maxi', description: 'Free-spirited bohemian style maxi dress.', price: 3500, offer_price: 3500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true },
-    { id: 17, name: 'Cord Set - Neon', description: 'Bold neon cord set for a fun, trendy look.', price: 2800, offer_price: 2800, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false }
+    { id: 1, name: 'Floral Maxi Dress', description: 'Elegant floor-length maxi with delicate floral print.', price: 4500, offer_price: 4500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true, shipping_price: 150 },
+    { id: 2, name: 'Satin Evening Maxi', description: 'Luxurious satin maxi perfect for special occasions.', price: 6200, offer_price: 6200, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false, shipping_price: 200 },
+    { id: 3, name: 'Cotton Summer Maxi', description: 'Lightweight breathable cotton maxi for sunny days.', price: 2800, offer_price: 2800, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false, shipping_price: 100 },
+    { id: 4, name: 'Cord Set - Pastel', description: 'Comfortable two-piece cord set in soft pastel colors.', price: 3500, offer_price: 3500, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true, shipping_price: 120 },
+    { id: 5, name: 'Cord Set - Printed', description: 'Trendy printed cord set for casual outings.', price: 1999, offer_price: 1999, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false, shipping_price: 80 },
+    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true, shipping_price: 90 },
+    { id: 7, name: 'Floral Anarkali Kurti', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false, shipping_price: 100 },
+    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false, shipping_price: 70 },
+    { id: 9, name: 'Embroidered Silk Kurti', description: 'Festive wear silk kurti with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false, shipping_price: 130 },
+    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true, shipping_price: 85 },
+    { id: 11, name: 'Kurti Set with Dupatta', description: 'Complete kurti set with matching dupatta and bottoms.', price: 4500, offer_price: 4500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true, shipping_price: 150 },
+    { id: 12, name: 'Party Wear Kurti Set', description: 'Glitzy kurti set perfect for parties and celebrations.', price: 5200, offer_price: 5200, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false, shipping_price: 180 },
+    { id: 13, name: 'Cotton Kurti Set', description: 'Breathable cotton kurti set for daily wear.', price: 2800, offer_price: 2800, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false, shipping_price: 100 },
+    { id: 14, name: 'Printed Kurti Set', description: 'Vibrant printed kurti set with contrasting dupatta.', price: 3600, offer_price: 3600, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false, shipping_price: 110 },
+    { id: 15, name: 'Embroidered Kurti Set', description: 'Premium kurti set with intricate embroidery work.', price: 6500, offer_price: 6500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false, shipping_price: 200 },
+    { id: 16, name: 'Bohemian Maxi', description: 'Free-spirited bohemian style maxi dress.', price: 3500, offer_price: 3500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true, shipping_price: 130 },
+    { id: 17, name: 'Cord Set - Neon', description: 'Bold neon cord set for a fun, trendy look.', price: 2800, offer_price: 2800, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false, shipping_price: 95 }
 ];
 // Sample product for new Pure Cotton category
-DEFAULT_PRODUCTS.push({ id: 18, name: 'Pure Cotton Summer Dress', description: 'Soft 100% cotton dress, breathable and lightweight.', price: 1999, offer_price: 1999, category: 'pure-cotton', image_url: 'https://images.unsplash.com/photo-1520975908598-8b3d1d3f9e2c?w=800&q=80', is_trending: false });
+DEFAULT_PRODUCTS.push({ id: 18, name: 'Pure Cotton Summer Dress', description: 'Soft 100% cotton dress, breathable and lightweight.', price: 1999, offer_price: 1999, category: 'pure-cotton', image_url: 'https://images.unsplash.com/photo-1520975908598-8b3d1d3f9e2c?w=800&q=80', is_trending: false, shipping_price: 90 });
 const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
 
 const STORE_KEYS = {
@@ -1270,7 +1270,7 @@ function renderToDOM(products, container, category) {
                 <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
                     ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
                 </button>
-                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}', ${p.shipping_price || 0})">
                     <i class="fas fa-plus"></i> ADD TO BAG
                 </button>
             </div>
@@ -1281,6 +1281,9 @@ function renderToDOM(products, container, category) {
                 <div class="product-price">
                     <span class="current-price">₹${p.offer_price || p.price}</span>
                     ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
+                </div>
+                <div class="product-shipping" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #666;">
+                    <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
                 </div>
             </div>
         </div>
@@ -1522,7 +1525,7 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                 <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
                     ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
                 </button>
-                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}')">
+                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${p.offer_price || p.price}, '${optimizedImg}', ${p.shipping_price || 0})">
                     <i class="fas fa-plus"></i> ADD TO BAG
                 </button>
             </div>
@@ -1532,6 +1535,9 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                 <div class="product-price">
                     <span class="current-price">₹${p.offer_price || p.price}</span>
                     ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
+                </div>
+                <div class="product-shipping" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #666;">
+                    <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
                 </div>
             </div>
         </div>
@@ -1623,6 +1629,9 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                     <span class="pdp-current-price">₹${product.offer_price || product.price}</span>
                     ${product.offer_price && product.offer_price < product.price ? `<span class="pdp-original-price">₹${product.price}</span><span class="pdp-discount">SAVE ₹${product.price - product.offer_price}</span>` : ''}
                 </div>
+                <div class="pdp-shipping-info" style="margin-top: 15px; padding: 10px 0; font-size: 1rem; font-weight: 700;">
+                    <i class="fas fa-truck" style="color: #00D8FF;"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
+                </div>
                 
                 <div class="pdp-short-desc">
                     <div class="pdp-description-title">Description</div>
@@ -1653,10 +1662,10 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                             <button onclick="updatePdpQty(1)"><i class="fas fa-plus"></i></button>
                         </div>
                         <div class="pdp-cta-buttons">
-                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
+                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
                                 <i class="fas fa-shopping-cart"></i> ADD TO BAG
                             </button>
-                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
+                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${product.offer_price || product.price}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})">
                                 BUY NOW <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
@@ -1810,7 +1819,7 @@ window.selectPdpVariant = function(productId, color, size) {
     renderProductDetails(product, document.getElementById('pdp-content') || document.getElementById('pdp-main-content'));
 }
 
-window.addFromPdp = function(id, name, price, image, color, size, stock) {
+window.addFromPdp = function(id, name, price, image, shipping_price, color, size, stock) {
     const qty = parseInt(document.getElementById('pdp-qty').value) || 1;
     if (stock !== undefined && stock <= 0) {
         alert('Selected variant is out of stock.');
@@ -1820,7 +1829,7 @@ window.addFromPdp = function(id, name, price, image, color, size, stock) {
     if (existing) {
         existing.quantity += qty;
     } else {
-        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}` });
+        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}`, shipping_price: shipping_price });
     }
     saveCart();
     updateCartBadge();
@@ -1844,12 +1853,12 @@ window.addFromPdp = function(id, name, price, image, color, size, stock) {
 }
 
 // --- Cart Logic ---
-function addToCart(id, name, price, image, color = 'Default', size = 'One Size') {
+function addToCart(id, name, price, image, shipping_price = 0, color = 'Default', size = 'One Size') {
     const existing = cart.find(item => item.id === id && item.variantColor === color && item.variantSize === size);
     if (existing) {
         existing.quantity += 1;
     } else {
-        cart.push({ id, name, price, image, quantity: 1, variantColor: color, variantSize: size, variantLabel: `${color} / ${size}` });
+        cart.push({ id, name, price, image, quantity: 1, variantColor: color, variantSize: size, variantLabel: `${color} / ${size}`, shipping_price: shipping_price });
     }
     saveCart();
     updateCartBadge();
@@ -1861,7 +1870,7 @@ function saveCart() {
     saveUserScopedData(AUTH_KEYS.cart, cart);
 }
 
-window.buyNowFromPdp = function(id, name, price, image, color, size, stock) {
+window.buyNowFromPdp = function(id, name, price, image, shipping_price, color, size, stock) {
     const qty = parseInt(document.getElementById('pdp-qty').value) || 1;
     if (stock !== undefined && stock <= 0) {
         alert('Selected variant is out of stock.');
@@ -1871,7 +1880,7 @@ window.buyNowFromPdp = function(id, name, price, image, color, size, stock) {
     if (existing) {
         existing.quantity += qty;
     } else {
-        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}` });
+        cart.push({ id, name, price, image, quantity: qty, variantColor: color || 'Default', variantSize: size || 'One Size', variantLabel: `${color || 'Default'} / ${size || 'One Size'}`, shipping_price: shipping_price });
     }
     saveCart();
     updateCartBadge();
@@ -2038,7 +2047,7 @@ function renderCartItems() {
             <img src="${item.image}" alt="${item.name}">
             <div class="cart-item-info">
                 <h4>${item.name}</h4>
-                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price} x ${item.quantity}</p>
+                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price} x ${item.quantity}${item.shipping_price ? `<br><small><i class="fas fa-truck"></i> Shipping: ₹${item.shipping_price}/item</small>` : ''}</p>
                 <div class="cart-item-qty">
                     <button onclick="changeQty(${index}, -1)"><i class="fas fa-minus"></i></button>
                     <span>${item.quantity}</span>
@@ -2049,7 +2058,9 @@ function renderCartItems() {
         </div>
     `).join('');
 
-    const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const totalShipping = cart.reduce((acc, item) => acc + (item.shipping_price || 0) * item.quantity, 0);
+    const total = subtotal + totalShipping;
     if (totalPrice) totalPrice.innerText = `₹${total}`;
 }
 
@@ -2112,7 +2123,9 @@ async function completeCheckout() {
     closeCheckoutModal();
     closeCart();
 
-    const amount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 100;
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const totalShipping = cart.reduce((acc, item) => acc + (item.shipping_price || 0) * item.quantity, 0);
+    const amount = subtotal + totalShipping;
     const txnid = 'TXN' + Date.now();
     const orderId = `LS-${Date.now()}`;
     const order = {
@@ -2199,13 +2212,15 @@ function renderCartPage() {
         return;
     }
 
-    const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const totalShipping = cart.reduce((acc, item) => acc + (item.shipping_price || 0) * item.quantity, 0);
+    const total = subtotal + totalShipping;
     const itemsHtml = cart.map((item, index) => `
         <div class="cart-page-item">
             <img src="${item.image}" alt="${item.name}">
             <div class="cart-page-item-info">
                 <h4>${item.name}</h4>
-                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price}</p>
+                <p>${item.variantLabel ? `${item.variantLabel} • ` : ''}₹${item.price}${item.shipping_price ? ` <small><i class="fas fa-truck"></i> ₹${item.shipping_price}/item</small>` : ''}</p>
                 <div class="cart-item-qty" style="margin-top:10px;">
                     <button onclick="changeQty(${index}, -1)"><i class="fas fa-minus"></i></button>
                     <span>${item.quantity}</span>
@@ -2213,7 +2228,7 @@ function renderCartPage() {
                 </div>
             </div>
             <div class="cart-page-item-actions">
-                <span class="cart-page-item-total">₹${item.price * item.quantity}</span>
+                <span class="cart-page-item-total">₹${(item.price * item.quantity) + (item.shipping_price || 0) * item.quantity}</span>
                 <button class="remove-item" onclick="removeItem(${index})"><i class="fas fa-times"></i></button>
             </div>
         </div>
@@ -2238,15 +2253,15 @@ function renderCartPage() {
                 <h3>Order Summary</h3>
                 <div style="display:flex; justify-content:space-between; margin: 15px 0; font-weight: 700;">
                     <span>Subtotal</span>
-                    <span>₹${total}</span>
+                    <span>₹${subtotal}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom: 20px; font-weight: 700;">
                     <span>Shipping</span>
-                    <span>₹100</span>
+                    <span>₹${totalShipping}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding: 20px; background: var(--accent-yellow); font-size: 1.8rem; font-weight: 900; border: 4px solid #000;">
                     <span>Total</span>
-                    <span>₹${total + 100}</span>
+                    <span>₹${total}</span>
                 </div>
                 <button class="btn btn-primary" id="cart-page-checkout-btn" style="width:100%; margin-top: 25px;">Proceed to Checkout</button>
             </aside>
@@ -2315,18 +2330,25 @@ window.openCheckoutModal = function() {
     
     // Render items
     const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const total = subtotal + 100;
+    const totalShipping = cart.reduce((acc, item) => acc + (item.shipping_price || 0) * item.quantity, 0);
+    const total = subtotal + totalShipping;
     
     if (itemsContainer) {
         itemsContainer.innerHTML = cart.map(item => `
             <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
                 <span>${item.name} (${item.variantLabel || 'Default'}) x ${item.quantity}</span>
-                <span>₹${item.price * item.quantity}</span>
+                <span>₹${item.price * item.quantity}${item.shipping_price ? ` (Shipping: ₹${item.shipping_price * item.quantity})` : ''}</span>
             </div>
         `).join('');
     }
     
     if (subtotalEl) subtotalEl.innerText = `₹${subtotal}`;
+    // Update shipping display in checkout modal (we need to update index.html too)
+    const shippingEl = document.querySelector('#checkout-modal [data-shipping]') || 
+                       document.querySelector('#checkout-modal').querySelectorAll('div')[2];
+    if (document.getElementById('checkout-shipping')) {
+        document.getElementById('checkout-shipping').innerText = `₹${totalShipping}`;
+    }
     if (grandtotalEl) grandtotalEl.innerText = `₹${total}`;
     
     modal.classList.add('active');

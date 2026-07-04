@@ -1199,6 +1199,9 @@ function renderProductGrid(products) {
             <span class="apc-offer">₹${p.offer_price || p.price}</span>
             ${p.offer_price && p.offer_price < p.price ? `<span class="apc-original">₹${p.price}</span>` : ''}
           </div>
+          <div class="apc-shipping" style="margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #666;">
+            <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
+          </div>
           <div class="apc-actions">
             <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="openEditProduct(${p.id})"><i class="fas fa-edit"></i> Edit</button>
             <button class="admin-btn admin-btn-sm ${p.is_trending ? 'admin-btn-fire active-fire' : 'admin-btn-outline-fire'}" onclick="toggleTrending(${p.id}, ${p.is_trending ? 0 : 1})">
