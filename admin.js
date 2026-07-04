@@ -463,7 +463,12 @@ function renderLogin() {
         </div>
         <div class="afield">
           <label>PASSWORD</label>
-          <input type="password" id="al-pass" placeholder="••••••••" autocomplete="current-password">
+          <div class="password-input-wrap">
+            <input type="password" id="al-pass" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('al-pass', this)">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
         <button class="admin-btn admin-btn-primary" id="al-btn" onclick="handleLogin()">SIGN IN</button>
         <p class="admin-login-hint"><a href="index.html">← Back to Store</a></p>
@@ -471,6 +476,20 @@ function renderLogin() {
     </div>`;
 
     document.getElementById('al-pass').addEventListener('keydown', e => e.key === 'Enter' && handleLogin());
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 }
 
 async function handleLogin() {
@@ -748,11 +767,21 @@ async function renderCreateAdmin() {
             </div>
             <div class="aform-group">
                 <label>Password <span style="color: var(--primary-color);">*</span></label>
-                <input class="aform-input" type="password" id="new-admin-password" placeholder="Enter password">
+                <div class="password-input-wrap">
+                    <input class="aform-input" type="password" id="new-admin-password" placeholder="Enter password">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new-admin-password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <div class="aform-group">
                 <label>Confirm Password <span style="color: var(--primary-color);">*</span></label>
-                <input class="aform-input" type="password" id="new-admin-confirm-password" placeholder="Confirm password">
+                <div class="password-input-wrap">
+                    <input class="aform-input" type="password" id="new-admin-confirm-password" placeholder="Confirm password">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new-admin-confirm-password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <div class="aform-actions" style="justify-content: flex-start;">
                 <button class="admin-btn admin-btn-primary" id="create-admin-btn"><i class="fas fa-plus"></i> Create Admin</button>
@@ -881,12 +910,15 @@ async function deleteAdmin(id, index) {
 // ═══════════════════════════════════════
 function renderCustomers() {
     const content = document.getElementById('admin-content');
-    // Sample customers data (in real app, would fetch from DB)
-    const customers = [
-        {id: 1, name: "John Doe", email: "john@example.com", phone: "+91 9876543210", orders: 3, totalSpent: 4500, joined: new Date(Date.now()-30*86400000).toLocaleDateString('en-IN')},
-        {id: 2, name: "Jane Smith", email: "jane@example.com", phone: "+91 9876543211", orders: 5, totalSpent: 8900, joined: new Date(Date.now()-60*86400000).toLocaleDateString('en-IN')},
-        {id: 3, name: "Guest User", email: "-", phone: "-", orders: 0, totalSpent: 0, joined: new Date(Date.now()-7*86400000).toLocaleDateString('en-IN')}
-    ];
+    // Get sample customers from localStorage or initialize
+    if (!localStorage.getItem('sample_customers')) {
+        localStorage.setItem('sample_customers', JSON.stringify([
+            {id: 1, name: "John Doe", email: "john@example.com", phone: "+91 9876543210", orders: 3, totalSpent: 4500, joined: new Date(Date.now()-30*86400000).toLocaleDateString('en-IN')},
+            {id: 2, name: "Jane Smith", email: "jane@example.com", phone: "+91 9876543211", orders: 5, totalSpent: 8900, joined: new Date(Date.now()-60*86400000).toLocaleDateString('en-IN')},
+            {id: 3, name: "Guest User", email: "-", phone: "-", orders: 0, totalSpent: 0, joined: new Date(Date.now()-7*86400000).toLocaleDateString('en-IN')}
+        ]));
+    }
+    const customers = JSON.parse(localStorage.getItem('sample_customers'));
     
     content.innerHTML = `
     <div class="admin-stats-grid">
@@ -918,7 +950,7 @@ function renderCustomers() {
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Total Spent</th><th>Joined</th></tr></thead>
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Total Spent</th><th>Joined</th><th>Actions</th></tr></thead>
           <tbody>
             ${customers.map(c => `
               <tr>
@@ -929,12 +961,27 @@ function renderCustomers() {
                 <td><span class="status-badge status-confirmed">${c.orders}</span></td>
                 <td><strong>₹${c.totalSpent}</strong></td>
                 <td>${c.joined}</td>
+                <td>
+                  <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteCustomer(${c.id})">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </td>
               </tr>`).join('')}
           </tbody>
         </table>
       </div>
     </div>
     `;
+}
+
+function deleteCustomer(customerId) {
+    confirmAction('Are you sure you want to delete this customer?', () => {
+        let customers = JSON.parse(localStorage.getItem('sample_customers') || '[]');
+        customers = customers.filter(c => c.id !== customerId);
+        localStorage.setItem('sample_customers', JSON.stringify(customers));
+        showToast('Customer deleted successfully!', 'success');
+        renderCustomers();
+    });
 }
 
 // ═══════════════════════════════════════
@@ -1238,6 +1285,10 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
         <div class="aform-group">
           <label>Offer Price (₹)</label>
           <input class="aform-input" id="pf-offer" type="number" value="${p.offer_price || ''}" placeholder="3999">
+        </div>
+        <div class="aform-group">
+          <label>Shipping Price (₹)</label>
+          <input class="aform-input" id="pf-shipping" type="number" value="${p.shipping_price || ''}" placeholder="0">
         </div>
       </div>
       <div class="aform-row">
@@ -1789,6 +1840,7 @@ async function handleAddProduct() {
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
                 offer_price: Number(document.getElementById('pf-offer').value || price),
+                shipping_price: Number(document.getElementById('pf-shipping').value || 0),
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
@@ -1809,6 +1861,7 @@ async function handleAddProduct() {
                     description: document.getElementById('pf-desc').value,
                     price: Number(price),
                     offer_price: Number(document.getElementById('pf-offer').value || price),
+                    shipping_price: Number(document.getElementById('pf-shipping').value || 0),
                     category: document.getElementById('pf-cat').value,
                     stock: Number(document.getElementById('pf-stock').value || 10),
                     image_url,
@@ -1921,6 +1974,7 @@ async function handleEditProduct(id) {
                 description: document.getElementById('pf-desc').value,
                 price: Number(price),
                 offer_price: Number(document.getElementById('pf-offer').value || price),
+                shipping_price: Number(document.getElementById('pf-shipping').value || 0),
                 category: document.getElementById('pf-cat').value,
                 stock: Number(document.getElementById('pf-stock').value || 10),
                 image_url,
@@ -1962,6 +2016,7 @@ async function handleEditProduct(id) {
                     description: document.getElementById('pf-desc').value,
                     price: Number(price),
                     offer_price: Number(document.getElementById('pf-offer').value || price),
+                    shipping_price: Number(document.getElementById('pf-shipping').value || 0),
                     category: document.getElementById('pf-cat').value,
                     stock: Number(document.getElementById('pf-stock').value || 10),
                     image_url,
@@ -2790,12 +2845,33 @@ function renderOrdersTable(orders) {
                       <i class="fas fa-file-invoice"></i> Invoice
                     </button>
                   ` : ''}
+                  <button class="admin-btn admin-btn-sm admin-btn-danger" onclick='deleteOrder("${o.id}")'>
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
                 </td>
               </tr>`).join('')}
           </tbody>
         </table>
       </div>
     </div>`;
+}
+
+async function deleteOrder(orderId) {
+    confirmAction('Are you sure you want to delete this order? This action cannot be undone.', async () => {
+        try {
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('orders').delete().eq('id', orderId);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' });
+            }
+            showToast('Order deleted successfully!', 'success');
+            renderOrders();
+        } catch (e) {
+            showToast('Failed to delete order: ' + e.message, 'error');
+        }
+    });
 }
 
 // ═══════════════════════════════════════

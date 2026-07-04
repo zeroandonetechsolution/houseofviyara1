@@ -32,6 +32,7 @@ CREATE TABLE products (
     description TEXT,
     price NUMERIC,
     offer_price NUMERIC,
+    shipping_price NUMERIC,
     category TEXT,
     image_url TEXT,
     video_url TEXT,
