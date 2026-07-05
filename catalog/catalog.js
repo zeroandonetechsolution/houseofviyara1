@@ -459,6 +459,9 @@ function createProductCard(product) {
                 </div>
                 ${discount > 0 ? `<div class="product-discount">-${discount}%</div>` : ''}
             </div>
+            <div class="product-shipping">
+                <i class="fas fa-truck"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
+            </div>
         </div>
     `;
     
@@ -811,6 +814,9 @@ function renderCatalogProductDetails(product, targetContainer, allProducts = [])
                 <div class="pdp-price-container">
                     <span class="pdp-current-price">₹${product.offer_price || product.price}</span>
                     ${product.offer_price && product.offer_price < product.price ? `<span class="pdp-original-price">₹${product.price}</span><span class="pdp-discount">SAVE ₹${product.price - product.offer_price}</span>` : ''}
+                </div>
+                <div class="pdp-shipping-info">
+                    <i class="fas fa-truck"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
                 </div>
                 
                 <div class="pdp-short-desc">

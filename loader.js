@@ -88,7 +88,12 @@
             document.documentElement.classList.add('is-loaded');
             if (preloader) {
                 preloader.classList.add('fade-out');
-                preloader.addEventListener('transitionend', () => preloader.remove(), { once: true });
+                // Remove preloader after a timeout even if transitionend doesn't fire
+                setTimeout(() => {
+                    if (preloader && preloader.parentNode) {
+                        preloader.remove();
+                    }
+                }, 600);
             }
             initLazyMedia();
             initPageTransitions();
@@ -247,7 +252,52 @@
     }
 
     scheduleHide();
+    
+    // Emergency fallback: ensure preloader hides after max time
+    setTimeout(() => {
+        if (!hidden) {
+            console.log('Emergency preloader hide triggered');
+            hidePreloader();
+        }
+    }, 2500);
+    
+    // Also ensure page loads when window is fully loaded
+    window.addEventListener('load', () => {
+        if (!hidden) {
+            console.log('Window load triggered preloader hide');
+            hidePreloader();
+        }
+    });
 
+    // Clear any stuck page transition overlay
+    function clearAllStuckStates() {
+        document.documentElement.classList.remove('is-loading');
+        document.documentElement.classList.add('is-loaded');
+        
+        const transition = document.getElementById('page-transition');
+        if (transition) {
+            transition.classList.remove('active');
+        }
+        
+        const preloaderEl = document.getElementById('preloader');
+        if (preloaderEl && !preloaderEl.classList.contains('fade-out')) {
+            preloaderEl.classList.add('fade-out');
+            setTimeout(() => {
+                if (preloaderEl && preloaderEl.parentNode) {
+                    preloaderEl.remove();
+                }
+            }, 600);
+        }
+    }
+    
+    clearAllStuckStates();
+    
+    // Also clear on pageshow event (handles back/forward navigation from cache)
+    window.addEventListener('pageshow', () => {
+        clearAllStuckStates();
+        if (!hidden) hidePreloader();
+    });
+    
     // Public API for app.js
     window.LifeStyleLoader = {
         optimizeImageUrl,

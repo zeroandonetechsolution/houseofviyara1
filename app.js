@@ -1225,6 +1225,13 @@ async function renderProducts(searchTerm = '') {
         if (window.location.pathname.includes('ethnic')) category = 'ethnic';
         if (window.location.pathname.includes('party')) category = 'party';
         if (window.location.pathname.includes('casual')) category = 'casual';
+        if (window.location.pathname.includes('maxis')) category = 'maxis';
+        if (window.location.pathname.toLowerCase().includes('cord sets')) category = 'cord-sets';
+        if (window.location.pathname.toLowerCase().includes('cord-sets')) category = 'cord-sets';
+        if (window.location.pathname.includes('kurti')) category = 'kurti';
+        if (window.location.pathname.toLowerCase().includes('kurti sets')) category = 'kurti-sets';
+        if (window.location.pathname.includes('kurti-sets')) category = 'kurti-sets';
+        if (window.location.pathname.includes('pure-cotton')) category = 'pure-cotton';
     }
 
     const isTrendingSection = productList.closest('#trending') !== null;
@@ -1282,9 +1289,9 @@ function renderToDOM(products, container, category) {
                     <span class="current-price">₹${p.offer_price || p.price}</span>
                     ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
                 </div>
-                <div class="product-shipping" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #666;">
-                    <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
-                </div>
+                <div class="product-shipping">
+                <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
+            </div>
             </div>
         </div>
     `}).join('');
@@ -1536,9 +1543,9 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                     <span class="current-price">₹${p.offer_price || p.price}</span>
                     ${p.offer_price && p.offer_price < p.price ? `<span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.price}</span>` : ''}
                 </div>
-                <div class="product-shipping" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #666;">
-                    <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
-                </div>
+                <div class="product-shipping">
+                <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
+            </div>
             </div>
         </div>
     `}).join('') : '';
@@ -1629,8 +1636,8 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                     <span class="pdp-current-price">₹${product.offer_price || product.price}</span>
                     ${product.offer_price && product.offer_price < product.price ? `<span class="pdp-original-price">₹${product.price}</span><span class="pdp-discount">SAVE ₹${product.price - product.offer_price}</span>` : ''}
                 </div>
-                <div class="pdp-shipping-info" style="margin-top: 15px; padding: 10px 0; font-size: 1rem; font-weight: 700;">
-                    <i class="fas fa-truck" style="color: #00D8FF;"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
+                <div class="pdp-shipping-info">
+                    <i class="fas fa-truck"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
                 </div>
                 
                 <div class="pdp-short-desc">
