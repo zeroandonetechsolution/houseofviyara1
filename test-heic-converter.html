@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEIC/HEIF Converter Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #d4a75c;
+            --bg: #f4f4f4;
+            --card-bg: white;
+            --text: #222;
+            --text-muted: #666;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: var(--text);
+            margin: 0 0 0.5rem;
+        }
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        .dropzone {
+            border: 3px dashed #ddd;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        .dropzone:hover, .dropzone.drag-over {
+            border-color: var(--primary);
+            background: rgba(212,167,92,0.05);
+        }
+        .dropzone i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+        .dropzone:hover i, .dropzone.drag-over i {
+            color: var(--primary);
+        }
+        .options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .option-group label {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .option-group select, .option-group input {
+            padding: 0.75rem 1rem;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+        }
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #c4944c;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #eee;
+            color: var(--text);
+        }
+        .btn-secondary:hover {
+            background: #ddd;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .result-item {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+        .result-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .result-item-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .result-item-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+        .result-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-image"></i> HEIC/HEIF Converter Test</h1>
+            <p>100% Client-Side | No Server Required</p>
+        </div>
+
+        <div class="card">
+            <div class="dropzone" id="dropzone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Drop HEIC/HEIF Images Here</h3>
+                <p>Or click to browse</p>
+                <input type="file" id="fileInput" multiple accept=".heic,.heif" hidden>
+            </div>
+
+            <div class="options">
+                <div class="option-group">
+                    <label for="formatSelect">Output Format</label>
+                    <select id="formatSelect">
+                        <option value="jpeg">JPEG (Recommended)</option>
+                        <option value="png">PNG</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="qualityRange">Quality (JPEG Only)</label>
+                    <input type="range" id="qualityRange" min="0.1" max="1" step="0.1" value="0.9">
+                    <span id="qualityValue">0.9</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="convertBtn">
+                    <i class="fas fa-magic"></i> Convert All
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display: none;">
+            <h2 style="margin-top: 0;"><i class="fas fa-check-circle"></i> Converted Images</h2>
+            <div class="results" id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <!-- Load converters with multiple CDN fallbacks! -->
+    <script>
+        window.loadHeic2Any = async function() {
+            if (typeof window.heic2any !== 'undefined') {
+                console.log('✅ heic2any already loaded!');
+                return true;
+            }
+            const cdns = [
+                'https://unpkg.com/heic2any@0.0.10/dist/heic2any.min.js',
+                'https://cdn.jsdelivr.net/npm/heic2any@0.0.10/dist/heic2any.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.10/heic2any.min.js'
+            ];
+            for (const url of cdns) {
+                console.log('📦 Trying to load heic2any from:', url);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    if (typeof window.heic2any !== 'undefined') {
+                        console.log('✅ heic2any loaded from:', url);
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to load from:', url);
+                }
+            }
+            console.error('❌ All CDNs failed to load heic2any!');
+            return false;
+        };
+
+        window.loadLibHeif = async function() {
+            if (typeof window.libheif !== 'undefined') {
+                console.log('✅ libheif already loaded!');
+                return true;
+            }
+            const cdns = [
+                'https://cdn.jsdelivr.net/npm/libheif-js@1.15.1/libheif.min.js',
+                'https://unpkg.com/libheif-js@1.15.1/libheif.min.js'
+            ];
+            for (const url of cdns) {
+                console.log('📦 Trying to load libheif from:', url);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    if (typeof window.libheif !== 'undefined') {
+                        console.log('✅ libheif loaded from:', url);
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to load from:', url);
+                }
+            }
+            console.error('❌ All CDNs failed to load libheif!');
+            return false;
+        };
+
+        window.convertWithLibheif = async function(file, format, quality) {
+            console.log('📸 Using libheif for conversion');
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const decoder = new window.libheif.HeifDecoder();
+                        const images = decoder.decode(new Uint8Array(reader.result));
+                        if (!images || images.length === 0) {
+                            reject(new Error('No images in HEIC file'));
+                            return;
+                        }
+
+                        const img = images[0];
+                        const w = img.get_width();
+                        const h = img.get_height();
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+
+                        const rgba = new Uint8ClampedArray(w * h * 4);
+                        img.display(rgba, function(result) {
+                            if (result === window.libheif.heif_error_code.Ok) {
+                                const imgData = new ImageData(rgba, w, h);
+                                ctx.putImageData(imgData, 0, 0);
+                                canvas.toBlob(function(blob) {
+                                    resolve({
+                                        blob,
+                                        fileName: file.name.replace(/\.(heic|heif)$/i, `.${format}`)
+                                    });
+                                }, `image/${format}`, format === 'jpeg' ? quality : undefined);
+                            } else {
+                                reject(new Error('libheif display failed'));
+                            }
+                        });
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        };
+    </script>
+    <script>
+        // --- DOM Elements ---
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const formatSelect = document.getElementById('formatSelect');
+        const qualityRange = document.getElementById('qualityRange');
+        const qualityValue = document.getElementById('qualityValue');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        // --- State ---
+        let uploadedFiles = [];
+
+        // --- Event Listeners ---
+        qualityRange.addEventListener('input', () => {
+            qualityValue.textContent = qualityRange.value;
+        });
+
+        // Dropzone click
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadedFiles = [...uploadedFiles, ...Array.from(e.target.files)];
+                console.log('📦 Files added:', uploadedFiles.map(f => f.name));
+            }
+        });
+
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults);
+            document.body.addEventListener(eventName, preventDefaults);
+        });
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.add('drag-over'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'));
+        });
+        dropzone.addEventListener('drop', (e) => {
+            const files = Array.from(e.dataTransfer.files);
+            uploadedFiles = [...uploadedFiles, ...files];
+            console.log('📦 Files dropped:', files.map(f => f.name));
+        });
+
+        // Convert button
+        convertBtn.addEventListener('click', convertAll);
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            uploadedFiles = [];
+            resultsCard.style.display = 'none';
+            resultsContainer.innerHTML = '';
+            fileInput.value = '';
+        });
+
+        // --- Conversion Functions ---
+        async function convertSingleFile(file, format, quality) {
+            console.log('🔄 Converting:', file.name, 'to', format);
+            let convertedBlob;
+            let finalFileName;
+
+            // --- 1. Try heic2any first ---
+            if (typeof window.heic2any !== 'undefined') {
+                try {
+                    console.log('📦 Trying heic2any...');
+                    convertedBlob = await window.heic2any({
+                        blob: file,
+                        toType: `image/${format}`,
+                        quality: format === 'jpeg' ? quality : undefined
+                    });
+                    convertedBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                    finalFileName = file.name.replace(/\.(heic|heif)$/i, `.${format}`);
+                    console.log('✅ heic2any conversion successful!');
+                } catch (err) {
+                    console.warn('⚠️ heic2any failed, trying libheif...', err);
+                }
+            }
+
+            // --- 2. Try libheif if heic2any failed ---
+            if (!convertedBlob && typeof window.libheif !== 'undefined') {
+                try {
+                    const result = await window.convertWithLibheif(file, format, quality);
+                    convertedBlob = result.blob;
+                    finalFileName = result.fileName;
+                    console.log('✅ libheif conversion successful!');
+                } catch (err) {
+                    console.warn('⚠️ libheif also failed!', err);
+                }
+            }
+
+            if (!convertedBlob) {
+                throw new Error('Both converters failed! Please try again.');
+            }
+
+            return {
+                originalFile: file,
+                convertedBlob: convertedBlob,
+                convertedFile: new File([convertedBlob], finalFileName, { type: `image/${format}` }),
+                url: URL.createObjectURL(convertedBlob)
+            };
+        }
+
+        async function convertAll() {
+            if (uploadedFiles.length === 0) {
+                alert('Please select some HEIC/HEIF images first!');
+                return;
+            }
+
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading converters...';
+
+            // Load both converters!
+            let anyConverterLoaded = false;
+            try {
+                const heic2anyLoaded = await window.loadHeic2Any();
+                if (heic2anyLoaded) anyConverterLoaded = true;
+                const libheifLoaded = await window.loadLibHeif();
+                if (libheifLoaded) anyConverterLoaded = true;
+            } catch (err) {
+                console.warn('Some converters failed to load', err);
+            }
+
+            if (!anyConverterLoaded) {
+                alert('Failed to load any image converter! Please check your internet connection and try again.');
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fas fa-magic"></i> Convert All';
+                return;
+            }
+
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+
+            const format = formatSelect.value;
+            const quality = parseFloat(qualityRange.value);
+
+            // Convert all files
+            const results = [];
+            for (const file of uploadedFiles) {
+                try {
+                    const result = await convertSingleFile(file, format, quality);
+                    results.push(result);
+                } catch (err) {
+                    alert(`Failed to convert ${file.name}: ${err.message}`);
+                }
+            }
+
+            // Render results
+            renderResults(results);
+
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<i class="fas fa-magic"></i> Convert All';
+        }
+
+        function renderResults(results) {
+            resultsCard.style.display = 'block';
+            resultsContainer.innerHTML = '';
+
+            for (const result of results) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+
+                item.innerHTML = `
+                    <img src="${result.url}" alt="${result.convertedFile.name}">
+                    <div class="result-item-info">
+                        <span class="result-item-name">${result.convertedFile.name}</span>
+                    </div>
+                    <div class="result-item-actions">
+                        <button class="btn btn-sm btn-primary downloadBtn" data-url="${result.url}" data-name="${result.convertedFile.name}">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                `;
+
+                // Add download event listener
+                item.querySelector('.downloadBtn').addEventListener('click', (e) => {
+                    const url = e.currentTarget.dataset.url;
+                    const name = e.currentTarget.dataset.name;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+
+                resultsContainer.appendChild(item);
+            }
+        }
+
+        // --- Init ---
+        console.log('✅ HEIC Converter initialized!');
+    </script>
+</body>
+</html>

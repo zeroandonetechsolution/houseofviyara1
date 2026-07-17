@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Of Viyara | Upload Files</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="upload.css">
+    <script src="https://cdn.jsdelivr.net/npm/libheif-js@1.12.0/libheif.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+</head>
+<body>
+    <div class="upload-page-wrap">
+        <div class="upload-header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+            <h1>Upload Files</h1>
+            <p>Upload any files: images, PDFs, docs, videos, etc.</p>
+        </div>
+        
+        <div class="upload-container">
+            <div class="upload-dropzone" id="uploadDropzone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Drop files here or click to browse</h3>
+                <p>All file types supported</p>
+                <input type="file" id="fileInput" multiple hidden>
+                <button class="upload-btn" id="browseBtn">
+                    <i class="fas fa-folder-open"></i>
+                    Browse Files
+                </button>
+            </div>
+            
+            <div class="upload-list" id="uploadList">
+                <!-- Upload items will appear here -->
+            </div>
+            
+            <div class="upload-actions">
+                <button class="clear-btn" id="clearBtn">
+                    <i class="fas fa-trash"></i>
+                    Clear All
+                </button>
+                <button class="upload-all-btn" id="uploadAllBtn">
+                    <i class="fas fa-upload"></i>
+                    Upload All
+                </button>
+            </div>
+            
+            <div class="uploaded-files" id="uploadedFiles">
+                <h3>Recently Uploaded</h3>
+                <div class="uploaded-list" id="uploadedList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="supabase-config.js"></script>
+    <script src="upload.js"></script>
+    
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-modal-backdrop" id="previewModalBackdrop"></div>
+        <div class="preview-modal-content">
+            <button class="preview-modal-close" id="previewModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="preview-modal-body" id="previewModalBody">
+                <!-- Preview will be here -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>

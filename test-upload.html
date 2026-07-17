@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Image Upload (All Formats)</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 20px; }
+        .upload-container { padding: 2rem; border: 2px dashed #ccc; border-radius: 10px; text-align: center; margin-bottom: 2rem; }
+        input[type="file"] { margin: 1rem 0; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 1rem; cursor: pointer; }
+        button:hover { background: #45a049; }
+        #preview-container { margin-top: 2rem; }
+        .preview-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; }
+        .result-url { margin-top: 1rem; padding: 10px; background: #f0f0f0; border-radius: 5px; word-wrap: break-word; }
+    </style>
+    <!-- Load supabase-config to get SUPABASE_URL and SUPABASE_ANON_KEY -->
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <h1>Test Image Upload (All Formats)</h1>
+    <div class="upload-container">
+        <input type="file" id="file-input" accept="image/*" />
+        <br><br>
+        <button id="upload-btn">Upload Image</button>
+    </div>
+    <div id="preview-container"></div>
+    
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const previewContainer = document.getElementById('preview-container');
+        
+        // Helper to convert HEIC using SUPABASE EDGE FUNCTION!
+        async function uploadWithEdgeFunction(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('pathPrefix', 'products');
+
+            // Edge Function URL: https://<project-ref>.supabase.co/functions/v1/convert-heic
+            const edgeFunctionUrl = `${window.SUPABASE_URL}/functions/v1/convert-heic`;
+            
+            const res = await fetch(edgeFunctionUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`
+                }
+            });
+            
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Edge Function failed: ${res.statusText} - ${errText}`);
+            }
+            
+            return await res.json();
+        }
+        
+        uploadBtn.addEventListener('click', async () => {
+            if (!fileInput.files.length) {
+                alert('Please select an image');
+                return;
+            }
+            
+            let file = fileInput.files[0];
+            previewContainer.innerHTML = '<p>Uploading to Supabase Edge Function...</p>';
+            
+            try {
+                const result = await uploadWithEdgeFunction(file);
+                previewContainer.innerHTML = `
+                    <h3>Upload Successful!</h3>
+                    <img src="${result.url}" class="preview-img" alt="Uploaded Image" />
+                    <div class="result-url">
+                        <strong>URL:</strong> ${result.url}
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Error:', err);
+                previewContainer.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

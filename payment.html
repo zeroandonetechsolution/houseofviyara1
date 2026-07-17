@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>House Of Viyara | Secure Payment</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-bottom: 30px;
+        }
+        .payment-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px 15px;
+            background: #fff;
+            border: 4px solid #000;
+            box-shadow: 10px 10px 0px #000;
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #000;
+            padding-bottom: 15px;
+        }
+        .payment-header h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .order-info {
+            background: #f9f9f9;
+            padding: 18px;
+            border: 3px solid #000;
+            margin-bottom: 25px;
+        }
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .customer-details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px dashed #ccc;
+        }
+        .customer-details h4 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+        .order-items {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px dashed #ccc;
+        }
+        .order-items h4 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .method-card {
+            border: 3px solid #000;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 800;
+            background: #fff;
+            font-size: 0.9rem;
+        }
+        .method-card:hover {
+            background: var(--accent-yellow);
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px #000;
+        }
+        .method-card.active {
+            background: var(--accent-blue);
+            box-shadow: 4px 4px 0px #000;
+            transform: translate(-2px, -2px);
+        }
+        .method-card i {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .pay-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2rem;
+            background: #00FF94;
+            color: #000;
+            border: 4px solid #000;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 6px 6px 0px #000;
+            transition: all 0.1s;
+        }
+        .pay-btn:active {
+            box-shadow: 0px 0px 0px #000;
+            transform: translate(6px, 6px);
+        }
+        .processing-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 8px solid #000;
+            border-top: 8px solid var(--accent-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .success-container {
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .success-icon {
+            font-size: 4.5rem;
+            color: #00FF94;
+            margin-bottom: 15px;
+        }
+        .success-container h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        .success-container p {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+        .btn {
+            padding: 14px 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
+            text-decoration: none;
+            color: #000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+        .btn-primary {
+            background: var(--accent-yellow);
+        }
+        .btn-secondary {
+            background: var(--accent-blue);
+        }
+        .btn:active {
+            box-shadow: 0px 0px 0px #000;
+            transform: translate(4px, 4px);
+        }
+
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .payment-container {
+                margin: 20px auto;
+                padding: 15px 12px;
+                border-width: 3px;
+                box-shadow: 6px 6px 0px #000;
+            }
+            .payment-header h1 {
+                font-size: 1.5rem;
+            }
+            .order-info {
+                padding: 14px;
+            }
+            .order-row {
+                font-size: 0.85rem;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .order-row span:first-child {
+                font-weight: 800;
+                color: #555;
+            }
+            .order-row span:last-child {
+                text-align: left;
+            }
+            .payment-methods {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .method-card {
+                padding: 12px;
+            }
+            .pay-btn {
+                padding: 16px;
+                font-size: 1.1rem;
+                box-shadow: 5px 5px 0px #000;
+            }
+            .pay-btn:active {
+                transform: translate(5px, 5px);
+            }
+            .success-icon {
+                font-size: 4rem;
+            }
+            .success-container h2 {
+                font-size: 1.6rem;
+            }
+            .success-actions {
+                gap: 10px;
+            }
+            .btn {
+                padding: 13px 18px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body style="background: #f4f4f4;">
+    <div class="payment-container" id="payment-content">
+        <div class="payment-header">
+            <h1>PAYMENT GATEWAY</h1>
+            <p style="font-weight: 800; color: #666; font-size: 0.9rem;">SECURE TRANSACTION</p>
+        </div>
+
+        <div class="order-info">
+            <div class="order-row">
+                <span>ORDER ID:</span>
+                <span id="display-orderid" style="color: var(--accent-pink);">LS-XXXXXX</span>
+            </div>
+            <div class="order-row">
+                <span>TRANSACTION ID:</span>
+                <span id="display-txnid">TXN-XXXXXXXX</span>
+            </div>
+            <div class="order-row" style="font-size: 1.3rem; color: #FF007A; margin-top: 12px; border-top: 2px solid #000; padding-top: 12px; flex-direction: row; justify-content: space-between;">
+                <span>AMOUNT TO PAY:</span>
+                <span id="display-amount">₹0.00</span>
+            </div>
+            
+            <div class="customer-details">
+                <h4>Customer Details</h4>
+                <div class="order-row"><span>Name:</span><span id="display-name">-</span></div>
+                <div class="order-row"><span>Email:</span><span id="display-email">-</span></div>
+                <div id="display-address"></div>
+            </div>
+            
+            <div class="order-items">
+                <h4>Order Items</h4>
+                <div id="display-items"></div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px; font-weight: 900; font-size: 1.1rem;">SELECT PAYMENT METHOD</h3>
+        <div class="payment-methods">
+            <div class="method-card active" onclick="selectMethod(this)">
+                <i class="fas fa-credit-card"></i>
+                CARD
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fab fa-google-pay"></i>
+                UPI / G-PAY
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fas fa-university"></i>
+                NET BANKING
+            </div>
+            <div class="method-card" onclick="selectMethod(this)">
+                <i class="fas fa-wallet"></i>
+                WALLETS
+            </div>
+        </div>
+
+        <button class="pay-btn" onclick="processPayment()">PAY NOW</button>
+        
+        <p style="text-align: center; margin-top: 25px; font-weight: 700; font-size: 0.75rem; color: #999;">
+            <i class="fas fa-lock"></i> SSL ENCRYPTED | POWERED BY PAYU BOLT (DEMO MODE)
+        </p>
+    </div>
+
+    <div class="payment-container" id="success-content" style="display: none;">
+        <div class="success-container">
+            <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2>PAYMENT SUCCESSFUL!</h2>
+            <p>Thank you for your purchase. Your order has been confirmed.</p>
+            
+            <div class="order-info" style="text-align: left;">
+                <div class="order-row"><span>ORDER ID:</span><span id="success-orderid" style="color: var(--accent-pink);">LS-XXXXXX</span></div>
+                <div class="order-row"><span>STATUS:</span><span style="color: #00FF94;">CONFIRMED</span></div>
+            </div>
+            
+            <div class="success-actions">
+                <a href="invoice.html" id="invoice-link" class="btn btn-primary"><i class="fas fa-file-invoice"></i> View Invoice</a>
+                <a href="#" id="whatsapp-link" class="btn" style="background: #25D366; color: #fff;"><i class="fab fa-whatsapp"></i> Share Order on WhatsApp</a>
+                <a href="orders.html" class="btn btn-secondary"><i class="fas fa-box"></i> View Orders</a>
+                <a href="index.html" class="btn"><i class="fas fa-home"></i> Continue Shopping</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="processing-overlay" id="processing">
+        <div class="spinner"></div>
+        <h2 style="font-weight: 900; font-size: 1.5rem; text-align: center;">PROCESSING PAYMENT...</h2>
+        <p style="font-weight: 700; font-size: 0.95rem; text-align: center;">Please do not refresh the page or click back.</p>
+    </div>
+
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+    
+    <script>
+        const { jsPDF } = window.jspdf;
+        const urlParams = new URLSearchParams(window.location.search);
+        const txnid = urlParams.get('txnid');
+        const amount = urlParams.get('amount');
+        const email = urlParams.get('email');
+        const name = urlParams.get('name');
+        const orderId = urlParams.get('orderId');
+
+        // Initialize Supabase client
+        let paymentSupabase = null;
+        function initPaymentSupabase() {
+            if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
+                if (createClient) {
+                    paymentSupabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                }
+            }
+        }
+        initPaymentSupabase();
+
+        // Load order from localStorage
+        let currentOrder = null;
+        const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+        if (txnid) {
+            currentOrder = orders.find(o => o.txnid === txnid);
+        }
+
+        // Display order details
+        document.getElementById('display-txnid').innerText = txnid || 'N/A';
+        document.getElementById('display-orderid').innerText = orderId || 'N/A';
+        document.getElementById('display-amount').innerText = amount ? `₹${amount}` : '₹0';
+        document.getElementById('display-name').innerText = name || '-';
+        document.getElementById('display-email').innerText = email || '-';
+
+        // Display address
+        if (currentOrder && currentOrder.shipping_address) {
+            const addr = currentOrder.shipping_address;
+            document.getElementById('display-address').innerHTML = `
+                <div class="order-row"><span>Phone:</span><span>${addr.phone || '-'}</span></div>
+                <div class="order-row"><span>Address:</span><span>${addr.street || '-'}</span></div>
+                <div class="order-row"><span>City:</span><span>${addr.city || '-'}</span></div>
+                <div class="order-row"><span>State:</span><span>${addr.state || '-'}</span></div>
+                <div class="order-row"><span>PIN:</span><span>${addr.pin || '-'}</span></div>
+            `;
+        }
+
+        // Display order items
+        if (currentOrder && currentOrder.items) {
+            let itemsHtml = '';
+            currentOrder.items.forEach(item => {
+                itemsHtml += `
+                    <div class="item-row">
+                        <span>${item.name} (${item.variant || 'Default'}) x ${item.qty}</span>
+                        <span>₹${item.price * item.qty}</span>
+                    </div>
+                `;
+            });
+            itemsHtml += `
+                <div class="item-row" style="border-top: 2px solid #000; margin-top: 10px; padding-top: 10px; font-weight: 900;">
+                    <span>Subtotal</span>
+                    <span>₹${currentOrder.total - 100}</span>
+                </div>
+                <div class="item-row">
+                    <span>Shipping</span>
+                    <span>₹100</span>
+                </div>
+                <div class="item-row" style="font-size: 1.1rem; color: var(--accent-pink);">
+                    <span>Total</span>
+                    <span>₹${currentOrder.total}</span>
+                </div>
+            `;
+            document.getElementById('display-items').innerHTML = itemsHtml;
+        }
+
+        function selectMethod(el) {
+            document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        async function processPayment() {
+            const processing = document.getElementById('processing');
+            processing.style.display = 'flex';
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Update order status in localStorage
+            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            const orderIndex = orders.findIndex(o => o.txnid === txnid);
+            if (orderIndex !== -1) {
+                orders[orderIndex].payment_status = 'Paid';
+                orders[orderIndex].status = 'Confirmed';
+                orders[orderIndex].paid_at = new Date().toISOString();
+                localStorage.setItem('hov_orders', JSON.stringify(orders));
+                currentOrder = orders[orderIndex];
+            }
+
+            // Update order in Supabase
+        if (paymentSupabase && orderId) {
+            try {
+                const { error } = await paymentSupabase
+                    .from('orders')
+                    .update({
+                        status: 'Confirmed',
+                        payment_status: 'Paid',
+                        paid_at: new Date().toISOString()
+                    })
+                    .eq('id', orderId);
+                if (error) {
+                    console.error('Error updating order in Supabase:', error);
+                } else {
+                    console.log('Order updated in Supabase successfully');
+                }
+            } catch (e) {
+                console.error('Supabase order update failed:', e);
+            }
+        }
+
+            // Show success content
+            document.getElementById('payment-content').style.display = 'none';
+            document.getElementById('success-content').style.display = 'block';
+            document.getElementById('success-orderid').innerText = orderId || 'N/A';
+            document.getElementById('invoice-link').href = `invoice.html?orderId=${orderId}`;
+            
+            // Set WhatsApp link
+            setupWhatsAppLink(currentOrder, orderId);
+            
+            // Auto open WhatsApp
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink && whatsappLink.href) {
+                window.open(whatsappLink.href, '_blank');
+            }
+            
+            processing.style.display = 'none';
+        }
+
+        function setupWhatsAppLink(order, orderId) {
+            if (!order) return;
+            
+            // Replace this with your actual WhatsApp number (include country code, e.g., 91XXXXXXXXXX)
+            const whatsappNumber = '919514518197'; 
+            
+            let message = `*New Order Received!* 🛍️\n\n`;
+            message += `*Order ID:* ${orderId}\n`;
+            message += `*Customer Name:* ${order.customer || 'N/A'}\n`;
+            
+            if (order.email) {
+                message += `*Email:* ${order.email}\n`;
+            }
+            
+            if (order.shipping_address) {
+                message += `*Shipping Address:*\n`;
+                message += `${order.shipping_address.street || ''}\n`;
+                message += `${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}\n`;
+                if (order.shipping_address.phone) {
+                    message += `*Phone:* ${order.shipping_address.phone}\n`;
+                }
+            }
+            
+            message += `\n*Order Items:*\n`;
+            order.items.forEach((item, idx) => {
+                message += `${idx + 1}. ${item.name}${item.variant ? ' (' + item.variant + ')' : ''} × ${item.qty} = ₹${item.price * item.qty}\n`;
+            });
+            
+            message += `\n*Total Amount:* ₹${order.total}\n`;
+            message += `*Payment Status:* ${order.payment_status || 'Paid'}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink) {
+                whatsappLink.href = whatsappUrl;
+                whatsappLink.target = '_blank';
+            }
+        }
+
+        function downloadInvoice() {
+            if (!currentOrder) {
+                alert('Order not found!');
+                return;
+            }
+
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HOUSE OF VIYARA', pageWidth / 2, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Premium Clothing & Fashion', pageWidth / 2, 28, { align: 'center' });
+            
+            // Invoice title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 0, 122);
+            doc.text('INVOICE', pageWidth / 2, 40, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Invoice date
+            const invoiceDate = new Date().toLocaleDateString('en-IN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Order info
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Bill To:', 14, 55);
+            doc.setFont('helvetica', 'normal');
+            doc.text(currentOrder.customer || 'Customer', 14, 62);
+            if (currentOrder.email) doc.text(currentOrder.email, 14, 69);
+            if (currentOrder.shipping_address) {
+                doc.text(currentOrder.shipping_address.street || '', 14, 76);
+                doc.text(`${currentOrder.shipping_address.city || ''}, ${currentOrder.shipping_address.state || ''} - ${currentOrder.shipping_address.pin || ''}`, 14, 83);
+                if (currentOrder.shipping_address.phone) doc.text(`Phone: ${currentOrder.shipping_address.phone}`, 14, 90);
+            }
+            
+            // Right side order details
+            doc.setFont('helvetica', 'bold');
+            doc.text('Order Details:', pageWidth - 70, 55, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Order ID: ${currentOrder.id}`, pageWidth - 14, 62, { align: 'right' });
+            doc.text(`Transaction ID: ${currentOrder.txnid}`, pageWidth - 14, 69, { align: 'right' });
+            doc.text(`Date: ${invoiceDate}`, pageWidth - 14, 76, { align: 'right' });
+            doc.text(`Status: ${currentOrder.status}`, pageWidth - 14, 83, { align: 'right' });
+            
+            // Items table
+            const tableStartY = currentOrder.shipping_address ? 105 : 95;
+            const tableData = [];
+            let subtotal = 0;
+            
+            currentOrder.items.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                tableData.push([
+                    `${item.name} (${item.variant || 'Default'})`,
+                    item.qty.toString(),
+                    `₹${item.price}`,
+                    `₹${itemTotal}`
+                ]);
+            });
+            
+            doc.autoTable({
+                head: [['Item', 'Qty', 'Price', 'Total']],
+                body: tableData,
+                startY: tableStartY,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 10
+                }
+            });
+            
+            // Totals
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Subtotal:', pageWidth - 70, finalY);
+            doc.text(`₹${subtotal}`, pageWidth - 14, finalY, { align: 'right' });
+            
+            doc.text('Shipping:', pageWidth - 70, finalY + 7);
+            doc.text('₹100', pageWidth - 14, finalY + 7, { align: 'right' });
+            
+            doc.setFontSize(13);
+            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(255, 209, 0);
+            doc.rect(pageWidth - 80, finalY + 12, 66, 10, 'F');
+            doc.text('GRAND TOTAL:', pageWidth - 70, finalY + 20);
+            doc.text(`₹${currentOrder.total}`, pageWidth - 14, finalY + 20, { align: 'right' });
+            
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Thank you for shopping with House Of Viyara!', pageWidth / 2, finalY + 35, { align: 'center' });
+            doc.text('This is a computer-generated invoice and does not require a signature.', pageWidth / 2, finalY + 42, { align: 'center' });
+            
+            // Download
+            doc.save(`invoice_${currentOrder.id}.pdf`);
+        }
+    </script>
+</body>
+</html>

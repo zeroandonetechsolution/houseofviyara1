@@ -1,0 +1,13 @@
+{
+  "name": "house-of-viyara",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "gen-config": "node scripts/gen-supabase-config.js",
+    "build": "npm run gen-config && node build.js",
+    "start": "node backend/server.js"
+  }
+}

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Your Orders | House Of Viyara</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">House Of Viyara</a></h1>
+            </div>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="saree.html">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="pure-cotton.html">Pure Cotton</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <a href="wishlist.html" class="icon-btn wishlist-btn" aria-label="Wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span class="cart-badge" id="wishlist-badge">0</span>
+                </a>
+                <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="success-modal" id="success-modal">
+        <div class="success-modal-content">
+            <button class="close-modal-btn" onclick="closeSuccessModal()"><i class="fas fa-times"></i></button>
+            <h2>Payment Confirmed</h2>
+            <p>Your order has been placed successfully.</p>
+            <div class="success-order-id">Order ID: <span id="order-id">LS-000000</span></div>
+            <a href="index.html" class="btn btn-primary">Continue Shopping</a>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-overlay"></div>
+    <div class="auth-modal" id="auth-modal">
+        <button class="close-modal-btn" id="close-auth-btn"><i class="fas fa-times"></i></button>
+        <div class="auth-content">
+            <h2>WELCOME BACK</h2>
+            <p>Login to House Of Viyara for a personalized experience.</p>
+            <div id="google-login-btn" style="margin: 20px 0; min-height: 40px;"></div>
+            <p id="auth-user-status" style="font-size: 0.85rem; opacity: 0.7; text-align: center; margin-top: 0; margin-bottom: 20px;">Sign in with Google to continue.</p>
+            <button id="auth-logout-btn" type="button" class="logout-btn" style="display: none; margin: 0 auto 20px; width: 100%;">Log out</button>
+            <div style="text-align: center; margin-top: -10px; margin-bottom: 20px;">
+                <a href="admin.html" class="admin-access-link" style="font-size: 0.8rem; font-weight: 800; text-decoration: underline; color: var(--primary-color); opacity: 0.7; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-user-shield"></i> ADMIN PORTAL
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+        <button class="close-menu-btn" id="close-menu-btn"><i class="fas fa-times"></i></button>
+        <ul class="mobile-nav-links">
+            <div class="section-title">Quick Actions</div>
+            <li><a href="javascript:void(0)" onclick="toggleTheme(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-moon"></i> Toggle Theme <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openAuthModal(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-user-circle"></i> Login / Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="orders.html"><i class="fas fa-truck"></i> Track Order <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="wishlist.html"><i class="fas fa-heart"></i> Wishlist <span class="cart-badge" id="mobile-wishlist-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openCart(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-shopping-bag"></i> Your Bag <span class="cart-badge" id="mobile-cart-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <div class="section-title">Categories</div>
+            <li><a href="saree.html"><i class="fas fa-female"></i> Saree</a></li>
+            <li><a href="kurtis.html"><i class="fas fa-female"></i> Kurtis</a></li>
+            <li><a href="ethnic.html"><i class="fas fa-female"></i> Ethnic Wear</a></li>
+            <li><a href="party.html"><i class="fas fa-glass-cheers"></i> Party Wear</a></li>
+            <li><a href="casual.html"><i class="fas fa-tshirt"></i> Casual Wear</a></li>
+        </ul>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cart-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h2>YOUR BAG</h2>
+            <button class="close-cart-btn" id="close-cart-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <div class="empty-cart" id="empty-cart-msg">
+                <i class="fas fa-box-open"></i>
+                <p>Your bag is empty.</p>
+                <a href="index.html" class="btn btn-primary" id="shop-now-btn">Shop Now</a>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cart-total-price">₹0</span>
+            </div>
+            <button class="btn btn-primary checkout-btn" onclick="openCheckout()">CHECKOUT</button>
+        </div>
+    </div>
+
+    <main style="padding: 40px; max-width: 1000px; margin: 0 auto;">
+        <div class="card" style="padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000; margin-bottom: 30px;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">YOUR ORDERS</h2>
+            <div id="orders-list"></div>
+        </div>
+
+        <div class="card" style="padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">TRACK ORDER</h2>
+            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 30px;">
+                <input type="text" id="order-search-input" class="brutal-input" placeholder="Enter Order ID (e.g., LS-XXXXXX)" style="flex-grow: 1; border: 3px solid #000; padding: 15px;">
+                <button class="btn btn-primary" onclick="trackOrder()">TRACK</button>
+            </div>
+
+            <div id="tracking-result" style="display: none;">
+                <div style="background: var(--accent-yellow); border: 4px solid #000; padding: 20px; margin-bottom: 20px;">
+                    <h3 id="tracking-status" style="font-size: 2rem; font-weight: 900; margin: 0;">STATUS: CONFIRMED</h3>
+                </div>
+                
+                <div class="tracking-timeline" style="margin-top: 30px;">
+                    <div id="timeline-confirmed" class="timeline-step">
+                        <i class="fas fa-check-circle"></i> Order Confirmed
+                    </div>
+                    <div id="timeline-shipped" class="timeline-step">
+                        <i class="fas fa-truck"></i> Shipped
+                    </div>
+                    <div id="timeline-delivered" class="timeline-step">
+                        <i class="fas fa-home"></i> Delivered
+                    </div>
+                </div>
+                <div id="tracking-details" style="margin-top: 24px; border: 3px solid #000; padding: 20px; background: #fff; display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>House Of Viyara</h3>
+                <p>Redefining fashion with curated styles and premium quality for women.</p>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/houseofviyara26" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/@HouseofViyara" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
+                    <a href="https://wa.me/918300463653" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>SHOP</h4>
+                <ul>
+                    <li><a href="saree.html">Saree</a></li>
+                    <li><a href="kurtis.html">Kurtis</a></li>
+                    <li><a href="ethnic.html">Ethnic Wear</a></li>
+                    <li><a href="party.html">Party Wear</a></li>
+                    <li><a href="casual.html">Casual Wear</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>HELP</h4>
+                <ul>
+                    <li><a href="orders.html">Track Order</a></li>
+                    <li><a href="return-policy.html">Returns & Exchanges</a></li>
+                    <li><a href="#">Shipping Info</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>LEGAL</h4>
+                
+                <ul>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Service</a></li>
+                    <li><a href="data-safety.html">Data Safety</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
+            <p style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow);">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</p>
+        </div>
+    </footer>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="collections.html" class="bottom-nav-item">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Shop</span>
+        </a>
+        <a href="wishlist.html" class="bottom-nav-item">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+            <span class="badge cart-count" id="bottom-wishlist-badge">0</span>
+        </a>
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleCart()">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Bag</span>
+            <span class="badge cart-count" id="mobile-cart-badge">0</span>
+        </a>
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleMenu()">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
+        </a>
+    </nav>
+
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="app.js?v=18" defer></script>
+    <script>
+        const { jsPDF } = window.jspdf;
+        
+        function downloadInvoice(order) {
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HOUSE OF VIYARA', pageWidth / 2, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Premium Clothing & Fashion', pageWidth / 2, 28, { align: 'center' });
+            
+            // Invoice title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 0, 122);
+            doc.text('INVOICE', pageWidth / 2, 40, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Invoice date
+            const invoiceDate = new Date().toLocaleDateString('en-IN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Order info
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Bill To:', 14, 55);
+            doc.setFont('helvetica', 'normal');
+            doc.text(order.customer || 'Customer', 14, 62);
+            if (order.email) doc.text(order.email, 14, 69);
+            if (order.shipping_address) {
+                doc.text(order.shipping_address.street || '', 14, 76);
+                doc.text(`${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}`, 14, 83);
+                if (order.shipping_address.phone) doc.text(`Phone: ${order.shipping_address.phone}`, 14, 90);
+            }
+            
+            // Right side order details
+            doc.setFont('helvetica', 'bold');
+            doc.text('Order Details:', pageWidth - 70, 55, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Order ID: ${order.id}`, pageWidth - 14, 62, { align: 'right' });
+            doc.text(`Transaction ID: ${order.txnid}`, pageWidth - 14, 69, { align: 'right' });
+            doc.text(`Date: ${invoiceDate}`, pageWidth - 14, 76, { align: 'right' });
+            doc.text(`Status: ${order.status}`, pageWidth - 14, 83, { align: 'right' });
+            
+            // Items table
+            const tableStartY = order.shipping_address ? 105 : 95;
+            const tableData = [];
+            let subtotal = 0;
+            
+            order.items.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                tableData.push([
+                    `${item.name} (${item.variant || 'Default'})`,
+                    item.qty.toString(),
+                    `₹${item.price}`,
+                    `₹${itemTotal}`
+                ]);
+            });
+            
+            doc.autoTable({
+                head: [['Item', 'Qty', 'Price', 'Total']],
+                body: tableData,
+                startY: tableStartY,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 10
+                }
+            });
+            
+            // Totals
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Subtotal:', pageWidth - 70, finalY);
+            doc.text(`₹${subtotal}`, pageWidth - 14, finalY, { align: 'right' });
+            
+            doc.text('Shipping:', pageWidth - 70, finalY + 7);
+            doc.text('₹100', pageWidth - 14, finalY + 7, { align: 'right' });
+            
+            doc.setFontSize(13);
+            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(255, 209, 0);
+            doc.rect(pageWidth - 80, finalY + 12, 66, 10, 'F');
+            doc.text('GRAND TOTAL:', pageWidth - 70, finalY + 20);
+            doc.text(`₹${order.total}`, pageWidth - 14, finalY + 20, { align: 'right' });
+            
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Thank you for shopping with House Of Viyara!', pageWidth / 2, finalY + 35, { align: 'center' });
+            doc.text('This is a computer-generated invoice and does not require a signature.', pageWidth / 2, finalY + 42, { align: 'center' });
+            
+            // Download
+            doc.save(`invoice_${order.id}.pdf`);
+        }
+
+        async function renderOrders() {
+            const ordersContainer = document.getElementById('orders-list');
+            const orders = await window.fetchOrdersPrefer();
+            
+            if (!orders.length) {
+                ordersContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-box-open" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                        <h3>No orders yet</h3>
+                        <p style="color: #666;">Start shopping to place your first order!</p>
+                        <a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Shop Now</a>
+                    </div>
+                `;
+                return;
+            }
+
+            ordersContainer.innerHTML = orders.map(order => `
+                <div style="border: 4px solid #000; padding: 20px; margin-bottom: 20px; background: #f9f9f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--accent-pink);">${order.id}</h3>
+                            <p style="margin: 5px 0 0; color: #666;">${order.date}</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span style="padding: 5px 15px; background: var(--accent-yellow); border: 2px solid #000; font-weight: 800;">
+                                ${order.status}
+                            </span>
+                            ${order.payment_status === 'Paid' ? `
+                                <a href="invoice.html?orderId=${order.id}" class="btn btn-secondary">
+                                    <i class="fas fa-file-invoice"></i> View Invoice
+                                </a>
+                                <a href="#" class="btn" style="background: #25D366; color: #fff;" onclick='shareOrderOnWhatsApp(${JSON.stringify(order)})'>
+                                    <i class="fab fa-whatsapp"></i> Share
+                                </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <strong>Customer:</strong> ${order.customer}
+                        </div>
+                        <div>
+                            <strong>Total:</strong> ₹${order.total}
+                        </div>
+                        <div>
+                            <strong>Payment:</strong> ${order.payment_status || 'Pending'}
+                        </div>
+                    </div>
+                    <div style="border-top: 2px solid #ddd; padding-top: 15px;">
+                        <strong>Items:</strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            ${order.items.map(item => `<li>${item.name} (${item.variant || 'Default'}) × ${item.qty} = ₹${item.price * item.qty}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateTrackingTimeline(status) {
+            const steps = [
+                { id: 'timeline-confirmed', active: true },
+                { id: 'timeline-shipped', active: status === 'Shipped' || status === 'Delivered' },
+                { id: 'timeline-delivered', active: status === 'Delivered' }
+            ];
+
+            steps.forEach(step => {
+                const elem = document.getElementById(step.id);
+                if (elem) {
+                    if (step.active) elem.classList.add('active');
+                    else elem.classList.remove('active');
+                }
+            });
+        }
+
+        async function trackOrder() {
+            const orderId = document.getElementById('order-search-input').value.trim().toUpperCase();
+            if (!orderId) {
+                alert('Please enter an order ID to search.');
+                return;
+            }
+
+            const order = await window.fetchOrderByIdPrefer(orderId);
+            if (!order) {
+                alert('Order not found. Make sure you used the exact order ID.');
+                return;
+            }
+
+            document.getElementById('tracking-result').style.display = 'block';
+            document.getElementById('tracking-status').innerText = `STATUS: ${order.status.toUpperCase()}`;
+            updateTrackingTimeline(order.status);
+
+            const details = document.getElementById('tracking-details');
+            if (details) {
+                details.innerHTML = `
+                    <p><strong>Order ID:</strong> ${order.id}</p>
+                    <p><strong>Name:</strong> ${order.customer}</p>
+                    <p><strong>Amount:</strong> ₹${order.total}</p>
+                    <p><strong>Date:</strong> ${order.date}</p>
+                    <p><strong>Payment:</strong> ${order.payment_status || 'Pending'}</p>
+                    ${order.payment_status === 'Paid' ? `
+                        <div style="margin-top: 15px;">
+                            <a href="invoice.html?orderId=${order.id}" class="btn btn-secondary">
+                                <i class="fas fa-file-invoice"></i> View Invoice
+                            </a>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        function shareOrderOnWhatsApp(order) {
+            // Replace this with your actual WhatsApp number (include country code, e.g., 91XXXXXXXXXX)
+            const whatsappNumber = '919514518197'; 
+            
+            let message = `*New Order Received!* 🛍️\n\n`;
+            message += `*Order ID:* ${order.id}\n`;
+            message += `*Customer Name:* ${order.customer || 'N/A'}\n`;
+            
+            if (order.email) {
+                message += `*Email:* ${order.email}\n`;
+            }
+            
+            if (order.shipping_address) {
+                message += `*Shipping Address:*\n`;
+                message += `${order.shipping_address.street || ''}\n`;
+                message += `${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}\n`;
+                if (order.shipping_address.phone) {
+                    message += `*Phone:* ${order.shipping_address.phone}\n`;
+                }
+            }
+            
+            message += `\n*Order Items:*\n`;
+            order.items.forEach((item, idx) => {
+                message += `${idx + 1}. ${item.name}${item.variant ? ' (' + item.variant + ')' : ''} × ${item.qty} = ₹${item.price * item.qty}\n`;
+            });
+            
+            message += `\n*Total Amount:* ₹${order.total}\n`;
+            message += `*Payment Status:* ${order.payment_status || 'Paid'}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Check for success message from payment
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            const successModal = document.getElementById('success-modal');
+            if (successModal) {
+                const orderIdSpan = document.getElementById('order-id');
+                if (orderIdSpan && urlParams.get('txnid')) {
+                    orderIdSpan.innerText = urlParams.get('txnid');
+                }
+                successModal.classList.add('active');
+                // Clear URL params
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // Render orders on page load
+        (async function() {
+            await renderOrders();
+        })();
+    </script>
+
+    <style>
+        .timeline-step {
+            padding: 15px;
+            border: 3px solid #000;
+            margin-bottom: 10px;
+            font-weight: 800;
+            opacity: 0.3;
+        }
+        .timeline-step.active {
+            opacity: 1;
+            background: var(--accent-blue);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            main {
+                padding: 20px 15px !important;
+            }
+            .card {
+                padding: 20px !important;
+                border-width: 4px !important;
+                box-shadow: 6px 6px 0px #000 !important;
+            }
+            .card h2 {
+                font-size: 1.8rem !important;
+            }
+            .form-group {
+                flex-direction: column !important;
+            }
+            .form-group .brutal-input {
+                width: 100% !important;
+            }
+            .form-group .btn {
+                width: 100% !important;
+            }
+            #tracking-status {
+                font-size: 1.5rem !important;
+            }
+        }
+    </style>
+</body>
+</html>

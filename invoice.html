@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Of Viyara | Invoice</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: #f4f4f4;
+            font-family: 'Outfit', sans-serif;
+            padding: 20px;
+        }
+        .invoice-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border: 5px solid #000;
+            box-shadow: 12px 12px 0px #000;
+            padding: 30px;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 4px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .company-info h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0 0 8px 0;
+            color: var(--accent-pink);
+        }
+        .company-info p {
+            margin: 4px 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .invoice-title {
+            text-align: right;
+        }
+        .invoice-title h2 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0;
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border: 3px solid #000;
+            display: inline-block;
+        }
+        .invoice-meta {
+            margin-top: 10px;
+            display: grid;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 20px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #000;
+        }
+        .addresses {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .address-box {
+            background: #f9f9f9;
+            padding: 18px;
+            border: 3px solid #000;
+        }
+        .address-box h4 {
+            margin: 0 0 12px 0;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+        }
+        .address-box p {
+            margin: 6px 0;
+            font-size: 0.95rem;
+        }
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            background: #f9f9f9;
+            padding: 20px;
+            border: 3px solid #000;
+            margin-bottom: 25px;
+        }
+        .order-detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .order-detail-label {
+            font-weight: 800;
+            color: #555;
+        }
+        .order-detail-value {
+            font-weight: 900;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .items-table th {
+            background: #000;
+            color: #fff;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 2px solid #eee;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .items-table tr:last-child td {
+            border-bottom: 3px solid #000;
+        }
+        .summary-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+        .summary-box {
+            width: 380px;
+            background: #f9f9f9;
+            padding: 20px;
+            border: 4px solid #000;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+            font-weight: 700;
+        }
+        .summary-row.total {
+            border-top: 4px solid #000;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--accent-pink);
+        }
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .signature-box {
+            text-align: center;
+        }
+        .signature-line {
+            width: 220px;
+            border-top: 3px solid #000;
+            margin-top: 60px;
+            margin-bottom: 8px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 700;
+            border-top: 3px solid #000;
+            padding-top: 20px;
+        }
+        .actions-bar {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            border-top: 4px solid #000;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            padding: 14px 30px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
+            text-decoration: none;
+            color: #000;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: var(--accent-yellow);
+        }
+        .btn-secondary {
+            background: var(--accent-blue);
+        }
+        .btn:active {
+            box-shadow: 0 0 0 #000;
+            transform: translate(4px, 4px);
+        }
+
+        @media (max-width: 768px) {
+            .invoice-container {
+                padding: 18px;
+                border-width: 4px;
+                box-shadow: 8px 8px 0 #000;
+            }
+            .invoice-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            .invoice-title {
+                text-align: center;
+            }
+            .invoice-title h2 {
+                font-size: 1.8rem;
+            }
+            .addresses {
+                grid-template-columns: 1fr;
+            }
+            .order-details-grid {
+                grid-template-columns: 1fr;
+            }
+            .items-table {
+                display: block;
+                overflow-x: auto;
+            }
+            .summary-box {
+                width: 100%;
+            }
+            .signature-section {
+                flex-direction: column;
+                gap: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container" id="invoice-content">
+        <div class="invoice-header">
+            <div class="company-info">
+                <h1>House Of Viyara</h1>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Fashion Street, Mumbai, Maharashtra 400001</p>
+                <p><i class="fas fa-envelope"></i> hello@houseofviyara.com</p>
+                <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+                <p><i class="fas fa-briefcase"></i> GSTIN: 27AABCU9603R1ZX</p>
+            </div>
+            <div class="invoice-title">
+                <h2>TAX INVOICE</h2>
+                <div class="invoice-meta">
+                    <span>Invoice No: <span id="inv-no">HOV-XXXXXX</span></span>
+                    <span>Invoice Date: <span id="inv-date">DD/MM/YYYY</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="addresses">
+            <div class="address-box">
+                <h4><i class="fas fa-user"></i> Billing Address</h4>
+                <div id="billing-address">
+                    <p><strong>Customer Name</strong></p>
+                    <p>123 Street, City</p>
+                    <p>State - PIN</p>
+                    <p>Phone: +91 XXXXXXXXXX</p>
+                </div>
+            </div>
+            <div class="address-box">
+                <h4><i class="fas fa-shipping-fast"></i> Shipping Address</h4>
+                <div id="shipping-address">
+                    <p><strong>Customer Name</strong></p>
+                    <p>123 Street, City</p>
+                    <p>State - PIN</p>
+                    <p>Phone: +91 XXXXXXXXXX</p>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="section-title"><i class="fas fa-receipt"></i> Order Details</h3>
+        <div class="order-details-grid">
+            <div class="order-detail-row">
+                <span class="order-detail-label">Order ID:</span>
+                <span class="order-detail-value" id="order-id">LS-XXXXXX</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Transaction ID:</span>
+                <span class="order-detail-value" id="txn-id">TXN-XXXXXXXX</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Payment Method:</span>
+                <span class="order-detail-value" id="payment-method">UPI</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Payment Status:</span>
+                <span class="order-detail-value" style="color: #00aa00;">PAID</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Order Date:</span>
+                <span class="order-detail-value" id="order-date">DD/MM/YYYY</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Order Status:</span>
+                <span class="order-detail-value" id="order-status">Confirmed</span>
+            </div>
+        </div>
+
+        <h3 class="section-title"><i class="fas fa-shopping-bag"></i> Items Purchased</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Sl. No.</th>
+                    <th>Product Description</th>
+                    <th>HSN/SAC</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>CGST</th>
+                    <th>SGST</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="items-body">
+                <tr>
+                    <td>1</td>
+                    <td>Product Name (Color / Size)</td>
+                    <td>5407</td>
+                    <td>1</td>
+                    <td>₹1,000</td>
+                    <td>₹60</td>
+                    <td>₹60</td>
+                    <td>₹1,120</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-container">
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">₹1,000</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping Charges</span>
+                    <span id="shipping">₹100</span>
+                </div>
+                <div class="summary-row">
+                    <span>CGST (6%)</span>
+                    <span id="cgst">₹60</span>
+                </div>
+                <div class="summary-row">
+                    <span>SGST (6%)</span>
+                    <span id="sgst">₹60</span>
+                </div>
+                <div class="summary-row total">
+                    <span>GRAND TOTAL</span>
+                    <span id="grand-total">₹1,220</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="address-box" style="flex: 1; max-width: 400px;">
+                <h4><i class="fas fa-info-circle"></i> Terms & Conditions</h4>
+                <p style="font-size: 0.85rem; line-height: 1.5;">
+                    1. Goods once sold cannot be returned or exchanged.<br>
+                    2. This is a computer-generated invoice.<br>
+                    3. All disputes subject to Mumbai jurisdiction.<br>
+                    4. Please check your items at the time of delivery.<br>
+                    5. For any queries, contact customer support.
+                </p>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <p style="font-weight: 900; margin: 0;">Authorized Signatory</p>
+                <p style="font-size: 0.85rem; margin-top: 4px; color: #666;">For House Of Viyara</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for shopping with House Of Viyara!</p>
+            <p style="margin-top: 8px; font-size: 0.8rem;">This is a computer-generated invoice and does not require a physical signature.</p>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print Invoice</button>
+        <button class="btn btn-secondary" onclick="downloadInvoicePdf()"><i class="fas fa-download"></i> Download PDF</button>
+        <a href="#" id="invoice-whatsapp-link" class="btn" style="background: #25D366; color: #fff;"><i class="fab fa-whatsapp"></i> Share Order</a>
+        <a href="orders.html" class="btn"><i class="fas fa-arrow-left"></i> Back to Orders</a>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        const { jsPDF } = window.jspdf;
+        
+        // Load order from URL params or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        let currentOrder = null;
+        
+        // Try to find order in localStorage
+        const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+        if (orderId) {
+            currentOrder = orders.find(o => o.id === orderId);
+        }
+        if (!currentOrder && orders.length > 0) {
+            currentOrder = orders[orders.length - 1];
+        }
+        
+        // Helper to format date in DD/MM/YYYY
+        function formatDate(dateStr) {
+            if (!dateStr) return new Date().toLocaleDateString('en-IN');
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-IN');
+        }
+        
+        // Helper to format currency
+        function formatCurrency(amount) {
+            return '₹' + parseFloat(amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+        
+        // Render invoice data
+        if (currentOrder) {
+            // Invoice/Order IDs
+            document.getElementById('inv-no').innerText = 'HOV-' + currentOrder.id.split('-')[1];
+            document.getElementById('order-id').innerText = currentOrder.id;
+            document.getElementById('txn-id').innerText = currentOrder.txnid || 'N/A';
+            document.getElementById('inv-date').innerText = formatDate(currentOrder.created_at || currentOrder.paid_at);
+            document.getElementById('order-date').innerText = formatDate(currentOrder.created_at);
+            document.getElementById('order-status').innerText = currentOrder.status || 'Confirmed';
+            
+            // Addresses
+            const addr = currentOrder.shipping_address || {};
+            const customerName = currentOrder.customer || 'Customer';
+            const addressHtml = `
+                <p><strong>${customerName}</strong></p>
+                <p>${addr.street || '-'}</p>
+                <p>${addr.city || '-'}, ${addr.state || '-'}</p>
+                <p>Phone: ${addr.phone || '-'}</p>
+            `;
+            document.getElementById('billing-address').innerHTML = addressHtml;
+            document.getElementById('shipping-address').innerHTML = addressHtml;
+            
+            // Items
+            const itemsBody = document.getElementById('items-body');
+            let itemsHtml = '';
+            let subtotal = 0;
+            let totalCgst = 0;
+            let totalSgst = 0;
+            
+            currentOrder.items.forEach((item, index) => {
+                const itemTotal = item.price * item.qty;
+                subtotal += item.price * item.qty;
+                
+                // Assume 12% GST (6% CGST + 6% SGST)
+                const cgst = Math.round((item.price * 0.06) * item.qty);
+                const sgst = Math.round((item.price * 0.06) * item.qty);
+                totalCgst += cgst;
+                totalSgst += sgst;
+                
+                itemsHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.name}${item.variant ? ' (' + item.variant + ')' : ''}</td>
+                        <td>5407</td>
+                        <td>${item.qty}</td>
+                        <td>${formatCurrency(item.price)}</td>
+                        <td>${formatCurrency(cgst)}</td>
+                        <td>${formatCurrency(sgst)}</td>
+                        <td>${formatCurrency(itemTotal + cgst + sgst)}</td>
+                    </tr>
+                `;
+            });
+            itemsBody.innerHTML = itemsHtml;
+            
+            // Summary
+            document.getElementById('subtotal').innerText = formatCurrency(subtotal);
+            
+            const shipping = 100;
+            document.getElementById('shipping').innerText = formatCurrency(shipping);
+            
+            document.getElementById('cgst').innerText = formatCurrency(totalCgst);
+            document.getElementById('sgst').innerText = formatCurrency(totalSgst);
+            
+            const grandTotal = subtotal + shipping + totalCgst + totalSgst;
+            document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
+            
+            // Setup WhatsApp share link
+            setupInvoiceWhatsAppLink(currentOrder, orderId);
+        }
+
+        function setupInvoiceWhatsAppLink(order, orderId) {
+            if (!order) return;
+            
+            // Replace this with your actual WhatsApp number (include country code, e.g., 91XXXXXXXXXX)
+            const whatsappNumber = '919514518197'; 
+            
+            let message = `*New Order Received!* 🛍️\n\n`;
+            message += `*Order ID:* ${orderId}\n`;
+            message += `*Customer Name:* ${order.customer || 'N/A'}\n`;
+            
+            if (order.email) {
+                message += `*Email:* ${order.email}\n`;
+            }
+            
+            if (order.shipping_address) {
+                message += `*Shipping Address:*\n`;
+                message += `${order.shipping_address.street || ''}\n`;
+                message += `${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} - ${order.shipping_address.pin || ''}\n`;
+                if (order.shipping_address.phone) {
+                    message += `*Phone:* ${order.shipping_address.phone}\n`;
+                }
+            }
+            
+            message += `\n*Order Items:*\n`;
+            order.items.forEach((item, idx) => {
+                message += `${idx + 1}. ${item.name}${item.variant ? ' (' + item.variant + ')' : ''} × ${item.qty} = ₹${item.price * item.qty}\n`;
+            });
+            
+            message += `\n*Total Amount:* ₹${order.total}\n`;
+            message += `*Payment Status:* ${order.payment_status || 'Paid'}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            const whatsappLink = document.getElementById('invoice-whatsapp-link');
+            if (whatsappLink) {
+                whatsappLink.href = whatsappUrl;
+                whatsappLink.target = '_blank';
+            }
+        }
+        
+        // Download invoice as PDF
+        function downloadInvoicePdf() {
+            if (!currentOrder) {
+                alert('Order data not found!');
+                return;
+            }
+            
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            // Header
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HOUSE OF VIYARA', pageWidth / 2, 20, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('123 Fashion Street, Mumbai, Maharashtra 400001', pageWidth / 2, 28, { align: 'center' });
+            doc.text('Email: hello@houseofviyara.com | Phone: +91 98765 43210', pageWidth / 2, 34, { align: 'center' });
+            doc.text('GSTIN: 27AABCU9603R1ZX', pageWidth / 2, 40, { align: 'center' });
+            
+            // Invoice title line
+            doc.setLineWidth(1);
+            doc.line(14, 45, pageWidth - 14, 45);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 0, 122);
+            doc.text('TAX INVOICE', pageWidth / 2, 54, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Top right meta info
+            doc.setFontSize(10);
+            const metaY = 54;
+            doc.text('Invoice No.: HOV-' + (currentOrder.id.split('-')[1] || 'XXXXXX'), pageWidth - 14, metaY, { align: 'right' });
+            doc.text('Invoice Date: ' + formatDate(currentOrder.created_at || currentOrder.paid_at), pageWidth - 14, metaY + 6, { align: 'right' });
+            doc.text('Order ID: ' + currentOrder.id, pageWidth - 14, metaY + 12, { align: 'right' });
+            
+            // Billing/Shipping Addresses
+            let startY = 70;
+            const addrBoxWidth = (pageWidth - 40) / 2;
+            
+            // Billing Address
+            doc.roundedRect(14, startY - 5, addrBoxWidth, 45, 2, 2);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Billing Address', 18, startY);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const addr = currentOrder.shipping_address || {};
+            let billY = startY + 7;
+            doc.text(currentOrder.customer || 'Customer', 18, billY); billY += 5;
+            doc.text(addr.street || '', 18, billY); billY += 5;
+            doc.text(`${addr.city || ''}, ${addr.state || ''} - ${addr.pin || ''}`, 18, billY); billY += 5;
+            doc.text(`Phone: ${addr.phone || '-'}`, 18, billY);
+            
+            // Shipping Address
+            doc.roundedRect(14 + addrBoxWidth + 12, startY - 5, addrBoxWidth, 45, 2, 2);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Shipping Address', 14 + addrBoxWidth + 16, startY);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            let shipY = startY + 7;
+            doc.text(currentOrder.customer || 'Customer', 14 + addrBoxWidth + 16, shipY); shipY += 5;
+            doc.text(addr.street || '', 14 + addrBoxWidth + 16, shipY); shipY += 5;
+            doc.text(`${addr.city || ''}, ${addr.state || ''} - ${addr.pin || ''}`, 14 + addrBoxWidth + 16, shipY); shipY += 5;
+            doc.text(`Phone: ${addr.phone || '-'}`, 14 + addrBoxWidth + 16, shipY);
+            
+            // Items Table
+            const tableData = [];
+            let subtotal = 0;
+            let totalCgst = 0;
+            let totalSgst = 0;
+            
+            currentOrder.items.forEach((item, index) => {
+                const itemTotal = item.price * item.qty;
+                const cgst = Math.round((item.price * 0.06) * item.qty);
+                const sgst = Math.round((item.price * 0.06) * item.qty);
+                subtotal += itemTotal;
+                totalCgst += cgst;
+                totalSgst += sgst;
+                
+                tableData.push([
+                    index + 1,
+                    item.name + (item.variant ? ` (${item.variant})` : ''),
+                    '5407',
+                    item.qty,
+                    `₹${item.price}`,
+                    `₹${cgst}`,
+                    `₹${sgst}`,
+                    `₹${itemTotal + cgst + sgst}`
+                ]);
+            });
+            
+            doc.autoTable({
+                head: [['Sl.', 'Description', 'HSN', 'Qty', 'Price', 'CGST', 'SGST', 'Total']],
+                body: tableData,
+                startY: 125,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [0, 0, 0],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                bodyStyles: {
+                    fontSize: 9
+                },
+                margin: { left: 14, right: 14 }
+            });
+            
+            // Summary Box
+            const finalTableY = doc.lastAutoTable.finalY + 10;
+            const shipping = 100;
+            const grandTotal = subtotal + shipping + totalCgst + totalSgst;
+            
+            const summaryX = pageWidth - 90;
+            const summaryWidth = 76;
+            
+            doc.setLineWidth(0.5);
+            doc.roundedRect(summaryX - 6, finalTableY - 4, summaryWidth + 12, 50, 2, 2);
+            
+            let summaryY = finalTableY;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Subtotal:', summaryX, summaryY);
+            doc.text(`₹${subtotal}`, summaryX + 60, summaryY, { align: 'right' });
+            summaryY += 7;
+            
+            doc.text('Shipping:', summaryX, summaryY);
+            doc.text(`₹${shipping}`, summaryX + 60, summaryY, { align: 'right' });
+            summaryY += 7;
+            
+            doc.text('CGST (6%):', summaryX, summaryY);
+            doc.text(`₹${totalCgst}`, summaryX + 60, summaryY, { align: 'right' });
+            summaryY += 7;
+            
+            doc.text('SGST (6%):', summaryX, summaryY);
+            doc.text(`₹${totalSgst}`, summaryX + 60, summaryY, { align: 'right' });
+            summaryY += 10;
+            
+            doc.setLineWidth(0.8);
+            doc.line(summaryX - 4, summaryY - 3, summaryX + summaryWidth - 8, summaryY - 3);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('GRAND TOTAL:', summaryX, summaryY + 4);
+            doc.setTextColor(255, 0, 122);
+            doc.text(`₹${grandTotal}`, summaryX + 60, summaryY + 4, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Footer
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Thank you for shopping with House Of Viyara!', pageWidth / 2, pageHeight - 30, { align: 'center' });
+            doc.text('This is a computer-generated invoice.', pageWidth / 2, pageHeight - 23, { align: 'center' });
+            
+            // Save
+            doc.save(`invoice_${currentOrder.id}.pdf`);
+        }
+    </script>
+</body>
+</html>
