@@ -12,7 +12,6 @@ const AADI_DISCOUNT = 0.05; // 5% off
 function calculateDiscountedPrice(price) {
     return Math.round(price * (1 - AADI_DISCOUNT));
 }
-
 // DEBUG: Check Supabase config
 console.log('🔍 window.SUPABASE_URL:', window.SUPABASE_URL);
 console.log('🔍 window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
@@ -1676,16 +1675,16 @@ function renderProductDetails(product, targetContainer, allProducts = []) {
                 <div class="pdp-actions">
                     <div class="pdp-cta-wrap">
                         <div class="qty-selector">
-                            <button onclick="updatePdpQty(-1)" ${(selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-minus"></i></button>
+                            <button onclick="updatePdpQty(-1)" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-minus"></i></button>
                             <input type="number" id="pdp-qty" value="1" min="1" max="${Math.max(1, selectedVariant.stock)}" readonly>
-                            <button onclick="updatePdpQty(1)" ${(selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-plus"></i></button>
+                            <button onclick="updatePdpQty(1)" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-plus"></i></button>
                         </div>
                         <div class="pdp-cta-buttons">
-                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${(selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
-                                <i class="fas fa-shopping-cart"></i> ${(selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'ADD TO BAG')}
+                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
+                                <i class="fas fa-shopping-cart"></i> ${selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'ADD TO BAG'}
                             </button>
-                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${(selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
-                                ${(selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'BUY NOW <i class="fas fa-arrow-right"></i>')}
+                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
+                                ${selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'BUY NOW <i class="fas fa-arrow-right"></i>'}
                             </button>
                         </div>
                     </div>
@@ -2153,7 +2152,7 @@ async function completeCheckout() {
         customer: checkout.name,
         email: checkout.email,
         phone: checkout.phone || '',
-        items: cart.map(item => ({ name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size' })),
+        items: cart.map(item => ({ id: item.id, name: item.name, qty: item.quantity, price: item.price, variant: item.variantLabel || 'Default / One Size', variantColor: item.variantColor || 'Default', variantSize: item.variantSize || 'One Size' })),
         total: amount,
         shipping_address: checkout.shipping_address,
         date: new Date().toLocaleDateString('en-IN'),

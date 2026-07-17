@@ -560,12 +560,13 @@ function renderShell() {
             <i class="fas fa-star"></i><span>Hero Section</span>
           </a>
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
-              <i class="fas fa-shopping-bag"></i><span>Orders</span>
-            </a>
-            <a class="admin-nav-item" id="nav-inventory" onclick="navigateTo('inventory')">
-              <i class="fas fa-warehouse"></i><span>Inventory</span>
-            </a>
-            <a class="admin-nav-item" id="nav-customers" onclick="navigateTo('customers')">
+          <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
+            <i class="fas fa-shopping-bag"></i><span>Orders</span>
+          </a>
+          <a class="admin-nav-item" id="nav-inventory" onclick="navigateTo('inventory')">
+            <i class="fas fa-warehouse"></i><span>Inventory</span>
+          </a>
+          <a class="admin-nav-item" id="nav-customers" onclick="navigateTo('customers')">
             <i class="fas fa-users"></i><span>Customers/Visitors</span>
           </a>
           <a class="admin-nav-item" id="nav-cookies" onclick="navigateTo('cookies')">
@@ -1224,10 +1225,18 @@ async function renderInventory() {
     try {
         await loadSupabaseClient();
         let products = [];
+        let systemConfig = { whatsapp_phone: '+919514518197', whatsapp_apikey: '' };
+        
         if (adminSupabase) {
-            const { data, error } = await adminSupabase.from('products').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-            products = data;
+            const [productsRes, configRes] = await Promise.all([
+                adminSupabase.from('products').select('*').order('created_at', { ascending: false }),
+                adminSupabase.from('system_config').select('whatsapp_phone, whatsapp_apikey').eq('id', 'global').maybeSingle()
+            ]);
+            if (productsRes.error) throw productsRes.error;
+            products = productsRes.data || [];
+            if (configRes.data) {
+                systemConfig = configRes.data;
+            }
         } else {
             products = await apiFetch('/api/admin/products');
         }
@@ -1280,7 +1289,7 @@ async function renderInventory() {
                           <button class="admin-btn admin-btn-sm admin-btn-primary" onclick="updateStock(${p.id})">
                             <i class="fas fa-save"></i> Save
                           </button>
-                          ${isLowStock ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="sendWhatsAppAlert(${p.id}, '${p.name}', ${stock})">
+                          ${isLowStock ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="sendWhatsAppAlert(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${stock})">
                             <i class="fab fa-whatsapp"></i> Alert
                           </button>` : ''}
                         </div>
@@ -1290,6 +1299,37 @@ async function renderInventory() {
                 }).join('')}
               </tbody>
             </table>
+          </div>
+        </div>
+        
+        <div class="admin-section-card" style="margin-top: 30px;">
+          <div class="admin-section-card-header">
+            <h3><i class="fab fa-whatsapp"></i> WhatsApp Notification Settings</h3>
+          </div>
+          <div style="padding: 20px;">
+            <p style="margin-top:0; color:#555;">Configure background WhatsApp alerts for low stock levels. We use the free <strong>CallMeBot API</strong> to send background alerts to your phone number.</p>
+            <div class="aform-row" style="margin-bottom:15px;">
+              <div class="aform-group">
+                <label>WhatsApp Number (with country code, e.g. +919514518197)</label>
+                <input type="text" class="aform-input" id="setting-wa-phone" value="${systemConfig.whatsapp_phone || '+919514518197'}">
+              </div>
+              <div class="aform-group">
+                <label>CallMeBot API Key</label>
+                <input type="text" class="aform-input" id="setting-wa-apikey" value="${systemConfig.whatsapp_apikey || ''}" placeholder="e.g. 123456">
+              </div>
+            </div>
+            <div style="background:#e3f2fd; padding:15px; border:2px solid #0d47a1; border-radius:8px; margin-bottom:20px; font-size:0.9rem;">
+              <strong>How to get a FREE CallMeBot API Key:</strong>
+              <ol style="margin:5px 0 0 20px; padding:0;">
+                <li>Add <strong>+34 644 20 47 56</strong> (or the latest bot number from <a href="https://www.callmebot.com" target="_blank">callmebot.com</a>) to your phone contacts.</li>
+                <li>Send a WhatsApp message to the contact: <code>I allow callmebot to send me messages</code></li>
+                <li>Wait for the bot to reply with your unique <strong>API Key</strong>.</li>
+                <li>Enter the key and your phone number above and click Save.</li>
+              </ol>
+            </div>
+            <button class="admin-btn admin-btn-primary" onclick="saveWhatsAppSettings()">
+              <i class="fas fa-save"></i> Save Settings
+            </button>
           </div>
         </div>`;
     } catch (e) {
@@ -1323,8 +1363,44 @@ async function updateStock(productId) {
         // Check if low stock and send alert
         if (stock <= lowStockThreshold) {
             const productName = stockInput.closest('tr').querySelector('strong').textContent;
-            if (confirm(`Low stock for ${productName}! Send WhatsApp alert?`)) {
-                sendWhatsAppAlert(productId, productName, stock);
+            
+            // Load WhatsApp Settings from system_config
+            let phone = '+919514518197';
+            let apikey = '';
+            try {
+                const { data: config } = await adminSupabase
+                    .from('system_config')
+                    .select('whatsapp_phone, whatsapp_apikey')
+                    .eq('id', 'global')
+                    .maybeSingle();
+                if (config) {
+                    phone = config.whatsapp_phone || phone;
+                    apikey = config.whatsapp_apikey || '';
+                }
+            } catch (configErr) {
+                console.warn('Failed to fetch WhatsApp config:', configErr);
+            }
+
+            if (apikey && apikey.trim() !== '') {
+                // Attempt background send
+                showToast('Sending background WhatsApp alert...', 'info');
+                const message = `⚠️ *LOW STOCK ALERT* ⚠️\n\nProduct: *${productName}*\nCurrent Stock: *${stock}* (Threshold: ${lowStockThreshold})\n\nPlease restock this item soon!`;
+                let cleanPhone = phone.replace(/[^0-9]/g, '');
+                if (!cleanPhone.startsWith('91') && cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+                
+                const url = `https://api.callmebot.com/whatsapp.php?phone=${cleanPhone}&text=${encodeURIComponent(message)}&apikey=${apikey}`;
+                try {
+                    await fetch(url, { mode: 'no-cors' });
+                    showToast('Automatic WhatsApp alert sent in background!', 'success');
+                } catch (e) {
+                    console.error('Background alert failed, falling back to manual...', e);
+                    sendManualWhatsAppAlert(productName, stock, phone);
+                }
+            } else {
+                // Fallback: ask for manual alert
+                if (confirm(`Low stock for ${productName}! Send WhatsApp alert?`)) {
+                    sendManualWhatsAppAlert(productName, stock, phone);
+                }
             }
         }
         renderInventory();
@@ -1334,12 +1410,66 @@ async function updateStock(productId) {
 }
 
 function sendWhatsAppAlert(productId, productName, stock) {
+    // Force trigger manual alert from the UI alert button
+    let phone = '+919514518197';
+    loadSupabaseClient().then(() => {
+        if (adminSupabase) {
+            adminSupabase.from('system_config').select('whatsapp_phone').eq('id', 'global').maybeSingle().then(res => {
+                if (res.data && res.data.whatsapp_phone) {
+                    phone = res.data.whatsapp_phone;
+                }
+                sendManualWhatsAppAlert(productName, stock, phone);
+            });
+        } else {
+            sendManualWhatsAppAlert(productName, stock, phone);
+        }
+    });
+}
+
+function sendManualWhatsAppAlert(productName, stock, phone) {
     const message = `⚠️ LOW STOCK ALERT!\n\nProduct: ${productName}\nCurrent Stock: ${stock}\n\nPlease restock soon!`;
-    const whatsappUrl = `https://wa.me/919514518197?text=${encodeURIComponent(message)}`;
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (!cleanPhone.startsWith('91') && cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     showToast('WhatsApp alert opened!', 'success');
 }
 
+async function saveWhatsAppSettings() {
+    try {
+        await loadSupabaseClient();
+        const phone = document.getElementById('setting-wa-phone').value.trim();
+        const apikey = document.getElementById('setting-wa-apikey').value.trim();
+        
+        if (!phone) {
+            alert('Please enter a WhatsApp phone number!');
+            return;
+        }
+        
+        if (adminSupabase) {
+            const { error } = await adminSupabase
+                .from('system_config')
+                .update({
+                    whatsapp_phone: phone,
+                    whatsapp_apikey: apikey
+                })
+                .eq('id', 'global');
+            if (error) throw error;
+        } else {
+            showToast('Supabase not connected. Settings saved locally only.', 'warning');
+        }
+        showToast('WhatsApp settings updated successfully!', 'success');
+        renderInventory();
+    } catch (e) {
+        showToast('Failed to save settings: ' + e.message, 'error');
+    }
+}
+
+// Attach functions to window to ensure global accessibility in admin view
+window.saveWhatsAppSettings = saveWhatsAppSettings;
+window.updateStock = updateStock;
+window.sendWhatsAppAlert = sendWhatsAppAlert;
 async function toggleTrending(id, newVal) {
     try {
         await loadSupabaseClient();

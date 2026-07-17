@@ -443,7 +443,6 @@ body.admin-page::before {
     background: var(--accent-pink);
     color: white;
 }
-}
 .status-pending   { background: var(--accent-yellow); }
 .status-confirmed { background: var(--accent-green); }
 .status-shipped   { background: var(--accent-blue); }

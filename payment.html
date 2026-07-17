@@ -425,9 +425,135 @@
             el.classList.add('active');
         }
 
+        async function decrementStockAndCheckAlerts(items) {
+            if (!paymentSupabase || !items || !items.length) return;
+            
+            console.log('📉 Decrementing stock for items:', items);
+            
+            // Load WhatsApp Settings from system_config
+            let whatsappPhone = '919514518197';
+            let whatsappApikey = '';
+            try {
+                const { data: config } = await paymentSupabase
+                    .from('system_config')
+                    .select('whatsapp_phone, whatsapp_apikey')
+                    .eq('id', 'global')
+                    .maybeSingle();
+                if (config) {
+                    whatsappPhone = config.whatsapp_phone || whatsappPhone;
+                    whatsappApikey = config.whatsapp_apikey || '';
+                }
+            } catch (configErr) {
+                console.warn('Failed to fetch system_config:', configErr);
+            }
+            
+            for (const item of items) {
+                if (!item.id) {
+                    console.warn('Item lacks product ID, skipping stock decrement:', item);
+                    continue;
+                }
+                try {
+                    // Fetch current product stock and variants
+                    const { data: product, error: fetchErr } = await paymentSupabase
+                        .from('products')
+                        .select('id, name, stock, variants, low_stock_threshold')
+                        .eq('id', item.id)
+                        .single();
+                        
+                    if (fetchErr) {
+                        console.error(`Failed to fetch product ${item.id}:`, fetchErr);
+                        continue;
+                    }
+                    
+                    if (product) {
+                        const currentStock = Number(product.stock ?? 10);
+                        const newStock = Math.max(0, currentStock - Number(item.qty || 1));
+                        
+                        let updatedVariants = product.variants;
+                        // If it has variants and it's not default, try to decrement matching variant
+                        if (Array.isArray(updatedVariants) && updatedVariants.length > 0 && item.variantColor && item.variantSize) {
+                            updatedVariants = updatedVariants.map(v => {
+                                const isColorMatch = (v.color || 'Default').trim().toLowerCase() === (item.variantColor || 'Default').trim().toLowerCase();
+                                const isSizeMatch = (v.size || 'One Size').trim().toLowerCase() === (item.variantSize || 'One Size').trim().toLowerCase();
+                                if (isColorMatch && isSizeMatch) {
+                                    const vStock = Number(v.stock ?? 0);
+                                    return { ...v, stock: Math.max(0, vStock - Number(item.qty || 1)) };
+                                }
+                                return v;
+                            });
+                        }
+                        
+                        // Update in Supabase
+                        const { error: updateErr } = await paymentSupabase
+                            .from('products')
+                            .update({
+                                stock: newStock,
+                                variants: updatedVariants
+                            })
+                            .eq('id', product.id);
+                            
+                        if (updateErr) {
+                            console.error(`Failed to update stock for product ${product.id}:`, updateErr);
+                        } else {
+                            console.log(`Successfully updated stock for ${product.name}. Old stock: ${currentStock}, New stock: ${newStock}`);
+                            
+                            // Check if low stock
+                            const threshold = Number(product.low_stock_threshold ?? 5);
+                            if (newStock <= threshold) {
+                                console.log(`⚠️ Low stock detected for ${product.name} (Stock: ${newStock}, Threshold: ${threshold})`);
+                                await sendBackgroundWhatsAppAlert(product.name, newStock, threshold, whatsappPhone, whatsappApikey);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Error decrementing stock for item ${item.name}:`, e);
+                }
+            }
+        }
+
+        async function sendBackgroundWhatsAppAlert(productName, stock, threshold, phone, apikey) {
+            const message = `⚠️ *LOW STOCK ALERT* ⚠️\n\nProduct: *${productName}*\nCurrent Stock: *${stock}* (Threshold: ${threshold})\n\nPlease restock this item soon!`;
+            
+            // Clean phone number (remove +, spaces, ensure country code)
+            let cleanPhone = phone.replace(/[^0-9]/g, '');
+            if (!cleanPhone.startsWith('91') && cleanPhone.length === 10) {
+                cleanPhone = '91' + cleanPhone;
+            }
+            
+            if (apikey && apikey.trim() !== '') {
+                console.log(`Calling CallMeBot to alert phone ${cleanPhone} in background...`);
+                const url = `https://api.callmebot.com/whatsapp.php?phone=${cleanPhone}&text=${encodeURIComponent(message)}&apikey=${apikey}`;
+                try {
+                    // Call CallMeBot in the background. fetch with mode: 'no-cors' is CORS-friendly
+                    await fetch(url, { mode: 'no-cors' });
+                    console.log('Background WhatsApp alert successfully triggered via CallMeBot.');
+                } catch (fetchErr) {
+                    console.error('Failed to trigger background WhatsApp alert:', fetchErr);
+                }
+            } else {
+                console.warn('WhatsApp API Key (CallMeBot) not configured. Cannot send background notification. Fallback: manual alert will be required.');
+            }
+        }
+
         async function processPayment() {
             const processing = document.getElementById('processing');
             processing.style.display = 'flex';
+
+            // Ensure currentOrder is loaded
+            if (paymentSupabase && orderId && (!currentOrder || !currentOrder.items)) {
+                try {
+                    const { data: orderData } = await paymentSupabase
+                        .from('orders')
+                        .select('*')
+                        .eq('id', orderId)
+                        .maybeSingle();
+                    if (orderData) {
+                        currentOrder = orderData;
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch order from Supabase:', e);
+                }
+            }
 
             await new Promise(resolve => setTimeout(resolve, 2000));
             
@@ -443,25 +569,29 @@
             }
 
             // Update order in Supabase
-        if (paymentSupabase && orderId) {
-            try {
-                const { error } = await paymentSupabase
-                    .from('orders')
-                    .update({
-                        status: 'Confirmed',
-                        payment_status: 'Paid',
-                        paid_at: new Date().toISOString()
-                    })
-                    .eq('id', orderId);
-                if (error) {
-                    console.error('Error updating order in Supabase:', error);
-                } else {
-                    console.log('Order updated in Supabase successfully');
+            if (paymentSupabase && orderId) {
+                try {
+                    const { error } = await paymentSupabase
+                        .from('orders')
+                        .update({
+                            status: 'Confirmed',
+                            payment_status: 'Paid',
+                            paid_at: new Date().toISOString()
+                        })
+                        .eq('id', orderId);
+                    if (error) {
+                        console.error('Error updating order in Supabase:', error);
+                    } else {
+                        console.log('Order updated in Supabase successfully');
+                        // Automatically decrement stock and trigger low-stock alerts
+                        if (currentOrder && currentOrder.items) {
+                            await decrementStockAndCheckAlerts(currentOrder.items);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Supabase order update failed:', e);
                 }
-            } catch (e) {
-                console.error('Supabase order update failed:', e);
             }
-        }
 
             // Show success content
             document.getElementById('payment-content').style.display = 'none';
