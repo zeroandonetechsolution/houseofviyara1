@@ -1392,22 +1392,30 @@ function renderProductGrid(products) {
 async function renderInventory() {
     const content = document.getElementById('admin-content');
     try {
-        await loadSupabaseClient();
         let products = [];
         let systemConfig = { whatsapp_phone: '+919514518197', whatsapp_apikey: '' };
         
-        if (adminSupabase) {
-            const [productsRes, configRes] = await Promise.all([
-                adminSupabase.from('products').select('*').order('created_at', { ascending: false }),
-                adminSupabase.from('system_config').select('whatsapp_phone, whatsapp_apikey').eq('id', 'global').maybeSingle()
-            ]);
-            if (productsRes.error) throw productsRes.error;
-            products = productsRes.data || [];
-            if (configRes.data) {
-                systemConfig = configRes.data;
+        if (window.USE_GITHUB_DATABASE) {
+            products = await adminFetchData('products', []);
+            const config = await adminFetchData('system_config', {});
+            if (config) {
+                systemConfig = { ...systemConfig, ...config };
             }
         } else {
-            products = await apiFetch('/api/admin/products');
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const [productsRes, configRes] = await Promise.all([
+                    adminSupabase.from('products').select('*').order('created_at', { ascending: false }),
+                    adminSupabase.from('system_config').select('whatsapp_phone, whatsapp_apikey').eq('id', 'global').maybeSingle()
+                ]);
+                if (productsRes.error) throw productsRes.error;
+                products = productsRes.data || [];
+                if (configRes.data) {
+                    systemConfig = configRes.data;
+                }
+            } else {
+                products = await apiFetch('/api/admin/products');
+            }
         }
 
         content.innerHTML = `
@@ -1508,23 +1516,35 @@ async function renderInventory() {
 
 async function updateStock(productId) {
     try {
-        await loadSupabaseClient();
         const stockInput = document.getElementById(`stock-${productId}`);
         const thresholdInput = document.getElementById(`threshold-${productId}`);
         const stock = Number(stockInput.value);
         const lowStockThreshold = Number(thresholdInput.value);
 
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('products').update({ 
-                stock, 
-                low_stock_threshold: lowStockThreshold 
-            }).eq('id', productId);
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const products = await adminFetchData('products', []);
+            const idx = products.findIndex(p => String(p.id) === String(productId));
+            if (idx !== -1) {
+                products[idx].stock = stock;
+                products[idx].low_stock_threshold = lowStockThreshold;
+                await adminSaveData('products', products);
+            } else {
+                throw new Error('Product not found');
+            }
         } else {
-            await apiFetch(`/api/admin/products/${productId}`, {
-                method: 'PUT',
-                body: JSON.stringify({ stock, low_stock_threshold: lowStockThreshold })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('products').update({ 
+                    stock, 
+                    low_stock_threshold: lowStockThreshold 
+                }).eq('id', productId);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/products/${productId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ stock, low_stock_threshold: lowStockThreshold })
+                });
+            }
         }
 
         showToast('Stock updated successfully!', 'success');
@@ -1537,14 +1557,22 @@ async function updateStock(productId) {
             let phone = '+919514518197';
             let apikey = '';
             try {
-                const { data: config } = await adminSupabase
-                    .from('system_config')
-                    .select('whatsapp_phone, whatsapp_apikey')
-                    .eq('id', 'global')
-                    .maybeSingle();
-                if (config) {
-                    phone = config.whatsapp_phone || phone;
-                    apikey = config.whatsapp_apikey || '';
+                if (window.USE_GITHUB_DATABASE) {
+                    const config = await adminFetchData('system_config', {});
+                    if (config) {
+                        phone = config.whatsapp_phone || phone;
+                        apikey = config.whatsapp_apikey || '';
+                    }
+                } else if (adminSupabase || await loadSupabaseClient()) {
+                    const { data: config } = await adminSupabase
+                        .from('system_config')
+                        .select('whatsapp_phone, whatsapp_apikey')
+                        .eq('id', 'global')
+                        .maybeSingle();
+                    if (config) {
+                        phone = config.whatsapp_phone || phone;
+                        apikey = config.whatsapp_apikey || '';
+                    }
                 }
             } catch (configErr) {
                 console.warn('Failed to fetch WhatsApp config:', configErr);
@@ -1581,18 +1609,27 @@ async function updateStock(productId) {
 function sendWhatsAppAlert(productId, productName, stock) {
     // Force trigger manual alert from the UI alert button
     let phone = '+919514518197';
-    loadSupabaseClient().then(() => {
-        if (adminSupabase) {
-            adminSupabase.from('system_config').select('whatsapp_phone').eq('id', 'global').maybeSingle().then(res => {
-                if (res.data && res.data.whatsapp_phone) {
-                    phone = res.data.whatsapp_phone;
-                }
-                sendManualWhatsAppAlert(productName, stock, phone);
-            });
-        } else {
+    if (window.USE_GITHUB_DATABASE) {
+        adminFetchData('system_config', {}).then(config => {
+            if (config && config.whatsapp_phone) {
+                phone = config.whatsapp_phone;
+            }
             sendManualWhatsAppAlert(productName, stock, phone);
-        }
-    });
+        });
+    } else {
+        loadSupabaseClient().then(() => {
+            if (adminSupabase) {
+                adminSupabase.from('system_config').select('whatsapp_phone').eq('id', 'global').maybeSingle().then(res => {
+                    if (res.data && res.data.whatsapp_phone) {
+                        phone = res.data.whatsapp_phone;
+                    }
+                    sendManualWhatsAppAlert(productName, stock, phone);
+                });
+            } else {
+                sendManualWhatsAppAlert(productName, stock, phone);
+            }
+        });
+    }
 }
 
 function sendManualWhatsAppAlert(productName, stock, phone) {
@@ -1641,20 +1678,31 @@ window.updateStock = updateStock;
 window.sendWhatsAppAlert = sendWhatsAppAlert;
 async function toggleTrending(id, newVal) {
     try {
-        await loadSupabaseClient();
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('products').update({ is_trending: newVal }).eq('id', id);
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const products = await adminFetchData('products', []);
+            const idx = products.findIndex(p => String(p.id) === String(id));
+            if (idx !== -1) {
+                products[idx].is_trending = newVal;
+                await adminSaveData('products', products);
+            } else {
+                throw new Error('Product not found');
+            }
         } else {
-            await apiFetch(`/api/admin/products/${id}/trending`, {
-                method: 'PATCH',
-                body: JSON.stringify({ is_trending: newVal })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('products').update({ is_trending: newVal }).eq('id', id);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/products/${id}/trending`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_trending: newVal })
+                });
+            }
         }
         showToast(newVal ? '🔥 Product marked as Trending!' : 'Product removed from Trending', 'success');
         renderProducts();
     } catch (e) {
-        showToast('Failed to update trending status', 'error');
+        showToast('Failed to update trending status: ' + e.message, 'error');
     }
 }
 
@@ -2197,8 +2245,8 @@ async function handleAddProduct() {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleAddProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
-        if (adminSupabase) {
+        // Upload any files or data URLs to Supabase Storage or Cloudinary
+        if (adminSupabase || window.CLOUDINARY_CLOUD_NAME || window.USE_GITHUB_DATABASE) {
             const uploadedGallery = [];
             for (const item of gallery) {
                 if (typeof item === 'object' && item.file) {
@@ -2321,8 +2369,8 @@ async function handleEditProduct(id) {
         let variants = tempProductData.variants || [];
         console.log('📥 Starting handleEditProduct, gallery:', gallery, 'videos:', videos, 'variants:', variants);
 
-        // Upload any files or data URLs to Supabase Storage
-        if (adminSupabase) {
+        // Upload any files or data URLs to Supabase Storage or Cloudinary
+        if (adminSupabase || window.CLOUDINARY_CLOUD_NAME || window.USE_GITHUB_DATABASE) {
             const uploadedGallery = [];
             for (const item of gallery) {
                 if (typeof item === 'object' && item.file) {
@@ -2789,13 +2837,17 @@ async function renderBanners() {
     const content = document.getElementById('admin-content');
     try {
         let banners;
-        await loadSupabaseClient();
-        if (adminSupabase) {
-            const { data, error } = await adminSupabase.from('banners').select('*').order('display_order', { ascending: true });
-            if (error) throw error;
-            banners = data;
+        if (window.USE_GITHUB_DATABASE) {
+            banners = await adminFetchData('banners', []);
         } else {
-            banners = await apiFetch('/api/admin/banners');
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { data, error } = await adminSupabase.from('banners').select('*').order('display_order', { ascending: true });
+                if (error) throw error;
+                banners = data;
+            } else {
+                banners = await apiFetch('/api/admin/banners');
+            }
         }
         
         content.innerHTML = `
@@ -2990,13 +3042,17 @@ function openAddBanner() {
 async function openEditBanner(id) {
     try {
         let banners;
-        await loadSupabaseClient();
-        if (adminSupabase) {
-            const { data, error } = await adminSupabase.from('banners').select('*').eq('id', id);
-            if (error) throw error;
-            banners = data;
+        if (window.USE_GITHUB_DATABASE) {
+            banners = await adminFetchData('banners', []);
         } else {
-            banners = await apiFetch('/api/admin/banners');
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { data, error } = await adminSupabase.from('banners').select('*').eq('id', id);
+                if (error) throw error;
+                banners = data;
+            } else {
+                banners = await apiFetch('/api/admin/banners');
+            }
         }
         const b = banners.find(x => x.id === id);
         if (!b) return showToast('Banner not found', 'error');
@@ -3013,45 +3069,43 @@ async function handleAddBanner() {
         
         // Check if we have a temporary file or image from upload
         if (window._bfTempFile) {
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
-            }
+            final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
         } else if (window._bfTempImage && window._bfTempImage.startsWith('data:')) {
             // Fallback for data URLs
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
-            }
+            final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
         }
         
         // Require at least one of temp image or URL
         if (!final_image_url && !window._bfTempImage && !window._bfTempFile) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
+
+        const newBanner = {
+            id: Date.now(),
+            title: document.getElementById('bf-title').value,
+            subtitle: document.getElementById('bf-sub').value,
+            image_url: final_image_url,
+            cta_text: document.getElementById('bf-cta-text').value,
+            cta_link: document.getElementById('bf-cta-link').value,
+            is_active: document.getElementById('bf-active').checked,
+            display_order: Number(document.getElementById('bf-order').value || 0)
+        };
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('banners').insert({
-                title: document.getElementById('bf-title').value,
-                subtitle: document.getElementById('bf-sub').value,
-                image_url: final_image_url,
-                cta_text: document.getElementById('bf-cta-text').value,
-                cta_link: document.getElementById('bf-cta-link').value,
-                is_active: document.getElementById('bf-active').checked,
-                display_order: Number(document.getElementById('bf-order').value || 0)
-            });
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const banners = await adminFetchData('banners', []);
+            banners.push(newBanner);
+            await adminSaveData('banners', banners);
         } else {
-            await apiFetch('/api/admin/banners', {
-                method: 'POST',
-                body: JSON.stringify({
-                    title: document.getElementById('bf-title').value,
-                    subtitle: document.getElementById('bf-sub').value,
-                    image_url: final_image_url,
-                    cta_text: document.getElementById('bf-cta-text').value,
-                    cta_link: document.getElementById('bf-cta-link').value,
-                    is_active: document.getElementById('bf-active').checked,
-                    display_order: Number(document.getElementById('bf-order').value || 0)
-                })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('banners').insert(newBanner);
+                if (error) throw error;
+            } else {
+                await apiFetch('/api/admin/banners', {
+                    method: 'POST',
+                    body: JSON.stringify(newBanner)
+                });
+            }
         }
         // Clear temp image/file
         window._bfTempImage = null;
@@ -3068,54 +3122,64 @@ async function handleEditBanner(id) {
         
         // Check if we have a temporary file or image from upload
         if (window._bfTempFile) {
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
-            }
+            final_image_url = await supabaseUploadFile(window._bfTempFile, 'banners');
         } else if (window._bfTempImage && window._bfTempImage.startsWith('data:')) {
             // Fallback for data URLs
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
-            }
+            final_image_url = await supabaseUploadFile(window._bfTempImage, 'banners');
         }
         
         // Require at least one of temp image, URL, or existing image
         if (!final_image_url && !window._bfTempImage && !window._bfTempFile) {
             // Get existing banner to check if it has an image
-            if (adminSupabase) {
-                const { data: existingBanner } = await adminSupabase.from('banners').select('image_url').eq('id', id).single();
+            if (window.USE_GITHUB_DATABASE) {
+                const banners = await adminFetchData('banners', []);
+                const existingBanner = banners.find(x => x.id === id);
                 if (!existingBanner || !existingBanner.image_url) {
                     return showToast('Please upload an image or enter an image URL', 'error');
                 }
                 final_image_url = existingBanner.image_url;
             } else {
-                return showToast('Please upload an image or enter an image URL', 'error');
+                await loadSupabaseClient();
+                if (adminSupabase) {
+                    const { data: existingBanner } = await adminSupabase.from('banners').select('image_url').eq('id', id).single();
+                    if (!existingBanner || !existingBanner.image_url) {
+                        return showToast('Please upload an image or enter an image URL', 'error');
+                    }
+                    final_image_url = existingBanner.image_url;
+                } else {
+                    return showToast('Please upload an image or enter an image URL', 'error');
+                }
             }
         }
+
+        const updatedBanner = {
+            id,
+            title: document.getElementById('bf-title').value,
+            subtitle: document.getElementById('bf-sub').value,
+            image_url: final_image_url,
+            cta_text: document.getElementById('bf-cta-text').value,
+            cta_link: document.getElementById('bf-cta-link').value,
+            is_active: document.getElementById('bf-active').checked,
+            display_order: Number(document.getElementById('bf-order').value || 0)
+        };
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('banners').update({
-                title: document.getElementById('bf-title').value,
-                subtitle: document.getElementById('bf-sub').value,
-                image_url: final_image_url,
-                cta_text: document.getElementById('bf-cta-text').value,
-                cta_link: document.getElementById('bf-cta-link').value,
-                is_active: document.getElementById('bf-active').checked,
-                display_order: Number(document.getElementById('bf-order').value || 0)
-            }).eq('id', id);
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const banners = await adminFetchData('banners', []);
+            const idx = banners.findIndex(x => x.id === id);
+            if (idx !== -1) banners[idx] = updatedBanner;
+            else banners.push(updatedBanner);
+            await adminSaveData('banners', banners);
         } else {
-            await apiFetch(`/api/admin/banners/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    title: document.getElementById('bf-title').value,
-                    subtitle: document.getElementById('bf-sub').value,
-                    image_url: final_image_url,
-                    cta_text: document.getElementById('bf-cta-text').value,
-                    cta_link: document.getElementById('bf-cta-link').value,
-                    is_active: document.getElementById('bf-active').checked,
-                    display_order: Number(document.getElementById('bf-order').value || 0)
-                })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('banners').update(updatedBanner).eq('id', id);
+                if (error) throw error;
+            } else {
+                await apiFetch(`/api/admin/banners/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updatedBanner)
+                });
+            }
         }
         // Clear temp image/file
         window._bfTempImage = null;
@@ -3126,18 +3190,27 @@ async function handleEditBanner(id) {
 
 async function toggleBannerActive(id, newVal) {
     try {
-        await loadSupabaseClient();
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('banners').update({ is_active: newVal }).eq('id', id);
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const banners = await adminFetchData('banners', []);
+            const idx = banners.findIndex(x => x.id === id);
+            if (idx !== -1) {
+                banners[idx].is_active = newVal;
+                await adminSaveData('banners', banners);
+            }
         } else {
-            const banners = await apiFetch('/api/admin/banners');
-            const b = banners.find(x => x.id === id);
-            if (!b) return;
-            await apiFetch(`/api/admin/banners/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify({ ...b, is_active: newVal })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('banners').update({ is_active: newVal }).eq('id', id);
+                if (error) throw error;
+            } else {
+                const banners = await apiFetch('/api/admin/banners');
+                const b = banners.find(x => x.id === id);
+                if (!b) return;
+                await apiFetch(`/api/admin/banners/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ ...b, is_active: newVal })
+                });
+            }
         }
         showToast(newVal ? 'Banner is now active' : 'Banner hidden', 'success');
         renderBanners();
@@ -3147,12 +3220,18 @@ async function toggleBannerActive(id, newVal) {
 async function deleteBanner(id, title) {
     confirmAction(`Delete banner "<strong>${title}</strong>"?`, async () => {
         try {
-            await loadSupabaseClient();
-            if (adminSupabase) {
-                const { error } = await adminSupabase.from('banners').delete().eq('id', id);
-                if (error) throw error;
+            if (window.USE_GITHUB_DATABASE) {
+                const banners = await adminFetchData('banners', []);
+                const updatedBanners = banners.filter(x => x.id !== id);
+                await adminSaveData('banners', updatedBanners);
             } else {
-                await apiFetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
+                await loadSupabaseClient();
+                if (adminSupabase) {
+                    const { error } = await adminSupabase.from('banners').delete().eq('id', id);
+                    if (error) throw error;
+                } else {
+                    await apiFetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
+                }
             }
             showToast('Banner deleted', 'success'); renderBanners();
         } catch (e) { showToast('Failed to delete', 'error'); }
@@ -3166,23 +3245,32 @@ async function renderOrders() {
     const content = document.getElementById('admin-content');
     document.getElementById('topbar-actions').innerHTML = ``;
     try {
-        await loadSupabaseClient();
         let orders;
-        if (adminSupabase) {
-            console.log('📡 Fetching orders from Supabase');
-            const { data, error } = await adminSupabase.from('orders').select('*').order('created_at', { ascending: false });
-            if (error) {
-                console.error('❌ Error fetching orders:', error);
-                throw error;
-            }
-            console.log('✅ Orders from Supabase:', data);
-            orders = data.map(o => ({
+        if (window.USE_GITHUB_DATABASE) {
+            const rawOrders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            orders = rawOrders.map(o => ({
                 ...o,
                 items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
                 shipping_address: typeof o.shipping_address === 'string' ? JSON.parse(o.shipping_address) : o.shipping_address
             }));
         } else {
-            orders = await apiFetch('/api/admin/orders');
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                console.log('📡 Fetching orders from Supabase');
+                const { data, error } = await adminSupabase.from('orders').select('*').order('created_at', { ascending: false });
+                if (error) {
+                    console.error('❌ Error fetching orders:', error);
+                    throw error;
+                }
+                console.log('✅ Orders from Supabase:', data);
+                orders = data.map(o => ({
+                    ...o,
+                    items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+                    shipping_address: typeof o.shipping_address === 'string' ? JSON.parse(o.shipping_address) : o.shipping_address
+                }));
+            } else {
+                orders = await apiFetch('/api/admin/orders');
+            }
         }
         content.innerHTML = `
         <div class="admin-filter-bar">
@@ -3266,12 +3354,18 @@ function renderOrdersTable(orders) {
 async function deleteOrder(orderId) {
     confirmAction('Are you sure you want to delete this order? This action cannot be undone.', async () => {
         try {
-            await loadSupabaseClient();
-            if (adminSupabase) {
-                const { error } = await adminSupabase.from('orders').delete().eq('id', orderId);
-                if (error) throw error;
+            if (window.USE_GITHUB_DATABASE) {
+                const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+                const updatedOrders = orders.filter(o => String(o.id) !== String(orderId) && String(o.txnid) !== String(orderId));
+                localStorage.setItem('hov_orders', JSON.stringify(updatedOrders));
             } else {
-                await apiFetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' });
+                await loadSupabaseClient();
+                if (adminSupabase) {
+                    const { error } = await adminSupabase.from('orders').delete().eq('id', orderId);
+                    if (error) throw error;
+                } else {
+                    await apiFetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' });
+                }
             }
             showToast('Order deleted successfully!', 'success');
             renderOrders();
@@ -3287,31 +3381,44 @@ async function deleteOrder(orderId) {
 async function renderVersions() {
     const content = document.getElementById('admin-content');
     try {
-        await loadSupabaseClient();
         let systemConfig;
         let products, categories, banners, orders, headerLinks, heroImages;
         
-        if (adminSupabase) {
-            const [configRes, productsRes, categoriesRes, bannersRes, ordersRes, headerRes, heroRes] = await Promise.all([
-                adminSupabase.from('system_config').select('*').eq('id', 'global').maybeSingle(),
-                adminSupabase.from('products').select('id, name, updated_at'),
-                adminSupabase.from('categories').select('id, name, updated_at'),
-                adminSupabase.from('banners').select('id, title, updated_at'),
-                adminSupabase.from('orders').select('id, status, updated_at'),
-                adminSupabase.from('header_links').select('id, name, updated_at'),
-                adminSupabase.from('hero_images').select('id, alt, updated_at')
+        if (window.USE_GITHUB_DATABASE) {
+            const config = await adminFetchData('system_config', {});
+            systemConfig = { global_version: '(JSON)', last_updated: new Date(), ...config };
+            [products, categories, banners, heroImages, headerLinks] = await Promise.all([
+                adminFetchData('products', []),
+                adminFetchData('categories', []),
+                adminFetchData('banners', []),
+                adminFetchData('hero_images', []),
+                adminFetchData('header_links', [])
             ]);
-            // If system_config doesn't exist yet, use default
-            systemConfig = configRes.data || { global_version: 1, last_updated: new Date() };
-            products = productsRes.data || [];
-            categories = categoriesRes.data || [];
-            banners = bannersRes.data || [];
-            orders = ordersRes.data || [];
-            headerLinks = headerRes.data || [];
-            heroImages = heroRes.data || [];
+            orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
         } else {
-            systemConfig = { global_version: 1, last_updated: new Date() };
-            products = []; categories = []; banners = []; orders = []; headerLinks = []; heroImages = [];
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const [configRes, productsRes, categoriesRes, bannersRes, ordersRes, headerRes, heroRes] = await Promise.all([
+                    adminSupabase.from('system_config').select('*').eq('id', 'global').maybeSingle(),
+                    adminSupabase.from('products').select('id, name, updated_at'),
+                    adminSupabase.from('categories').select('id, name, updated_at'),
+                    adminSupabase.from('banners').select('id, title, updated_at'),
+                    adminSupabase.from('orders').select('id, status, updated_at'),
+                    adminSupabase.from('header_links').select('id, name, updated_at'),
+                    adminSupabase.from('hero_images').select('id, alt, updated_at')
+                ]);
+                // If system_config doesn't exist yet, use default
+                systemConfig = configRes.data || { global_version: 1, last_updated: new Date() };
+                products = productsRes.data || [];
+                categories = categoriesRes.data || [];
+                banners = bannersRes.data || [];
+                orders = ordersRes.data || [];
+                headerLinks = headerRes.data || [];
+                heroImages = heroRes.data || [];
+            } else {
+                systemConfig = { global_version: 1, last_updated: new Date() };
+                products = []; categories = []; banners = []; orders = []; headerLinks = []; heroImages = [];
+            }
         }
         
         content.innerHTML = `
@@ -3379,15 +3486,27 @@ async function renderVersions() {
 
 async function updateOrderStatus(orderId, status, selectEl) {
     try {
-        await loadSupabaseClient();
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('orders').update({ status }).eq('id', orderId);
-            if (error) throw error;
+        if (window.USE_GITHUB_DATABASE) {
+            const orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            const idx = orders.findIndex(o => String(o.id) === String(orderId) || String(o.txnid) === String(orderId));
+            if (idx !== -1) {
+                orders[idx].status = status;
+                orders[idx].updated_at = new Date().toISOString();
+                localStorage.setItem('hov_orders', JSON.stringify(orders));
+            } else {
+                throw new Error('Order not found');
+            }
         } else {
-            await apiFetch('/api/admin/update-order', {
-                method: 'POST',
-                body: JSON.stringify({ orderId, status })
-            });
+            await loadSupabaseClient();
+            if (adminSupabase) {
+                const { error } = await adminSupabase.from('orders').update({ status }).eq('id', orderId);
+                if (error) throw error;
+            } else {
+                await apiFetch('/api/admin/update-order', {
+                    method: 'POST',
+                    body: JSON.stringify({ orderId, status })
+                });
+            }
         }
         showToast(`Order ${orderId} → ${status}`, 'success');
         if (selectEl) {
@@ -3395,11 +3514,11 @@ async function updateOrderStatus(orderId, status, selectEl) {
         }
         // Update in-memory order list
         if (window._allOrders) {
-            const o = window._allOrders.find(x => x.id === orderId);
+            const o = window._allOrders.find(x => String(x.id) === String(orderId) || String(x.txnid) === String(orderId));
             if (o) o.status = status;
         }
     } catch (e) {
-        showToast('Failed to update order status', 'error');
+        showToast('Failed to update order status: ' + e.message, 'error');
     }
 }
 
