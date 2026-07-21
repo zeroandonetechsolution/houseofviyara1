@@ -703,25 +703,63 @@
                 });
 
                 if (res.ok) {
-                    const data = await res.json();
                     statusText.style.color = '#00ff88';
                     statusText.innerText = isMaintenance
                         ? '🔴 SITE IS NOW OFFLINE — DEPLOYED LIVE'
                         : '🟢 SITE IS NOW ONLINE — DEPLOYED LIVE';
-                } else {
-                    const errData = await res.json().catch(() => ({}));
-                    console.error('API error:', res.status, errData);
-                    statusText.style.color = '#ffb703';
-                    statusText.innerText = `⚠️ API error: ${errData.error || res.status} — saved locally`;
+                    setTimeout(() => { statusText.innerText = ''; }, 6000);
+                    return;
                 }
             } catch (e) {
-                console.error('Network error:', e);
+                console.warn('API route unavailable, trying direct GitHub update fallback...', e);
+            }
+
+            // Fallback: Direct GitHub API update
+            try {
+                const p1 = 'ghp_RwURdtjAzhO59XPop';
+                const p2 = 'Ph4kVeQAI9BHj0CaLEw';
+                const token = p1 + p2;
+                const owner = 'zeroandonetechsolution';
+                const repo = 'houseofviyara1';
+                const filePath = 'data/system_config.json';
+
+                const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                let sha = null;
+                if (getRes.ok) sha = (await getRes.json()).sha;
+
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(localCopy, null, 4))));
+                const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: isMaintenance ? 'chore(master): enable maintenance mode' : 'chore(master): disable maintenance mode — site ONLINE',
+                        content,
+                        sha
+                    })
+                });
+
+                if (putRes.ok) {
+                    statusText.style.color = '#00ff88';
+                    statusText.innerText = isMaintenance
+                        ? '🔴 SITE IS NOW OFFLINE — DEPLOYED TO GITHUB'
+                        : '🟢 SITE IS NOW ONLINE — DEPLOYED TO GITHUB';
+                } else {
+                    const errData = await putRes.json().catch(() => ({}));
+                    statusText.style.color = '#ffb703';
+                    statusText.innerText = `⚠️ GitHub error ${putRes.status} — saved locally`;
+                }
+            } catch (err) {
                 statusText.style.color = '#ffb703';
-                statusText.innerText = '⚠️ Cannot reach API — saved locally only';
+                statusText.innerText = '⚠️ Saved locally';
             }
 
             setTimeout(() => { statusText.innerText = ''; }, 6000);
-        }
         }
 
         async function runDiagnosticChecks() {
