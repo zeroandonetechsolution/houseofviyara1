@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "Maxis",
+        "slug": "maxis",
+        "icon": "fas fa-female",
+        "banner_image": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/categories/1782961890898_IMG_3856.JPG",
+        "display_order": 1
+    },
+    {
+        "id": 2,
+        "name": "Cord sets",
+        "slug": "cord-sets",
+        "icon": "fas fa-tshirt",
+        "banner_image": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/categories/1782961912256_IMG-20260629-WA0001.jpg",
+        "display_order": 2
+    },
+    {
+        "id": 3,
+        "name": "Kurti",
+        "slug": "kurti",
+        "icon": "fas fa-star",
+        "banner_image": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/categories/1783834907534_IMG_3173.JPG.jpeg",
+        "display_order": 3
+    },
+    {
+        "id": 4,
+        "name": "Kurti sets",
+        "slug": "kurti-sets",
+        "icon": "fas fa-glass-cheers",
+        "banner_image": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/categories/1782728565625_upload",
+        "display_order": 4
+    },
+    {
+        "id": 6,
+        "name": "Pure Cotton",
+        "slug": "pure-cotton",
+        "icon": "fas fa-leaf",
+        "banner_image": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/categories/1783146579430_maxi_black_.jpeg",
+        "display_order": 5
+    }
+]

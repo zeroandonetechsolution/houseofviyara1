@@ -17,8 +17,8 @@ console.log('🔍 window.SUPABASE_URL:', window.SUPABASE_URL);
 console.log('🔍 window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
 console.log('🔍 window.SUPABASE_BUCKET:', window.SUPABASE_BUCKET);
 
-// Clear old localStorage to avoid conflicts with Supabase
-if (window.SUPABASE_URL) {
+// Clear old localStorage to avoid conflicts with Supabase (only when Supabase is active)
+if (window.SUPABASE_URL && window.USE_SUPABASE !== false) {
     console.log('🧹 Clearing old localStorage to use Supabase exclusively...');
     const keysToKeep = ['lifestyle_user', 'hov_admin_token'];
     Object.keys(localStorage).forEach(key => {
@@ -31,8 +31,11 @@ if (window.SUPABASE_URL) {
 // Supabase client (optional)
 let appSupabase = null;
 let USE_SUPABASE = false;
-
 async function loadSupabaseClient() {
+    if (window.USE_SUPABASE === false) {
+        USE_SUPABASE = false;
+        return false;
+    }
     if (appSupabase) return true;
     // try to load supabase-config if present
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
@@ -108,73 +111,64 @@ async function setupRealtimeSubscriptions() {
 
     // Subscribe to system config (version) changes
     appSupabase
-        .channel('system-config-changes')
-        .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'system_config' },
-            async (payload) => {
-                console.log('🔄 System config changed:', payload);
+        .channel('schema-db-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'system_config',
+                filter: 'id=eq.global'
+            },
+            (payload) => {
+                console.log('🔄 System config version changed:', payload.new);
                 if (payload.new && payload.new.global_version) {
                     const newVersion = payload.new.global_version;
                     if (newVersion > currentGlobalVersion) {
-                        console.log(`🆕 New version available: ${newVersion}, reloading...`);
-                        localStorage.setItem('current_global_version', newVersion);
+                        console.log(`🚀 Newer global version detected: ${newVersion} (current: ${currentGlobalVersion}). Reloading store data...`);
                         currentGlobalVersion = newVersion;
-                        location.reload(); // Auto reload the page
+                        localStorage.setItem('current_global_version', currentGlobalVersion);
+                        
+                        // Force refresh products/categories
+                        localStorage.removeItem(STORE_KEYS.products);
+                        localStorage.removeItem(STORE_KEYS.categories);
+                        localStorage.removeItem(STORE_KEYS.banners);
+                        localStorage.removeItem(STORE_KEYS.hero_images);
+                        
+                        window.location.reload();
                     }
                 }
             }
         )
         .subscribe((status) => {
-            console.log('📡 System config channel status:', status);
+            console.log('📡 Realtime system config channel status:', status);
         });
 
     // Subscribe to products changes
     appSupabase
-        .channel('products-changes')
-        .on('postgres_changes', 
+        .channel('realtime-products')
+        .on(
+            'postgres_changes',
             { event: '*', schema: 'public', table: 'products' },
             async (payload) => {
-                console.log('🔄 Product changed:', payload);
-                await renderProducts();
+                console.log('🔄 Realtime products update:', payload);
+                // Clear local cache
+                localStorage.removeItem(STORE_KEYS.products);
+                // Re-render if we are on appropriate page
+                if (typeof renderProducts === 'function') {
+                    await renderProducts();
+                }
             }
         )
         .subscribe((status) => {
             console.log('📡 Products channel status:', status);
         });
 
-    // Subscribe to categories changes
+    // Subscribe to hero images changes
     appSupabase
-        .channel('categories-changes')
-        .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'categories' },
-            async (payload) => {
-                console.log('🔄 Category changed:', payload);
-                await renderCategories();
-                await renderHeaderNavigation();
-            }
-        )
-        .subscribe((status) => {
-            console.log('📡 Categories channel status:', status);
-        });
-
-    // Subscribe to banners changes
-    appSupabase
-        .channel('banners-changes')
-        .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'banners' },
-            async (payload) => {
-                console.log('🔄 Banner changed:', payload);
-                await initHeroCarousel();
-            }
-        )
-        .subscribe((status) => {
-            console.log('📡 Banners channel status:', status);
-        });
-
-    // Subscribe to hero_images changes
-    appSupabase
-        .channel('hero-images-changes')
-        .on('postgres_changes', 
+        .channel('realtime-hero-images')
+        .on(
+            'postgres_changes',
             { event: '*', schema: 'public', table: 'hero_images' },
             async (payload) => {
                 console.log('🔄 Hero image changed:', payload);
@@ -188,7 +182,48 @@ async function setupRealtimeSubscriptions() {
     console.log('✅ Realtime subscriptions set up!');
 }
 
-// Fetch products preferring Supabase, then API_URL, then localStorage
+// Fetch helper for GitHub raw or local JSON database files
+async function fetchGithubJson(filename, fallbackData) {
+    if (window.USE_GITHUB_DATABASE) {
+        const owner = window.GITHUB_OWNER || 'zeroandonetechsolution';
+        const repo = window.GITHUB_REPO || 'houseofviyara1';
+        const branch = window.GITHUB_BRANCH || 'main';
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/${filename}.json?t=${Date.now()}`;
+        const localUrl = `/data/${filename}.json`;
+        
+        // 1. Try raw GitHub URL
+        try {
+            const response = await fetch(rawUrl);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && (Array.isArray(data) || typeof data === 'object')) {
+                    // Update client local storage cache
+                    saveStore(`hov_${filename}`, data);
+                    return data;
+                }
+            }
+        } catch (e) {
+            console.warn(`GitHub fetch for ${filename} failed, falling back to local file.`, e);
+        }
+
+        // 2. Try local Vercel file
+        try {
+            const response = await fetch(localUrl);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && (Array.isArray(data) || typeof data === 'object')) {
+                    saveStore(`hov_${filename}`, data);
+                    return data;
+                }
+            }
+        } catch (e) {
+            console.warn(`Local file fetch for ${filename} failed.`, e);
+        }
+    }
+    return getStore(`hov_${filename}`, fallbackData);
+}
+
+// Fetch products preferring Supabase, then GitHub/local JSON, then API_URL, then localStorage
 async function fetchProductsPrefer() {
     if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
@@ -196,14 +231,16 @@ async function fetchProductsPrefer() {
             if (!error && data) return data;
         } catch (e) { console.warn('appSupabase fetch failed', e); }
     }
-    // try backend API
+    if (window.USE_GITHUB_DATABASE) {
+        return await fetchGithubJson('products', DEFAULT_PRODUCTS);
+    }
     if (API_URL) {
         try {
             const r = await fetch(API_URL + '/api/products');
             if (r.ok) return await r.json();
         } catch (e) { }
     }
-    return getStore(STORE_KEYS.products, []);
+    return getStore(STORE_KEYS.products, DEFAULT_PRODUCTS);
 }
 
 async function fetchProductByIdPrefer(id) {
@@ -214,13 +251,7 @@ async function fetchProductByIdPrefer(id) {
             if (!error && data) return data;
         } catch (e) { console.warn('appSupabase single fetch failed', e); }
     }
-    if (API_URL) {
-        try {
-            const r = await fetch(`${API_URL}/api/products/${id}`);
-            if (r.ok) return await r.json();
-        } catch (e) { }
-    }
-    const products = getStore(STORE_KEYS.products, []);
+    const products = await fetchProductsPrefer();
     return products.find(p => Number(p.id) === Number(id)) || null;
 }
 
@@ -231,13 +262,16 @@ async function fetchCategoriesPrefer() {
             if (!error && data) return data;
         } catch (e) { console.warn('appSupabase categories fetch failed', e); }
     }
+    if (window.USE_GITHUB_DATABASE) {
+        return await fetchGithubJson('categories', defaultCategories);
+    }
     if (API_URL) {
         try {
             const r = await fetch(API_URL + '/api/categories');
             if (r.ok) return await r.json();
         } catch (e) { }
     }
-    return getStore(STORE_KEYS.categories, []);
+    return getStore(STORE_KEYS.categories, defaultCategories);
 }
 
 async function fetchBannersPrefer() {
@@ -247,13 +281,16 @@ async function fetchBannersPrefer() {
             if (!error && data) return data;
         } catch (e) { console.warn('appSupabase banners fetch failed', e); }
     }
+    if (window.USE_GITHUB_DATABASE) {
+        return await fetchGithubJson('banners', defaultBanners);
+    }
     if (API_URL) {
         try {
             const r = await fetch(API_URL + '/api/banners');
             if (r.ok) return await r.json();
         } catch (e) { }
     }
-    return getStore(STORE_KEYS.banners, []);
+    return getStore(STORE_KEYS.banners, defaultBanners);
 }
 
 async function fetchHeaderLinksPrefer() {
@@ -268,13 +305,22 @@ async function fetchHeaderLinksPrefer() {
             }));
         } catch (e) { console.warn('appSupabase header_links fetch failed', e); }
     }
+    if (window.USE_GITHUB_DATABASE) {
+        const links = await fetchGithubJson('header_links', defaultHeaderLinks);
+        return links.map(link => ({
+            id: link.id,
+            label: link.name || link.label,
+            slug: link.slug,
+            href: link.href
+        }));
+    }
     if (API_URL) {
         try {
             const r = await fetch(API_URL + '/api/header-links');
             if (r.ok) return await r.json();
         } catch (e) { }
     }
-    return getStore(STORE_KEYS.header_links, []);
+    return getStore(STORE_KEYS.header_links, defaultHeaderLinks);
 }
 
 async function fetchOrdersPrefer() {
@@ -350,13 +396,16 @@ async function fetchHeroImagesPrefer() {
             }
         } catch (e) { console.warn('appSupabase hero_images fetch failed', e); }
     }
+    if (window.USE_GITHUB_DATABASE) {
+        return await fetchGithubJson('hero_images', defaultHeroImages);
+    }
     if (API_URL) {
         try {
             const r = await fetch(API_URL + '/api/hero-images');
             if (r.ok) return await r.json();
         } catch (e) { }
     }
-    return getStore(STORE_KEYS.hero_images, []);
+    return getStore(STORE_KEYS.hero_images, defaultHeroImages);
 }
 
 const AUTH_KEYS = {

@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "username": "admin",
+        "password": "admin",
+        "created_at": "2026-07-03 08:08:21.907395+00",
+        "updated_at": "2026-07-03 08:08:21.907395+00"
+    },
+    {
+        "id": 3,
+        "username": "VISALINI",
+        "password": "houseofviyara26",
+        "created_at": "2026-07-03 10:36:30.033088+00",
+        "updated_at": "2026-07-03 10:36:30.033088+00"
+    }
+]

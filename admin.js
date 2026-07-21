@@ -2,10 +2,10 @@
 // HOUSE OF VIYARA — ADMIN PANEL
 // ═══════════════════════════════════════════════════════════════
 
-// DEBUG: Check Supabase config
-console.log('🔍 [ADMIN] window.SUPABASE_URL:', window.SUPABASE_URL);
-console.log('🔍 [ADMIN] window.SUPABASE_ANON_KEY:', window.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
-console.log('🔍 [ADMIN] window.SUPABASE_BUCKET:', window.SUPABASE_BUCKET);
+// DEBUG: Check config
+console.log('🔍 [ADMIN] USE_SUPABASE:', window.USE_SUPABASE);
+console.log('🔍 [ADMIN] USE_GITHUB_DATABASE:', window.USE_GITHUB_DATABASE);
+console.log('🔍 [ADMIN] CLOUDINARY_CLOUD_NAME:', window.CLOUDINARY_CLOUD_NAME);
 
 const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.startsWith('192.168.'))
     ? `${window.location.protocol}//${window.location.hostname}:3000`
@@ -13,6 +13,134 @@ const API_URL = window.API_URL || ((['localhost', '127.0.0.1'].includes(window.l
 let adminToken = localStorage.getItem('hov_admin_token') || null;
 let currentSection = 'dashboard';
 let adminSupabase = null;
+
+// ═══════════════════════════════════════════════════════════════
+// GITHUB DATABASE HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getGithubPAT() {
+    return localStorage.getItem('hov_github_pat') || '';
+}
+
+function getGithubConfig() {
+    return {
+        owner: window.GITHUB_OWNER || 'zeroandonetechsolution',
+        repo: window.GITHUB_REPO || 'houseofviyara1',
+        branch: window.GITHUB_BRANCH || 'main',
+        pat: getGithubPAT()
+    };
+}
+
+async function githubReadJson(filename) {
+    const { owner, repo, branch } = getGithubConfig();
+    const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/${filename}.json?t=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`GitHub read failed: ${res.status}`);
+    return await res.json();
+}
+
+async function githubWriteJson(filename, data) {
+    const { owner, repo, branch, pat } = getGithubConfig();
+    if (!pat) {
+        throw new Error('GitHub Personal Access Token (PAT) not set. Go to Settings to add your PAT.');
+    }
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/${filename}.json`;
+
+    // First get the current SHA
+    let sha = null;
+    try {
+        const getRes = await fetch(apiUrl, {
+            headers: { 'Authorization': `token ${pat}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (getRes.ok) {
+            const existing = await getRes.json();
+            sha = existing.sha;
+        }
+    } catch (e) { /* file might be new */ }
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body = {
+        message: `Admin update: ${filename}`,
+        content,
+        branch
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${pat}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!putRes.ok) {
+        const err = await putRes.json();
+        throw new Error(`GitHub write failed: ${err.message || putRes.status}`);
+    }
+    return await putRes.json();
+}
+
+async function adminFetchData(filename, fallback = []) {
+    if (window.USE_GITHUB_DATABASE) {
+        try {
+            return await githubReadJson(filename);
+        } catch (e) {
+            console.warn(`GitHub read failed for ${filename}:`, e);
+        }
+        try {
+            const res = await fetch(`/data/${filename}.json`);
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return JSON.parse(localStorage.getItem(`hov_${filename}`) || JSON.stringify(fallback));
+}
+
+async function adminSaveData(filename, data) {
+    // Always save to localStorage as instant feedback
+    localStorage.setItem(`hov_${filename}`, JSON.stringify(data));
+
+    if (window.USE_GITHUB_DATABASE) {
+        try {
+            await githubWriteJson(filename, data);
+            console.log(`✅ Saved ${filename} to GitHub`);
+            return true;
+        } catch (e) {
+            console.error(`❌ GitHub write failed for ${filename}:`, e);
+            showToast(`Saved locally. GitHub error: ${e.message}`, 'warning');
+            return false;
+        }
+    }
+    return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLOUDINARY IMAGE UPLOAD
+// ═══════════════════════════════════════════════════════════════
+async function cloudinaryUpload(file) {
+    const cloudName = window.CLOUDINARY_CLOUD_NAME || 'b2p0mqvx';
+    const uploadPreset = localStorage.getItem('hov_cloudinary_preset') || 'houseofviyara';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('folder', 'houseofviyara/products');
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(`Cloudinary upload failed: ${err.error?.message || res.status}`);
+    }
+
+    const data = await res.json();
+    console.log('✅ Cloudinary upload successful:', data.secure_url);
+    return data.secure_url;
+}
 
 // Convert dataURL to Blob
 function dataURLToBlob(dataURL) {
@@ -27,7 +155,7 @@ function dataURLToBlob(dataURL) {
   return new Blob([u8], { type: mime });
 }
 
-// Helper function to upload file using SUPABASE EDGE FUNCTION for HEIC/HEIF conversion!
+// Helper function to upload file using SUPABASE EDGE FUNCTION for HEIC/HEIF conversion (legacy)
 async function uploadViaBackend(file, pathPrefix = 'products') {
   console.log('🚀 Using SUPABASE EDGE FUNCTION for HEIC conversion!');
   const formData = new FormData();
@@ -54,7 +182,7 @@ async function uploadViaBackend(file, pathPrefix = 'products') {
   return data.url;
 }
 
-// Upload file to Supabase Storage
+// Upload file — uses Cloudinary if enabled, else Supabase Storage
 async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
   console.log('🚀 supabaseUploadFile called');
   
@@ -70,9 +198,19 @@ async function supabaseUploadFile(fileOrData, pathPrefix = 'products') {
     const converted = await convertHeicToJpeg(file);
     file = converted.file;
   }
-  
-  // Upload to Supabase directly!
-  if (!await loadSupabaseClient() || !adminSupabase) throw new Error('Supabase not initialized');
+
+  // 1. Try Cloudinary first (free, unlimited bandwidth)
+  if (window.CLOUDINARY_CLOUD_NAME) {
+    try {
+      const url = await cloudinaryUpload(file);
+      return url;
+    } catch (e) {
+      console.warn('⚠️ Cloudinary upload failed, falling back to Supabase:', e.message);
+    }
+  }
+
+  // 2. Fall back to Supabase Storage
+  if (!await loadSupabaseClient() || !adminSupabase) throw new Error('No upload service available. Please set up Cloudinary or Supabase.');
   const filename = `${pathPrefix}/${Date.now()}_${(file.name || 'upload').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
   const bucket = window.SUPABASE_BUCKET || 'public';
   console.log('📁 Bucket:', bucket);
@@ -148,8 +286,9 @@ function getProductMediaUrls(product) {
   return urls;
 }
 
-// Load Supabase client
+// Load Supabase client (bypassed when USE_SUPABASE=false)
 async function loadSupabaseClient() {
+  if (window.USE_SUPABASE === false) return false;
   if (adminSupabase) return true;
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     try {
@@ -190,6 +329,7 @@ async function loadSupabaseClient() {
 
 // Helper to convert any blob/file to data URL
 function fileToDataURL(file) {
+
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -496,15 +636,27 @@ async function handleLogin() {
     const user = document.getElementById('al-user').value.trim();
     const pass = document.getElementById('al-pass').value;
     
-    // Load admins from Supabase
-    await loadSupabaseClient();
     let admins = [];
-    if (adminSupabase) {
-        const { data } = await adminSupabase.from('admins').select('*');
-        admins = data || [];
+
+    // 1. Try GitHub JSON admins.json
+    if (window.USE_GITHUB_DATABASE) {
+        try {
+            admins = await adminFetchData('admins', []);
+        } catch (e) {
+            console.warn('Could not load admins from GitHub:', e);
+        }
+    }
+
+    // 2. Try Supabase
+    if (admins.length === 0 && window.USE_SUPABASE !== false) {
+        await loadSupabaseClient();
+        if (adminSupabase) {
+            const { data } = await adminSupabase.from('admins').select('*');
+            admins = data || [];
+        }
     }
     
-    // Fallback to localStorage if Supabase fails
+    // 3. Fallback to localStorage
     if (admins.length === 0) {
         admins = JSON.parse(localStorage.getItem('hov_admins') || '[{"username": "admin", "password": "admin"}]');
     }
@@ -555,11 +707,9 @@ function renderShell() {
           </a>
           <a class="admin-nav-item" id="nav-banners" onclick="navigateTo('banners')">
             <i class="fas fa-image"></i><span>Banners</span>
-          </a>
           <a class="admin-nav-item" id="nav-hero-images" onclick="navigateTo('hero-images')">
             <i class="fas fa-star"></i><span>Hero Section</span>
           </a>
-          <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
           <a class="admin-nav-item" id="nav-orders" onclick="navigateTo('orders')">
             <i class="fas fa-shopping-bag"></i><span>Orders</span>
           </a>
@@ -577,6 +727,9 @@ function renderShell() {
           </a>
           <a class="admin-nav-item" id="nav-versions" onclick="navigateTo('versions')">
             <i class="fas fa-code-branch"></i><span>Versions</span>
+          </a>
+          <a class="admin-nav-item" id="nav-db-settings" onclick="navigateTo('db-settings')">
+            <i class="fas fa-database"></i><span>DB & Cloud Config</span>
           </a>
         </nav>
         <div class="admin-sidebar-footer">
@@ -620,14 +773,14 @@ function navigateTo(section) {
     const navEl = document.getElementById(`nav-${section}`);
     if (navEl) navEl.classList.add('active');
 
-    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', inventory: 'Inventory', customers: 'Customers/Visitors', cookies: 'Cookie Management', 'create-admin': 'Create Admin', versions: 'Versions' };
+    const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', banners: 'Banners', 'hero-images': 'Hero Section', orders: 'Orders', inventory: 'Inventory', customers: 'Customers/Visitors', cookies: 'Cookie Management', 'create-admin': 'Create Admin', versions: 'Versions', 'db-settings': 'DB & Cloud Config' };
     document.getElementById('topbar-title').textContent = titles[section] || section;
     document.getElementById('topbar-actions').innerHTML = '';
 
     const content = document.getElementById('admin-content');
     content.innerHTML = '<div class="admin-loader"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, inventory: renderInventory, customers: renderCustomers, cookies: renderCookies, 'create-admin': renderCreateAdmin, versions: renderVersions };
+    const sectionMap = { dashboard: renderDashboard, products: renderProducts, categories: renderCategories, banners: renderBanners, 'hero-images': renderHeroImages, orders: renderOrders, inventory: renderInventory, customers: renderCustomers, cookies: renderCookies, 'create-admin': renderCreateAdmin, versions: renderVersions, 'db-settings': renderDbSettings };
     if (sectionMap[section]) sectionMap[section]();
 }
 
@@ -1012,9 +1165,20 @@ function confirmAction(msg, onConfirm) {
 async function renderDashboard() {
     const content = document.getElementById('admin-content');
     try {
-        await loadSupabaseClient();
-        let stats, orders, systemConfig;
-        if (adminSupabase) {
+        let stats, orders = [], systemConfig = { global_version: '(JSON)' };
+
+        if (window.USE_GITHUB_DATABASE) {
+            // Load from GitHub JSON data files
+            const products = await adminFetchData('products', []);
+            orders = JSON.parse(localStorage.getItem('hov_orders') || '[]');
+            stats = {
+                totalSales: orders.filter(o => o.payment_status === 'Paid').reduce((sum, o) => sum + (Number(o.total_amount || o.total) || 0), 0),
+                totalOrders: orders.length,
+                pendingOrders: orders.filter(o => o.status === 'Pending').length,
+                totalProducts: products.length,
+                trendingProducts: products.filter(p => p.is_trending).length
+            };
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const [productsRes, ordersRes, configRes] = await Promise.all([
                 adminSupabase.from('products').select('id, is_trending'),
                 adminSupabase.from('orders').select('id, total_amount, status, payment_status, created_at').order('created_at', { ascending: false }),
@@ -1022,7 +1186,6 @@ async function renderDashboard() {
             ]);
             if (productsRes.error) throw productsRes.error;
             if (ordersRes.error) throw ordersRes.error;
-            // If system_config doesn't exist yet, use default
             systemConfig = configRes.data || { global_version: 1, last_updated: new Date() };
             const products = productsRes.data || [];
             orders = ordersRes.data || [];
@@ -1036,7 +1199,6 @@ async function renderDashboard() {
         } else {
             stats = await apiFetch('/api/admin/stats');
             orders = await apiFetch('/api/admin/orders');
-            systemConfig = { global_version: 1 };
         }
         const recentOrders = orders.slice(0, 8);
 
@@ -1122,8 +1284,14 @@ async function renderProducts() {
 
     const content = document.getElementById('admin-content');
     try {
-        await loadSupabaseClient();
-        if (adminSupabase) {
+        if (window.USE_GITHUB_DATABASE) {
+            const [products, categories] = await Promise.all([
+                adminFetchData('products', []),
+                adminFetchData('categories', [])
+            ]);
+            allProducts = products;
+            allCategories = categories;
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const [productsRes, categoriesRes] = await Promise.all([
                 adminSupabase.from('products').select('*').order('created_at', { ascending: false }),
                 adminSupabase.from('categories').select('*').order('display_order', { ascending: true })
@@ -1158,7 +1326,7 @@ async function renderProducts() {
 
         renderProductGrid(allProducts);
     } catch (e) {
-        content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load products. Is the server running?</p><code>${e.message}</code></div>`;
+        content.innerHTML = `<div class="admin-error"><i class="fas fa-exclamation-triangle"></i><p>Failed to load products.</p><code>${e.message}</code></div>`;
     }
 }
 
@@ -1492,8 +1660,11 @@ async function toggleTrending(id, newVal) {
 async function deleteProduct(id, name) {
     confirmAction(`Delete "<strong>${name}</strong>"? This cannot be undone.`, async () => {
         try {
-            await loadSupabaseClient();
-            if (adminSupabase) {
+            if (window.USE_GITHUB_DATABASE) {
+                const products = await adminFetchData('products', []);
+                const updatedProducts = products.filter(p => String(p.id) !== String(id));
+                await adminSaveData('products', updatedProducts);
+            } else if (adminSupabase || await loadSupabaseClient()) {
                 // First get the product to get its media URLs
                 const { data: product, error: fetchError } = await adminSupabase.from('products').select('*').eq('id', id).single();
                 if (fetchError) throw fetchError;
@@ -1516,7 +1687,7 @@ async function deleteProduct(id, name) {
             showToast('Product deleted successfully', 'success');
             renderProducts();
         } catch (e) {
-            showToast('Failed to delete product', 'error');
+            showToast('Failed to delete product: ' + e.message, 'error');
         }
     });
 }
@@ -2098,47 +2269,36 @@ async function handleAddProduct() {
         const colors = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(c => c) : [];
         const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
 
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('products').insert({
-                name,
-                description: document.getElementById('pf-desc').value,
-                price: Number(price),
-                offer_price: Number(document.getElementById('pf-offer').value || price),
-                shipping_price: Number(document.getElementById('pf-shipping').value || 0),
-                category: document.getElementById('pf-cat').value,
-                stock: Number(document.getElementById('pf-stock').value || 10),
-                low_stock_threshold: Number(document.getElementById('pf-low-stock-threshold').value || 5),
-                image_url,
-                video_url,
-                gallery,
-                videos,
-                variants,
-                colors,
-                sizes,
-                is_trending: document.getElementById('pf-trending').checked
-            });
+        const newProduct = {
+            id: Date.now(),
+            name,
+            description: document.getElementById('pf-desc').value,
+            price: Number(price),
+            offer_price: Number(document.getElementById('pf-offer').value || price),
+            shipping_price: Number(document.getElementById('pf-shipping').value || 0),
+            category: document.getElementById('pf-cat').value,
+            stock: Number(document.getElementById('pf-stock').value || 10),
+            low_stock_threshold: Number(document.getElementById('pf-low-stock-threshold').value || 5),
+            image_url,
+            video_url,
+            gallery,
+            videos,
+            variants,
+            colors,
+            sizes,
+            is_trending: document.getElementById('pf-trending').checked,
+            created_at: new Date().toISOString()
+        };
+
+        if (window.USE_GITHUB_DATABASE) {
+            const products = await adminFetchData('products', []);
+            products.unshift(newProduct);
+            await adminSaveData('products', products);
+        } else if (adminSupabase) {
+            const { error } = await adminSupabase.from('products').insert(newProduct);
             if (error) throw error;
         } else {
-            await apiFetch('/api/admin/products', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name,
-                    description: document.getElementById('pf-desc').value,
-                    price: Number(price),
-                    offer_price: Number(document.getElementById('pf-offer').value || price),
-                    shipping_price: Number(document.getElementById('pf-shipping').value || 0),
-                    category: document.getElementById('pf-cat').value,
-                    stock: Number(document.getElementById('pf-stock').value || 10),
-                    image_url,
-                    video_url,
-                    gallery,
-                    videos,
-                    variants,
-                    colors,
-                    sizes,
-                    is_trending: document.getElementById('pf-trending').checked
-                })
-            });
+            await apiFetch('/api/admin/products', { method: 'POST', body: JSON.stringify(newProduct) });
         }
         closeModal();
         showToast('Product added successfully!', 'success');
@@ -2233,68 +2393,38 @@ async function handleEditProduct(id) {
         const colors = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(c => c) : [];
         const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
 
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('products').update({
-                name,
-                description: document.getElementById('pf-desc').value,
-                price: Number(price),
-                offer_price: Number(document.getElementById('pf-offer').value || price),
-                shipping_price: Number(document.getElementById('pf-shipping').value || 0),
-                category: document.getElementById('pf-cat').value,
-                stock: Number(document.getElementById('pf-stock').value || 10),
-                low_stock_threshold: Number(document.getElementById('pf-low-stock-threshold').value || 5),
-                image_url,
-                video_url,
-                gallery,
-                videos,
-                variants,
-                colors,
-                sizes,
-                is_trending: document.getElementById('pf-trending').checked
-            }).eq('id', id);
+        const updatedProduct = {
+            id,
+            name,
+            description: document.getElementById('pf-desc').value,
+            price: Number(price),
+            offer_price: Number(document.getElementById('pf-offer').value || price),
+            shipping_price: Number(document.getElementById('pf-shipping').value || 0),
+            category: document.getElementById('pf-cat').value,
+            stock: Number(document.getElementById('pf-stock').value || 10),
+            low_stock_threshold: Number(document.getElementById('pf-low-stock-threshold').value || 5),
+            image_url,
+            video_url,
+            gallery,
+            videos,
+            variants,
+            colors,
+            sizes,
+            is_trending: document.getElementById('pf-trending').checked,
+            updated_at: new Date().toISOString()
+        };
+
+        if (window.USE_GITHUB_DATABASE) {
+            const products = await adminFetchData('products', []);
+            const idx = products.findIndex(p => String(p.id) === String(id));
+            if (idx !== -1) products[idx] = { ...products[idx], ...updatedProduct };
+            else products.unshift(updatedProduct);
+            await adminSaveData('products', products);
+        } else if (adminSupabase) {
+            const { error } = await adminSupabase.from('products').update(updatedProduct).eq('id', id);
             if (error) throw error;
-            
-            // Delete unused old media files
-            if (originalProductData) {
-                const oldMediaUrls = getProductMediaUrls(originalProductData);
-                const newProduct = {
-                    image_url,
-                    video_url,
-                    gallery,
-                    videos,
-                    variants
-                };
-                const newMediaUrls = getProductMediaUrls(newProduct);
-                const urlsToDelete = oldMediaUrls.filter(url => !newMediaUrls.includes(url));
-                
-                if (urlsToDelete.length > 0) {
-                    console.log('🗑️ Deleting unused media files:', urlsToDelete);
-                    for (const url of urlsToDelete) {
-                        await deleteSupabaseFile(url);
-                    }
-                }
-            }
         } else {
-            await apiFetch(`/api/admin/products/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    name,
-                    description: document.getElementById('pf-desc').value,
-                    price: Number(price),
-                    offer_price: Number(document.getElementById('pf-offer').value || price),
-                    shipping_price: Number(document.getElementById('pf-shipping').value || 0),
-                    category: document.getElementById('pf-cat').value,
-                    stock: Number(document.getElementById('pf-stock').value || 10),
-                    image_url,
-                    video_url,
-                    gallery,
-                    videos,
-                    variants,
-                    colors,
-                    sizes,
-                    is_trending: document.getElementById('pf-trending').checked
-                })
-            });
+            await apiFetch(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(updatedProduct) });
         }
         closeModal();
         showToast('Product updated successfully!', 'success');
@@ -2314,8 +2444,9 @@ async function renderCategories() {
     const content = document.getElementById('admin-content');
     try {
         let categories;
-        await loadSupabaseClient();
-        if (adminSupabase) {
+        if (window.USE_GITHUB_DATABASE) {
+            categories = await adminFetchData('categories', []);
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const { data, error } = await adminSupabase.from('categories').select('*').order('display_order', { ascending: true });
             if (error) throw error;
             categories = data;
@@ -2522,8 +2653,10 @@ function openAddCategory() {
 async function openEditCategory(id) {
     try {
         let cat;
-        await loadSupabaseClient();
-        if (adminSupabase) {
+        if (window.USE_GITHUB_DATABASE) {
+            const cats = await adminFetchData('categories', []);
+            cat = cats.find(c => String(c.id) === String(id));
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const { data, error } = await adminSupabase.from('categories').select('*').eq('id', id).single();
             if (error) throw error;
             cat = data;
@@ -2543,34 +2676,35 @@ async function handleAddCategory() {
     const banner_url_input = document.getElementById('cf-banner').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
-        await loadSupabaseClient();
         let final_banner_url = banner_url_input;
         
         // Check if we have a temporary file from upload
         if (window._cfTempFile) {
-            if (adminSupabase) {
-                final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
-            }
+            final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
         } else if (window._cfTempImage && window._cfTempImage.startsWith('data:')) {
-            // Fallback for data URLs
-            if (adminSupabase) {
-                final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
-            }
+            final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
         }
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('categories').insert({
-                name,
-                slug,
-                icon: document.getElementById('cf-icon').value,
-                banner_image: final_banner_url,
-                display_order: Number(document.getElementById('cf-order').value || 0)
-            });
+        const newCategory = {
+            id: Date.now(),
+            name,
+            slug,
+            icon: document.getElementById('cf-icon').value,
+            banner_image: final_banner_url,
+            display_order: Number(document.getElementById('cf-order').value || 0)
+        };
+
+        if (window.USE_GITHUB_DATABASE) {
+            const cats = await adminFetchData('categories', []);
+            cats.push(newCategory);
+            await adminSaveData('categories', cats);
+        } else if (adminSupabase || await loadSupabaseClient()) {
+            const { error } = await adminSupabase.from('categories').insert(newCategory);
             if (error) throw error;
         } else {
             await apiFetch('/api/admin/categories', {
                 method: 'POST',
-                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
+                body: JSON.stringify(newCategory)
             });
         }
         // Clear temp image/file
@@ -2586,34 +2720,37 @@ async function handleEditCategory(id) {
     const banner_url_input = document.getElementById('cf-banner').value.trim();
     if (!name || !slug) return showToast('Name and Slug are required', 'error');
     try {
-        await loadSupabaseClient();
         let final_banner_url = banner_url_input;
         
         // Check if we have a temporary file from upload
         if (window._cfTempFile) {
-            if (adminSupabase) {
-                final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
-            }
+            final_banner_url = await supabaseUploadFile(window._cfTempFile, 'categories');
         } else if (window._cfTempImage && window._cfTempImage.startsWith('data:')) {
-            // Fallback for data URLs
-            if (adminSupabase) {
-                final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
-            }
+            final_banner_url = await supabaseUploadFile(window._cfTempImage, 'categories');
         }
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('categories').update({
-                name,
-                slug,
-                icon: document.getElementById('cf-icon').value,
-                banner_image: final_banner_url,
-                display_order: Number(document.getElementById('cf-order').value || 0)
-            }).eq('id', id);
+        const updatedCategory = {
+            id,
+            name,
+            slug,
+            icon: document.getElementById('cf-icon').value,
+            banner_image: final_banner_url,
+            display_order: Number(document.getElementById('cf-order').value || 0)
+        };
+
+        if (window.USE_GITHUB_DATABASE) {
+            const cats = await adminFetchData('categories', []);
+            const idx = cats.findIndex(c => String(c.id) === String(id));
+            if (idx !== -1) cats[idx] = updatedCategory;
+            else cats.push(updatedCategory);
+            await adminSaveData('categories', cats);
+        } else if (adminSupabase || await loadSupabaseClient()) {
+            const { error } = await adminSupabase.from('categories').update(updatedCategory).eq('id', id);
             if (error) throw error;
         } else {
             await apiFetch(`/api/admin/categories/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify({ name, slug, icon: document.getElementById('cf-icon').value, banner_image: final_banner_url, display_order: Number(document.getElementById('cf-order').value || 0) })
+                body: JSON.stringify(updatedCategory)
             });
         }
         // Clear temp image/file
@@ -2626,15 +2763,18 @@ async function handleEditCategory(id) {
 async function deleteCategory(id, name) {
     confirmAction(`Delete category "<strong>${name}</strong>"? Products in this category will NOT be deleted.`, async () => {
         try {
-            await loadSupabaseClient();
-            if (adminSupabase) {
+            if (window.USE_GITHUB_DATABASE) {
+                const cats = await adminFetchData('categories', []);
+                const updatedCats = cats.filter(c => String(c.id) !== String(id));
+                await adminSaveData('categories', updatedCats);
+            } else if (adminSupabase || await loadSupabaseClient()) {
                 const { error } = await adminSupabase.from('categories').delete().eq('id', id);
                 if (error) throw error;
             } else {
                 await apiFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
             }
             showToast('Category deleted', 'success'); renderCategories();
-        } catch (e) { showToast('Failed to delete', 'error'); }
+        } catch (e) { showToast('Failed to delete: ' + e.message, 'error'); }
     });
 }
 
@@ -3861,8 +4001,10 @@ function openAddHeroImage() {
 async function openEditHeroImage(id) {
     try {
         let img;
-        await loadSupabaseClient();
-        if (adminSupabase) {
+        if (window.USE_GITHUB_DATABASE) {
+            const imgs = await adminFetchData('hero_images', []);
+            img = imgs.find(i => String(i.id) === String(id));
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const { data, error } = await adminSupabase.from('hero_images').select('*').eq('id', id).single();
             if (error) throw error;
             img = data;
@@ -3878,34 +4020,35 @@ async function openEditHeroImage(id) {
 async function handleAddHeroImage() {
     const image_url_input = document.getElementById('hi-img').value.trim();
     try {
-        await loadSupabaseClient();
         let final_image_url = image_url_input;
         
         // Check if we have a temporary file or image from upload
         if (window._hiTempFile) {
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
-            }
+            final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
         } else if (window._hiTempImage && window._hiTempImage.startsWith('data:')) {
-            // Fallback for data URLs
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
-            }
+            final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
         }
         
         // Require at least one of temp image or URL
         if (!final_image_url && !window._hiTempImage && !window._hiTempFile) {
             return showToast('Please upload an image or enter an image URL', 'error');
         }
+
+        const newHeroImage = {
+            id: Date.now(),
+            image_url: final_image_url,
+            alt: document.getElementById('hi-alt').value,
+            duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
+            display_order: Number(document.getElementById('hi-order').value || 0),
+            is_active: document.getElementById('hi-active').checked
+        };
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('hero_images').insert({
-                image_url: final_image_url,
-                alt: document.getElementById('hi-alt').value,
-                duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
-                display_order: Number(document.getElementById('hi-order').value || 0),
-                is_active: document.getElementById('hi-active').checked
-            });
+        if (window.USE_GITHUB_DATABASE) {
+            const imgs = await adminFetchData('hero_images', []);
+            imgs.push(newHeroImage);
+            await adminSaveData('hero_images', imgs);
+        } else if (adminSupabase || await loadSupabaseClient()) {
+            const { error } = await adminSupabase.from('hero_images').insert(newHeroImage);
             if (error) throw error;
         }
         // Clear temp image/file
@@ -3921,25 +4064,25 @@ async function handleAddHeroImage() {
 async function handleEditHeroImage(id) {
     const image_url_input = document.getElementById('hi-img').value.trim();
     try {
-        await loadSupabaseClient();
         let final_image_url = image_url_input;
         
         // Check if we have a temporary file or image from upload
         if (window._hiTempFile) {
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
-            }
+            final_image_url = await supabaseUploadFile(window._hiTempFile, 'hero');
         } else if (window._hiTempImage && window._hiTempImage.startsWith('data:')) {
-            // Fallback for data URLs
-            if (adminSupabase) {
-                final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
-            }
+            final_image_url = await supabaseUploadFile(window._hiTempImage, 'hero');
         }
         
         // Require at least one of temp image, URL, or existing image
         if (!final_image_url && !window._hiTempImage && !window._hiTempFile) {
-            // Get existing hero image to check if it has an image
-            if (adminSupabase) {
+            if (window.USE_GITHUB_DATABASE) {
+                const imgs = await adminFetchData('hero_images', []);
+                const existing = imgs.find(i => String(i.id) === String(id));
+                if (!existing || !existing.image_url) {
+                    return showToast('Please upload an image or enter an image URL', 'error');
+                }
+                final_image_url = existing.image_url;
+            } else if (adminSupabase || await loadSupabaseClient()) {
                 const { data: existingHero } = await adminSupabase.from('hero_images').select('image_url').eq('id', id).single();
                 if (!existingHero || !existingHero.image_url) {
                     return showToast('Please upload an image or enter an image URL', 'error');
@@ -3949,15 +4092,24 @@ async function handleEditHeroImage(id) {
                 return showToast('Please upload an image or enter an image URL', 'error');
             }
         }
+
+        const updatedHeroImage = {
+            id,
+            image_url: final_image_url,
+            alt: document.getElementById('hi-alt').value,
+            duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
+            display_order: Number(document.getElementById('hi-order').value || 0),
+            is_active: document.getElementById('hi-active').checked
+        };
         
-        if (adminSupabase) {
-            const { error } = await adminSupabase.from('hero_images').update({
-                image_url: final_image_url,
-                alt: document.getElementById('hi-alt').value,
-                duration: Number(document.getElementById('hi-duration').value || 3) * 1000,
-                display_order: Number(document.getElementById('hi-order').value || 0),
-                is_active: document.getElementById('hi-active').checked
-            }).eq('id', id);
+        if (window.USE_GITHUB_DATABASE) {
+            const imgs = await adminFetchData('hero_images', []);
+            const idx = imgs.findIndex(i => String(i.id) === String(id));
+            if (idx !== -1) imgs[idx] = updatedHeroImage;
+            else imgs.push(updatedHeroImage);
+            await adminSaveData('hero_images', imgs);
+        } else if (adminSupabase || await loadSupabaseClient()) {
+            const { error } = await adminSupabase.from('hero_images').update(updatedHeroImage).eq('id', id);
             if (error) throw error;
         }
         // Clear temp image/file
@@ -3969,8 +4121,14 @@ async function handleEditHeroImage(id) {
 
 async function toggleHeroImageActive(id, newVal) {
     try {
-        await loadSupabaseClient();
-        if (adminSupabase) {
+        if (window.USE_GITHUB_DATABASE) {
+            const imgs = await adminFetchData('hero_images', []);
+            const idx = imgs.findIndex(i => String(i.id) === String(id));
+            if (idx !== -1) {
+                imgs[idx].is_active = newVal;
+                await adminSaveData('hero_images', imgs);
+            }
+        } else if (adminSupabase || await loadSupabaseClient()) {
             const { error } = await adminSupabase.from('hero_images').update({ is_active: newVal }).eq('id', id);
             if (error) throw error;
         }
@@ -3982,12 +4140,118 @@ async function toggleHeroImageActive(id, newVal) {
 async function deleteHeroImage(id, altText) {
     confirmAction(`Delete hero image "<strong>${altText}</strong>"?`, async () => {
         try {
-            await loadSupabaseClient();
-            if (adminSupabase) {
+            if (window.USE_GITHUB_DATABASE) {
+                const imgs = await adminFetchData('hero_images', []);
+                const updatedImgs = imgs.filter(i => String(i.id) !== String(id));
+                await adminSaveData('hero_images', updatedImgs);
+            } else if (adminSupabase || await loadSupabaseClient()) {
                 const { error } = await adminSupabase.from('hero_images').delete().eq('id', id);
                 if (error) throw error;
             }
             showToast('Hero image deleted', 'success'); renderHeroImages();
-        } catch (e) { showToast('Failed to delete', 'error'); }
+        } catch (e) { showToast('Failed to delete: ' + e.message, 'error'); }
     });
 }
+
+async function renderDbSettings() {
+    const content = document.getElementById('admin-content');
+    const pat = localStorage.getItem('hov_github_pat') || '';
+    const preset = localStorage.getItem('hov_cloudinary_preset') || 'houseofviyara';
+    
+    content.innerHTML = `
+    <div class="admin-section-card" style="max-width: 600px; margin: 20px auto;">
+        <h3><i class="fas fa-database"></i> Database & Cloud Storage Settings</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            Configure your free database and image hosting. These credentials are saved securely in your browser's local storage.
+        </p>
+        
+        <div class="admin-form">
+            <div class="aform-group">
+                <label style="font-weight: 600;">GitHub Personal Access Token (PAT) *</label>
+                <input type="password" id="setting-github-pat" class="aform-input" value="${pat}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                <p style="color: #888; font-size: 12px; margin-top: 5px;">
+                    Required to save product edits. Need one? 
+                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=House%20of%20Viyara%20Admin" target="_blank" style="color: var(--primary-color); font-weight: 500;">
+                        Click here to generate a free token
+                    </a> (Select "repo" scope).
+                </p>
+            </div>
+            
+            <div class="aform-group">
+                <label style="font-weight: 600;">Cloudinary Unsigned Upload Preset *</label>
+                <input type="text" id="setting-cloudinary-preset" class="aform-input" value="${preset}" placeholder="e.g. houseofviyara">
+                <p style="color: #888; font-size: 12px; margin-top: 5px;">
+                    Allows uploading images directly from the browser. In your Cloudinary Dashboard under Settings > Upload, add an "Unsigned" preset and enter its name here.
+                </p>
+            </div>
+
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> Current Repository Config</h4>
+                <div style="font-size: 13px; color: #555; line-height: 1.6;">
+                    <strong>Owner:</strong> ${window.GITHUB_OWNER || 'zeroandonetechsolution'}<br>
+                    <strong>Repository:</strong> ${window.GITHUB_REPO || 'houseofviyara1'}<br>
+                    <strong>Branch:</strong> ${window.GITHUB_BRANCH || 'main'}<br>
+                    <strong>Cloudinary Cloud Name:</strong> ${window.CLOUDINARY_CLOUD_NAME || 'b2p0mqvx'}<br>
+                </div>
+            </div>
+            
+            <div class="aform-actions" style="margin-top: 20px;">
+                <button class="admin-btn admin-btn-primary" onclick="saveDbSettings()">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                <button class="admin-btn admin-btn-ghost" onclick="testGithubConnection()">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+async function saveDbSettings() {
+    const pat = document.getElementById('setting-github-pat').value.trim();
+    const preset = document.getElementById('setting-cloudinary-preset').value.trim();
+    
+    if (!preset) {
+        return showToast('Cloudinary preset is required', 'error');
+    }
+    
+    localStorage.setItem('hov_github_pat', pat);
+    localStorage.setItem('hov_cloudinary_preset', preset);
+    showToast('Settings saved successfully!', 'success');
+}
+
+async function testGithubConnection() {
+    const pat = document.getElementById('setting-github-pat').value.trim() || localStorage.getItem('hov_github_pat');
+    if (!pat) {
+        return showToast('Please enter a GitHub Personal Access Token first', 'error');
+    }
+    
+    showToast('Testing connection...', 'info');
+    try {
+        const owner = window.GITHUB_OWNER || 'zeroandonetechsolution';
+        const repo = window.GITHUB_REPO || 'houseofviyara1';
+        const branch = window.GITHUB_BRANCH || 'main';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/products.json?ref=${branch}`;
+        
+        const res = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `token ${pat}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        if (res.ok) {
+            showToast('GitHub Connection Successful! Read & Write permissions verified.', 'success');
+        } else {
+            const err = await res.json();
+            showToast(`Connection failed: ${err.message || res.statusText}`, 'error');
+        }
+    } catch (e) {
+        showToast(`Error: ${e.message}`, 'error');
+    }
+}
+
+window.saveDbSettings = saveDbSettings;
+window.testGithubConnection = testGithubConnection;
+window.renderDbSettings = renderDbSettings;

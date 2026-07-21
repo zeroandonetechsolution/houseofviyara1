@@ -1,0 +1,5 @@
+id,image_url,alt,display_order,is_active,duration,created_at,updated_at
+16,https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713855647_upload,yellow kurti,1,true,3000,2026-06-29 06:17:38.071294+00,2026-07-03 04:29:53.614197+00
+19,https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713910178_upload,pink kurti,3,true,3000,2026-06-29 06:18:31.161164+00,2026-07-03 04:29:53.614197+00
+20,https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713934915_upload,kurti,4,true,3000,2026-06-29 06:18:55.896742+00,2026-07-03 04:29:53.614197+00
+21,https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782838411816_IMG_3248.jpg,kurti,4,true,3000,2026-06-30 16:53:34.823774+00,2026-07-03 04:29:53.614197+00

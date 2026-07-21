@@ -1,0 +1,5 @@
+id,name,slug,href,display_order,is_active,created_at,updated_at
+1,Maxis,maxis,Maxis.html,1,true,2026-06-29 05:16:40.856263+00,2026-07-03 04:29:53.614197+00
+2,Cord sets,cord-sets,Cord sets.html,2,true,2026-06-29 05:16:40.856263+00,2026-07-03 04:29:53.614197+00
+3,Kurti,kurti,Kurti.html,3,true,2026-06-29 05:16:40.856263+00,2026-07-03 04:29:53.614197+00
+4,Kurti sets,kurti-sets,Kurti sets.html,4,true,2026-06-29 05:16:40.856263+00,2026-07-03 04:29:53.614197+00

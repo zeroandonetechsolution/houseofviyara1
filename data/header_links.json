@@ -1,0 +1,34 @@
+[
+    {
+        "id": 1,
+        "name": "Maxis",
+        "slug": "maxis",
+        "href": "Maxis.html",
+        "display_order": 1,
+        "is_active": true
+    },
+    {
+        "id": 2,
+        "name": "Cord sets",
+        "slug": "cord-sets",
+        "href": "Cord sets.html",
+        "display_order": 2,
+        "is_active": true
+    },
+    {
+        "id": 3,
+        "name": "Kurti",
+        "slug": "kurti",
+        "href": "Kurti.html",
+        "display_order": 3,
+        "is_active": true
+    },
+    {
+        "id": 4,
+        "name": "Kurti sets",
+        "slug": "kurti-sets",
+        "href": "Kurti sets.html",
+        "display_order": 4,
+        "is_active": true
+    }
+]

@@ -343,6 +343,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- Supabase JS -->
+    <script src="supabase-config.js?v=25"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
     
     <script>
@@ -357,6 +358,10 @@
         // Initialize Supabase client
         let paymentSupabase = null;
         function initPaymentSupabase() {
+            if (window.USE_SUPABASE === false) {
+                console.log('🔌 Supabase is disabled by configuration.');
+                return;
+            }
             if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
                 const createClient = window.supabase && window.supabase.createClient ? window.supabase.createClient : (window.supabase ? window.supabase : null);
                 if (createClient) {
