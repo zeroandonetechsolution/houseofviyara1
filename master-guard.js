@@ -50,22 +50,35 @@
         });
     });
 
-    // Master Bypass check (Allows developer to work on site unless previewing)
+    // Master Bypass check
     function isDeveloperSession() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('test_maintenance') === 'true') return false; // Force test mode
+        if (urlParams.get('test_maintenance') === 'true') return false; // Force preview mode
         if (urlParams.get('dev_bypass') === 'true') return true;
         return localStorage.getItem('hov_master_authenticated') === 'true';
     }
 
+    // Secret key listener for developer (Press 'm' + 'a' + 's' + 't' + 'e' + 'r' anywhere on maintenance screen)
+    let secretBuffer = '';
+    window.addEventListener('keydown', function(e) {
+        secretBuffer += e.key.toLowerCase();
+        if (secretBuffer.length > 10) secretBuffer = secretBuffer.slice(-10);
+        if (secretBuffer.includes('master') || secretBuffer.includes('devpass')) {
+            secretBuffer = '';
+            const pass = prompt('Enter Master Developer Passcode:');
+            if (pass === 'DEV-MASTER-9999') {
+                localStorage.setItem('hov_master_authenticated', 'true');
+                alert('Developer Bypass Granted! Reloading page...');
+                window.location.reload();
+            }
+        }
+    });
+
     // Check Maintenance Mode
     async function checkMaintenanceMode() {
-        // Do not block master panel itself
         if (window.location.pathname.includes('master.html')) return;
 
         let config = null;
-
-        // Try multiple paths to find data/system_config.json regardless of subdirectory
         const pathsToTry = [
             '/data/system_config.json',
             'data/system_config.json',
@@ -98,75 +111,79 @@
         const overlayHtml = `
         <div id="hov-maintenance-overlay" style="
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #0d0e15; color: #ffffff; z-index: 999999999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            text-align: center; padding: 20px; box-sizing: border-box; overflow: auto;
+            background: #f4f4f4; color: #000000; z-index: 999999999;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+            box-sizing: border-box; overflow-y: auto; overflow-x: hidden;
         ">
+            <!-- Top Announcement Ticker -->
             <div style="
-                max-width: 600px; width: 100%; background: #161925; border: 2px solid #ff3366;
-                border-radius: 16px; padding: 40px 30px; box-shadow: 0 20px 50px rgba(255, 51, 102, 0.3);
-                position: relative;
+                width: 100%; background: #FFE500; border-bottom: 4px solid #000;
+                padding: 12px 20px; font-weight: 900; font-size: 0.9rem; letter-spacing: 1.5px;
+                text-align: center; text-transform: uppercase; color: #000;
+                box-shadow: 0 4px 0 #000;
+            ">
+                ✨ HOUSE OF VIYARA — OFFICIAL SYSTEM ANNOUNCEMENT ✨
+            </div>
+
+            <!-- Header Brand Logo -->
+            <div style="padding: 40px 20px 20px 20px; text-align: center;">
+                <div style="
+                    display: inline-block; background: #FFE500; border: 4px solid #000;
+                    box-shadow: 6px 6px 0px #000; padding: 14px 28px; font-size: 1.8rem;
+                    font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #000;
+                ">
+                    HOUSE OF VIYARA
+                </div>
+            </div>
+
+            <!-- Maintenance Card Content -->
+            <div style="
+                max-width: 620px; width: 90%; background: #ffffff; border: 4px solid #000;
+                box-shadow: 10px 10px 0px #000; padding: 40px 32px; margin: 20px auto 40px auto;
+                text-align: center; box-sizing: border-box;
             ">
                 <div style="
-                    display: inline-flex; align-items: center; justify-content: center;
-                    width: 80px; height: 80px; background: rgba(255, 51, 102, 0.1);
-                    border-radius: 50%; border: 2px solid #ff3366; margin-bottom: 24px;
-                    animation: hovPulse 2s infinite;
+                    display: inline-block; background: #FF007A; color: #ffffff;
+                    border: 3px solid #000; box-shadow: 4px 4px 0px #000; font-size: 11px;
+                    font-weight: 900; letter-spacing: 2px; padding: 6px 16px; text-transform: uppercase;
+                    margin-bottom: 24px;
                 ">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff3366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                        <path d="M12 12h.01"></path>
-                        <path d="M17 12h.01"></path>
-                        <path d="M7 12h.01"></path>
-                    </svg>
+                    ● SITE CURRENTLY OFFLINE
                 </div>
 
-                <div style="
-                    display: inline-block; background: #ff3366; color: #fff; font-size: 11px;
-                    font-weight: 900; letter-spacing: 2px; padding: 6px 14px; border-radius: 20px;
-                    text-transform: uppercase; margin-bottom: 16px;
+                <h1 style="
+                    font-size: 2.2rem; font-weight: 900; margin: 0 0 18px 0; color: #000000;
+                    text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2;
                 ">
-                    ● WEBSITE IS CURRENTLY OFF / UNDER MAINTENANCE
-                </div>
-
-                <h1 style="font-size: 2rem; font-weight: 800; margin: 0 0 16px 0; color: #ffffff;">
-                    ${config.maintenance_title || 'Site Under Maintenance'}
+                    ${config.maintenance_title || 'SITE UNDER MAINTENANCE'}
                 </h1>
 
-                <p style="font-size: 1.05rem; line-height: 1.6; color: #a0aec0; margin: 0 0 24px 0;">
-                    ${config.maintenance_message || 'Our website is currently undergoing scheduled maintenance. Please check back shortly.'}
+                <p style="
+                    font-size: 1.1rem; line-height: 1.7; color: #333333; margin: 0 0 28px 0;
+                    font-weight: 600;
+                ">
+                    ${config.maintenance_message || 'House of Viyara is currently undergoing scheduled system upgrades. We will be back online shortly! Thank you for your patience.'}
                 </p>
 
                 ${config.maintenance_estimated_time ? `
                 <div style="
-                    background: #0d0e15; border: 1px solid #2d3748; padding: 12px 20px;
-                    border-radius: 8px; display: inline-flex; align-items: center; gap: 10px;
-                    margin-bottom: 24px; font-size: 0.9rem; color: #e2e8f0;
+                    background: #FFE500; border: 3px solid #000; box-shadow: 4px 4px 0px #000;
+                    padding: 14px 24px; display: inline-flex; align-items: center; gap: 10px;
+                    font-size: 1rem; font-weight: 800; color: #000; text-transform: uppercase;
                 ">
-                    <span style="color: #ff3366;">⏳ Estimated Duration:</span> <strong>${config.maintenance_estimated_time}</strong>
+                    <span>⏳ ESTIMATED BACK ONLINE:</span> <span style="background: #000; color: #FFE500; padding: 2px 8px; border-radius: 4px;">${config.maintenance_estimated_time}</span>
                 </div>
                 ` : ''}
 
-                <div style="margin-top: 20px; border-top: 1px solid #2d3748; padding-top: 20px;">
-                    <button onclick="promptDeveloperLogin()" style="
-                        background: transparent; border: 1px solid #4a5568; color: #cbd5e0;
-                        padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-                        transition: all 0.2s;
-                    ">
-                        🔑 Developer Access
-                    </button>
+                <div style="
+                    margin-top: 36px; padding-top: 24px; border-top: 2px dashed #000;
+                    font-size: 0.85rem; color: #666; font-weight: 700; text-transform: uppercase;
+                ">
+                    💖 Thank you for shopping with House of Viyara
                 </div>
             </div>
         </div>
-
-        <style>
-            @keyframes hovPulse {
-                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
-                70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 51, 102, 0); }
-                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
-            }
-        </style>
         `;
 
         function applyOverlay() {
@@ -183,18 +200,5 @@
         }
     }
 
-    // Helper for developer unlock on overlay
-    window.promptDeveloperLogin = function() {
-        const pass = prompt('Enter Master Developer Passcode:');
-        if (pass === 'DEV-MASTER-9999') {
-            localStorage.setItem('hov_master_authenticated', 'true');
-            alert('Developer Bypass Granted! Reloading page...');
-            window.location.reload();
-        } else if (pass) {
-            alert('Invalid Passcode!');
-        }
-    };
-
-    // Run check immediately
     checkMaintenanceMode();
 })();
