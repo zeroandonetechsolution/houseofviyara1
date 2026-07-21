@@ -730,8 +730,8 @@ function isHeicUrl(url) {
     return lowerUrl.includes('.heic') || lowerUrl.includes('.heif');
 }
 
-// Placeholder SVG image (embedded as data URI - always works, no network needed)
-const HOV_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784624124/main-sample.png";
+// Placeholder dress image on Cloudinary (always works)
+const HOV_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/product_1.jpg";
 const SUPABASE_BLOCKED_HOST = 'embvkfuwevutfwpxemfe.supabase.co';
 
 function isSupabaseBlocked(url) {

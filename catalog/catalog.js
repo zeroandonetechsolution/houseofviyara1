@@ -601,7 +601,7 @@ function clearAllFilters() {
 // HELPER FUNCTIONS
 // ============================================
 
-const CATALOG_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784624124/main-sample.png";
+const CATALOG_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/product_1.jpg";
 
 function getProductImageUrl(product) {
     if (product.image_url) {

@@ -1,7 +1,7 @@
 [
     {
         "id": 16,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713855647_upload",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg",
         "alt": "yellow kurti",
         "display_order": 1,
         "is_active": true,
@@ -9,7 +9,7 @@
     },
     {
         "id": 19,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713910178_upload",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
         "alt": "pink kurti",
         "display_order": 3,
         "is_active": true,
@@ -17,7 +17,7 @@
     },
     {
         "id": 20,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782713934915_upload",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
         "alt": "kurti",
         "display_order": 4,
         "is_active": true,
@@ -25,7 +25,7 @@
     },
     {
         "id": 21,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/hero/1782838411816_IMG_3248.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
         "alt": "kurti",
         "display_order": 4,
         "is_active": true,
