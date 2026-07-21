@@ -2,7 +2,7 @@
 // HOUSE OF VIYARA — MASTER SYSTEM GUARD & TELEMETRY SURVEILLANCE
 // ═══════════════════════════════════════════════════════════════
 
-(function() {
+(function () {
     'use strict';
 
     window.HOV_SYSTEM_LOGS = JSON.parse(localStorage.getItem('hov_system_logs') || '[]');
@@ -26,11 +26,11 @@
         if (window.HOV_SYSTEM_LOGS.length > 100) window.HOV_SYSTEM_LOGS.pop();
         try {
             localStorage.setItem('hov_system_logs', JSON.stringify(window.HOV_SYSTEM_LOGS));
-        } catch(e) {}
+        } catch (e) { }
     }
 
     // Catch Uncaught JS Errors
-    window.addEventListener('error', function(event) {
+    window.addEventListener('error', function (event) {
         recordSystemError({
             type: 'RUNTIME_ERROR',
             message: event.message,
@@ -42,7 +42,7 @@
     });
 
     // Catch Unhandled Promise Rejections
-    window.addEventListener('unhandledrejection', function(event) {
+    window.addEventListener('unhandledrejection', function (event) {
         recordSystemError({
             type: 'UNHANDLED_PROMISE',
             message: event.reason ? (event.reason.message || String(event.reason)) : 'Promise rejected',
@@ -60,13 +60,13 @@
 
     // Secret key listener for developer (Press 'm' + 'a' + 's' + 't' + 'e' + 'r' anywhere on maintenance screen)
     let secretBuffer = '';
-    window.addEventListener('keydown', function(e) {
+    window.addEventListener('keydown', function (e) {
         secretBuffer += e.key.toLowerCase();
         if (secretBuffer.length > 10) secretBuffer = secretBuffer.slice(-10);
         if (secretBuffer.includes('master') || secretBuffer.includes('devpass')) {
             secretBuffer = '';
             const pass = prompt('Enter Master Developer Passcode:');
-            if (pass === 'DEV-MASTER-9999') {
+            if (pass === 'mosakutty') {
                 localStorage.setItem('hov_master_authenticated', 'true');
                 alert('Developer Bypass Granted! Reloading page...');
                 window.location.reload();
@@ -93,13 +93,13 @@
                     localStorage.setItem('hov_system_config', JSON.stringify(config));
                     break;
                 }
-            } catch(e) {}
+            } catch (e) { }
         }
 
         if (!config) {
             try {
                 config = JSON.parse(localStorage.getItem('hov_system_config'));
-            } catch(err) {}
+            } catch (err) { }
         }
 
         if (config && config.maintenance_mode === true && !isDeveloperSession()) {

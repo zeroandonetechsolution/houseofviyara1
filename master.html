@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOUSE OF VIYARA — Developer Master Control Panel</title>
     <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             --bg-dark: #0a0b10;
@@ -23,7 +26,12 @@
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
@@ -35,149 +43,384 @@
 
         /* Login Modal */
         #master-login-modal {
-            position: fixed; inset: 0; background: rgba(10, 11, 16, 0.95);
-            backdrop-filter: blur(10px); z-index: 999999;
-            display: flex; align-items: center; justify-content: center; padding: 20px;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 11, 16, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .login-box {
-            background: var(--bg-card); border: 2px solid var(--accent-blue);
-            border-radius: 16px; width: 100%; max-width: 420px; padding: 36px 30px;
-            box-shadow: 0 0 50px rgba(0, 176, 255, 0.2); text-align: center;
+            background: var(--bg-card);
+            border: 2px solid var(--accent-blue);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            padding: 36px 30px;
+            box-shadow: 0 0 50px rgba(0, 176, 255, 0.2);
+            text-align: center;
         }
 
         .login-box h2 {
-            font-size: 1.5rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 8px;
-            color: var(--text-main); text-transform: uppercase;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            text-transform: uppercase;
         }
 
-        .login-box p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; }
+        .login-box p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+        }
 
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-family: var(--font-mono); }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+        }
+
         .master-input {
-            width: 100%; padding: 12px 16px; background: var(--bg-input); border: 1px solid var(--border-color);
-            border-radius: 8px; color: var(--text-main); font-family: var(--font-mono); font-size: 1rem; outline: none;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            outline: none;
             transition: all 0.2s;
         }
-        .master-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(0, 176, 255, 0.3); }
+
+        .master-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 176, 255, 0.3);
+        }
 
         .master-btn {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #00b0ff, #0088ff); color: #fff;
-            font-weight: 800; font-size: 0.95rem; border: none; border-radius: 8px; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #00b0ff, #0088ff);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
         }
-        .master-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .master-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
 
         /* Main Dashboard Header */
         header {
-            background: var(--bg-card); border-bottom: 1px solid var(--border-color);
-            padding: 16px 30px; display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .header-title { display: flex; align-items: center; gap: 12px; }
-        .header-title i { font-size: 1.5rem; color: var(--accent-blue); }
-        .header-title h1 { font-size: 1.25rem; font-weight: 900; letter-spacing: 1px; }
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title i {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
 
         .header-badge {
-            background: rgba(0, 255, 136, 0.1); border: 1px solid var(--accent-green);
-            color: var(--accent-green); font-size: 0.75rem; font-family: var(--font-mono);
-            padding: 4px 10px; border-radius: 20px; text-transform: uppercase; font-weight: 700;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
         /* Layout */
         .dashboard-container {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
-            padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
         }
 
         @media (max-width: 1024px) {
-            .dashboard-container { grid-template-columns: 1fr; }
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         .card {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 14px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .card-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
         }
 
-        .card-title { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
-        .card-title i { color: var(--accent-blue); }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .card-title i {
+            color: var(--accent-blue);
+        }
 
         /* Maintenance Switch */
         .switch-container {
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--bg-input); padding: 18px 20px; border-radius: 10px;
-            border: 1px solid var(--border-color); margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-input);
+            padding: 18px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
         }
 
-        .switch-label { font-weight: 800; font-size: 1.1rem; }
-        .switch-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        .switch-label {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .switch-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
 
         /* Toggle Switch */
         .toggle {
-            position: relative; display: inline-block; width: 64px; height: 34px;
+            position: relative;
+            display: inline-block;
+            width: 64px;
+            height: 34px;
         }
-        .toggle input { opacity: 0; width: 0; height: 0; }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
         .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--accent-green); transition: .3s; border-radius: 34px;
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--accent-green);
+            transition: .3s;
+            border-radius: 34px;
         }
+
         .slider:before {
-            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
-            background-color: white; transition: .3s; border-radius: 50%;
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--accent-red); }
-        input:checked + .slider:before { transform: translateX(30px); }
+
+        input:checked+.slider {
+            background-color: var(--accent-red);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(30px);
+        }
 
         /* Status Badge Big */
         .status-hero {
-            text-align: center; padding: 16px; border-radius: 10px; font-weight: 900;
-            letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-size: 0.9rem;
+            text-align: center;
+            padding: 16px;
+            border-radius: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
         }
-        .status-hero.online { background: rgba(0, 255, 136, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
-        .status-hero.offline { background: rgba(255, 51, 102, 0.15); border: 1px solid var(--accent-red); color: var(--accent-red); }
+
+        .status-hero.online {
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .status-hero.offline {
+            background: rgba(255, 51, 102, 0.15);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
 
         /* Logs Table */
-        .logs-table-wrapper { overflow-x: auto; max-height: 380px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; }
-        th { background: var(--bg-input); color: var(--text-muted); text-align: left; padding: 10px; position: sticky; top: 0; }
-        td { padding: 10px; border-bottom: 1px solid var(--border-color); color: var(--text-main); word-break: break-all; }
-        tr:hover td { background: rgba(255,255,255,0.02); }
+        .logs-table-wrapper {
+            overflow-x: auto;
+            max-height: 380px;
+            overflow-y: auto;
+        }
 
-        .badge-error { background: rgba(255,51,102,0.2); color: var(--accent-red); padding: 2px 6px; border-radius: 4px; }
-        .badge-warn { background: rgba(255,183,3,0.2); color: var(--accent-yellow); padding: 2px 6px; border-radius: 4px; }
-        .badge-info { background: rgba(0,176,255,0.2); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        th {
+            background: var(--bg-input);
+            color: var(--text-muted);
+            text-align: left;
+            padding: 10px;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-error {
+            background: rgba(255, 51, 102, 0.2);
+            color: var(--accent-red);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .badge-warn {
+            background: rgba(255, 183, 3, 0.2);
+            color: var(--accent-yellow);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .badge-info {
+            background: rgba(0, 176, 255, 0.2);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
 
         /* Quick Action Buttons */
-        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-        .action-btn {
-            background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main);
-            padding: 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s;
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
         }
-        .action-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); transform: translateY(-2px); }
-        .action-btn i { font-size: 1.2rem; }
 
-        .full-width { grid-column: 1 / -1; }
+        .action-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .action-btn i {
+            font-size: 1.2rem;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- Passcode Modal -->
     <div id="master-login-modal">
         <div class="login-box">
-            <div style="font-size: 2.5rem; color: var(--accent-blue); margin-bottom: 12px;"><i class="fas fa-user-shield"></i></div>
+            <div style="font-size: 2.5rem; color: var(--accent-blue); margin-bottom: 12px;"><i
+                    class="fas fa-user-shield"></i></div>
             <h2>Developer Master Access</h2>
             <p>Enter developer passcode to unlock surveillance & maintenance controls.</p>
             <form onsubmit="handleMasterLogin(event)">
                 <div class="input-group">
                     <label>Master Passcode</label>
-                    <input type="password" id="master-passcode-input" class="master-input" placeholder="••••••••••••" autofocus required>
+                    <input type="password" id="master-passcode-input" class="master-input" placeholder="••••••••••••"
+                        autofocus required>
                 </div>
                 <button type="submit" class="master-btn"><i class="fas fa-lock-open"></i> Unlock Master Panel</button>
             </form>
@@ -192,13 +435,16 @@
             <span class="header-badge">LIVE SURVEILLANCE</span>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
-            <button onclick="window.location.href='index.html'" class="action-btn" style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem;">
+            <button onclick="window.location.href='index.html'" class="action-btn"
+                style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem;">
                 <i class="fas fa-store"></i> View Storefront
             </button>
-            <button onclick="window.location.href='admin.html'" class="action-btn" style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem;">
+            <button onclick="window.location.href='admin.html'" class="action-btn"
+                style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem;">
                 <i class="fas fa-user-gear"></i> Admin Panel
             </button>
-            <button onclick="lockMasterPanel()" class="action-btn" style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem; border-color: var(--accent-red); color: var(--accent-red);">
+            <button onclick="lockMasterPanel()" class="action-btn"
+                style="padding: 8px 14px; flex-direction: row; font-size: 0.8rem; border-color: var(--accent-red); color: var(--accent-red);">
                 <i class="fas fa-power-off"></i> Lock
             </button>
         </div>
@@ -211,7 +457,8 @@
         <div class="card">
             <div class="card-header">
                 <div class="card-title"><i class="fas fa-toggle-on"></i> Website Maintenance & Kill Switch</div>
-                <span id="save-status-text" style="font-size: 0.75rem; color: var(--accent-green); font-family: var(--font-mono);"></span>
+                <span id="save-status-text"
+                    style="font-size: 0.75rem; color: var(--accent-green); font-family: var(--font-mono);"></span>
             </div>
 
             <div id="status-indicator" class="status-hero online">
@@ -236,7 +483,8 @@
 
             <div class="input-group">
                 <label>Maintenance Message (Why the site is off)</label>
-                <textarea id="m-message" class="master-input" rows="3" style="resize: vertical;">House of Viyara is currently undergoing scheduled system upgrades. We will be back online shortly! Thank you for your patience.</textarea>
+                <textarea id="m-message" class="master-input" rows="3"
+                    style="resize: vertical;">House of Viyara is currently undergoing scheduled system upgrades. We will be back online shortly! Thank you for your patience.</textarea>
             </div>
 
             <div class="input-group">
@@ -244,7 +492,8 @@
                 <input type="text" id="m-duration" class="master-input" value="15-30 minutes">
             </div>
 
-            <button onclick="saveMaintenanceConfig()" class="master-btn" style="background: linear-gradient(135deg, #00ff88, #00b0ff); color: #000;">
+            <button onclick="saveMaintenanceConfig()" class="master-btn"
+                style="background: linear-gradient(135deg, #00ff88, #00b0ff); color: #000;">
                 <i class="fas fa-save"></i> Save & Deploy Maintenance State
             </button>
         </div>
@@ -253,49 +502,63 @@
         <div class="card">
             <div class="card-header">
                 <div class="card-title"><i class="fas fa-heart-pulse"></i> Infrastructure Surveillance</div>
-                <button onclick="runDiagnosticChecks()" style="background: transparent; border: none; color: var(--accent-blue); cursor: pointer;"><i class="fas fa-sync"></i> Refresh</button>
+                <button onclick="runDiagnosticChecks()"
+                    style="background: transparent; border: none; color: var(--accent-blue); cursor: pointer;"><i
+                        class="fas fa-sync"></i> Refresh</button>
             </div>
 
             <div style="display: grid; gap: 14px;">
-                <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div
+                    style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; font-size: 0.9rem;">GitHub JSON Database</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">zeroandonetechsolution/houseofviyara1</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                            zeroandonetechsolution/houseofviyara1</div>
                     </div>
                     <span id="health-github" class="badge-info">CHECKING...</span>
                 </div>
 
-                <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div
+                    style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; font-size: 0.9rem;">Cloudinary Media Storage</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Cloud: b2p0mqvx (Preset: houseofviyara)</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Cloud:
+                            b2p0mqvx (Preset: houseofviyara)</div>
                     </div>
                     <span id="health-cloudinary" class="badge-info">CHECKING...</span>
                 </div>
 
-                <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div
+                    style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; font-size: 0.9rem;">Products Database Registry</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);" id="health-products-count">Counting items...</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);"
+                            id="health-products-count">Counting items...</div>
                     </div>
                     <span id="health-products-status" class="badge-info">ACTIVE</span>
                 </div>
 
-                <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div
+                    style="background: var(--bg-input); padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; font-size: 0.9rem;">Developer Bypass Key</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">DEV-MASTER-9999</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                            mosakutty</div>
                     </div>
                     <span class="badge-warn">ACTIVE</span>
                 </div>
             </div>
 
             <div style="margin-top: 24px;">
-                <div class="card-title" style="margin-bottom: 12px; font-size: 0.85rem;"><i class="fas fa-bolt"></i> Emergency Operations</div>
+                <div class="card-title" style="margin-bottom: 12px; font-size: 0.85rem;"><i class="fas fa-bolt"></i>
+                    Emergency Operations</div>
                 <div class="action-grid">
-                    <button class="action-btn" onclick="clearSystemLogs()"><i class="fas fa-trash"></i> Clear Error Logs</button>
-                    <button class="action-btn" onclick="clearLocalStorage()"><i class="fas fa-broom"></i> Flush Local Cache</button>
-                    <button class="action-btn" onclick="testMaintenanceOverlay()"><i class="fas fa-eye"></i> Preview Overlay</button>
+                    <button class="action-btn" onclick="clearSystemLogs()"><i class="fas fa-trash"></i> Clear Error
+                        Logs</button>
+                    <button class="action-btn" onclick="clearLocalStorage()"><i class="fas fa-broom"></i> Flush Local
+                        Cache</button>
+                    <button class="action-btn" onclick="testMaintenanceOverlay()"><i class="fas fa-eye"></i> Preview
+                        Overlay</button>
                 </div>
             </div>
         </div>
@@ -305,8 +568,12 @@
             <div class="card-header">
                 <div class="card-title"><i class="fas fa-bug"></i> Error Telemetry & Issue Logs</div>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="renderSystemLogs()" class="action-btn" style="padding: 6px 12px; flex-direction: row; font-size: 0.75rem;"><i class="fas fa-arrows-rotate"></i> Refresh</button>
-                    <button onclick="exportLogsCSV()" class="action-btn" style="padding: 6px 12px; flex-direction: row; font-size: 0.75rem;"><i class="fas fa-download"></i> Export CSV</button>
+                    <button onclick="renderSystemLogs()" class="action-btn"
+                        style="padding: 6px 12px; flex-direction: row; font-size: 0.75rem;"><i
+                            class="fas fa-arrows-rotate"></i> Refresh</button>
+                    <button onclick="exportLogsCSV()" class="action-btn"
+                        style="padding: 6px 12px; flex-direction: row; font-size: 0.75rem;"><i
+                            class="fas fa-download"></i> Export CSV</button>
                 </div>
             </div>
 
@@ -322,7 +589,10 @@
                         </tr>
                     </thead>
                     <tbody id="logs-table-body">
-                        <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No system errors recorded. Systems operating cleanly.</td></tr>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No
+                                system errors recorded. Systems operating cleanly.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -333,7 +603,7 @@
     <!-- Master Control JS logic -->
     <script src="supabase-config.js?v=25"></script>
     <script>
-        const PASSCODE = 'DEV-MASTER-9999';
+        const PASSCODE = 'mosakutty';
 
         function checkAuth() {
             if (localStorage.getItem('hov_master_authenticated') === 'true') {
@@ -378,7 +648,7 @@
                     if (cfg.maintenance_estimated_time) document.getElementById('m-duration').value = cfg.maintenance_estimated_time;
                     updateMaintenanceUI();
                 }
-            } catch(e) {
+            } catch (e) {
                 console.warn('Config load failed:', e);
             }
         }
@@ -452,7 +722,7 @@
                     statusText.style.color = '#ffb703';
                     statusText.innerText = '⚠️ SAVED LOCALLY (GitHub Push Failed)';
                 }
-            } catch(e) {
+            } catch (e) {
                 statusText.style.color = '#ffb703';
                 statusText.innerText = '⚠️ SAVED LOCALLY';
             }
@@ -474,7 +744,7 @@
                     document.getElementById('health-github').innerText = `ONLINE (${Math.round(end - start)}ms)`;
                     document.getElementById('health-products-count').innerText = `${products.length} active products in catalog`;
                 }
-            } catch(e) {
+            } catch (e) {
                 document.getElementById('health-github').className = 'badge-error';
                 document.getElementById('health-github').innerText = 'ERROR';
             }
@@ -487,7 +757,7 @@
                     document.getElementById('health-cloudinary').style.color = 'var(--accent-green)';
                     document.getElementById('health-cloudinary').innerText = 'CONNECTED';
                 }
-            } catch(e) {
+            } catch (e) {
                 document.getElementById('health-cloudinary').innerText = 'OK';
             }
         }
@@ -536,7 +806,7 @@
             if (logs.length === 0) return alert('No logs to export.');
             let csv = 'Timestamp,Type,Page,Message,Source\n';
             logs.forEach(l => {
-                csv += `"${l.timestamp}","${l.type}","${l.page}","${(l.message||'').replace(/"/g, '""')}","${(l.source||'').replace(/"/g, '""')}"\n`;
+                csv += `"${l.timestamp}","${l.type}","${l.page}","${(l.message || '').replace(/"/g, '""')}","${(l.source || '').replace(/"/g, '""')}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
@@ -546,10 +816,11 @@
         }
 
         function escapeHtml(str) {
-            return String(str||'').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         checkAuth();
     </script>
 </body>
+
 </html>
