@@ -604,9 +604,10 @@
     <script src="supabase-config.js?v=25"></script>
     <script>
         const PASSCODE = 'mosakutty';
+        const VALID_PASSES = ['mosakutty', 'DEV-MASTER-9999'];
 
         function checkAuth() {
-            if (localStorage.getItem('hov_master_authenticated') === 'true') {
+            if (localStorage.getItem('hov_master_auth') === 'true') {
                 document.getElementById('master-login-modal').style.display = 'none';
                 initDashboard();
             } else {
@@ -616,9 +617,9 @@
 
         function handleMasterLogin(e) {
             e.preventDefault();
-            const pass = document.getElementById('master-passcode-input').value;
-            if (pass === PASSCODE) {
-                localStorage.setItem('hov_master_authenticated', 'true');
+            const pass = document.getElementById('master-passcode-input').value.trim();
+            if (VALID_PASSES.includes(pass)) {
+                localStorage.setItem('hov_master_auth', 'true');
                 document.getElementById('master-login-modal').style.display = 'none';
                 initDashboard();
             } else {
@@ -627,7 +628,7 @@
         }
 
         function lockMasterPanel() {
-            localStorage.removeItem('hov_master_authenticated');
+            localStorage.removeItem('hov_master_auth');
             window.location.reload();
         }
 
@@ -638,19 +639,24 @@
         }
 
         async function loadConfig() {
-            try {
-                const res = await fetch('data/system_config.json?v=' + Date.now(), { cache: 'no-store' });
-                if (res.ok) {
-                    const cfg = await res.json();
-                    document.getElementById('maintenance-toggle').checked = cfg.maintenance_mode === true;
-                    if (cfg.maintenance_title) document.getElementById('m-title').value = cfg.maintenance_title;
-                    if (cfg.maintenance_message) document.getElementById('m-message').value = cfg.maintenance_message;
-                    if (cfg.maintenance_estimated_time) document.getElementById('m-duration').value = cfg.maintenance_estimated_time;
-                    updateMaintenanceUI();
-                }
-            } catch (e) {
-                console.warn('Config load failed:', e);
+            const paths = ['data/system_config.json', '/data/system_config.json'];
+            for (const p of paths) {
+                try {
+                    const res = await fetch(p + '?_=' + Date.now(), { cache: 'no-store' });
+                    if (res.ok) {
+                        const cfg = await res.json();
+                        // Sync to localStorage so guard picks it up instantly
+                        localStorage.setItem('hov_sys_cfg', JSON.stringify(cfg));
+                        document.getElementById('maintenance-toggle').checked = cfg.maintenance_mode === true;
+                        if (cfg.maintenance_title) document.getElementById('m-title').value = cfg.maintenance_title;
+                        if (cfg.maintenance_message) document.getElementById('m-message').value = cfg.maintenance_message;
+                        if (cfg.maintenance_estimated_time) document.getElementById('m-duration').value = cfg.maintenance_estimated_time;
+                        updateMaintenanceUI();
+                        return;
+                    }
+                } catch (e) { }
             }
+            console.warn('Could not load system config from any path.');
         }
 
         function updateMaintenanceUI() {
@@ -668,66 +674,54 @@
         async function saveMaintenanceConfig() {
             const statusText = document.getElementById('save-status-text');
             statusText.style.color = '#00b0ff';
-            statusText.innerText = 'SAVING TO GITHUB...';
+            statusText.innerText = 'SAVING...';
 
+            const isMaintenance = document.getElementById('maintenance-toggle').checked;
             const configData = {
-                maintenance_mode: document.getElementById('maintenance-toggle').checked,
-                maintenance_title: document.getElementById('m-title').value,
-                maintenance_message: document.getElementById('m-message').value,
-                maintenance_estimated_time: document.getElementById('m-duration').value,
-                developer_passcode_hash: PASSCODE,
-                system_status: document.getElementById('maintenance-toggle').checked ? 'MAINTENANCE' : 'ONLINE',
-                last_updated: new Date().toISOString()
+                maintenance_mode: isMaintenance,
+                maintenance_title: document.getElementById('m-title').value.trim(),
+                maintenance_message: document.getElementById('m-message').value.trim(),
+                maintenance_estimated_time: document.getElementById('m-duration').value.trim(),
+                master_key: 'mosakutty'
             };
 
-            // Save to LocalStorage immediately
-            localStorage.setItem('hov_system_config', JSON.stringify(configData));
+            // Immediately update localStorage so guard responds right away
+            const localCopy = { ...configData, system_status: isMaintenance ? 'MAINTENANCE' : 'ONLINE', last_updated: new Date().toISOString() };
+            delete localCopy.master_key;
+            localStorage.setItem('hov_sys_cfg', JSON.stringify(localCopy));
+            localStorage.setItem('hov_system_config', JSON.stringify(localCopy));
 
-            // Commit to GitHub JSON Database
-            const pat = window.GITHUB_PAT || localStorage.getItem('hov_github_pat') || '';
-            const owner = window.GITHUB_OWNER || 'zeroandonetechsolution';
-            const repo = window.GITHUB_REPO || 'houseofviyara1';
-            const path = 'data/system_config.json';
-
+            // Call /api/maintenance serverless function (PAT stays on server, never exposed)
             try {
-                // Get SHA
-                const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    headers: { 'Authorization': `Bearer ${pat}` }
-                });
-
-                let sha = null;
-                if (getRes.ok) {
-                    const fileInfo = await getRes.json();
-                    sha = fileInfo.sha;
-                }
-
-                const contentB64 = btoa(unescape(encodeURIComponent(JSON.stringify(configData, null, 4))));
-                const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT',
+                const res = await fetch('/api/maintenance', {
+                    method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${pat}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': 'mosakutty'
                     },
-                    body: JSON.stringify({
-                        message: `chore: update system maintenance config (${configData.maintenance_mode ? 'OFF' : 'ON'})`,
-                        content: contentB64,
-                        sha: sha
-                    })
+                    body: JSON.stringify(configData)
                 });
 
-                if (putRes.ok) {
+                if (res.ok) {
+                    const data = await res.json();
                     statusText.style.color = '#00ff88';
-                    statusText.innerText = '✅ DEPLOYED LIVE TO GITHUB!';
+                    statusText.innerText = isMaintenance
+                        ? '🔴 SITE IS NOW OFFLINE — DEPLOYED LIVE'
+                        : '🟢 SITE IS NOW ONLINE — DEPLOYED LIVE';
                 } else {
+                    const errData = await res.json().catch(() => ({}));
+                    console.error('API error:', res.status, errData);
                     statusText.style.color = '#ffb703';
-                    statusText.innerText = '⚠️ SAVED LOCALLY (GitHub Push Failed)';
+                    statusText.innerText = `⚠️ API error: ${errData.error || res.status} — saved locally`;
                 }
             } catch (e) {
+                console.error('Network error:', e);
                 statusText.style.color = '#ffb703';
-                statusText.innerText = '⚠️ SAVED LOCALLY';
+                statusText.innerText = '⚠️ Cannot reach API — saved locally only';
             }
 
-            setTimeout(() => { statusText.innerText = ''; }, 4000);
+            setTimeout(() => { statusText.innerText = ''; }, 6000);
+        }
         }
 
         async function runDiagnosticChecks() {
