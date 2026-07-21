@@ -528,12 +528,7 @@
         }
 
         function testMaintenanceOverlay() {
-            const config = {
-                maintenance_title: document.getElementById('m-title').value,
-                maintenance_message: document.getElementById('m-message').value,
-                maintenance_estimated_time: document.getElementById('m-duration').value
-            };
-            alert('To test maintenance overlay, open any store page in an incognito window after turning maintenance mode ON.');
+            window.open('index.html?test_maintenance=true', '_blank');
         }
 
         function exportLogsCSV() {
