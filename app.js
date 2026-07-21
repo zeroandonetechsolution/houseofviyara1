@@ -730,12 +730,28 @@ function isHeicUrl(url) {
     return lowerUrl.includes('.heic') || lowerUrl.includes('.heif');
 }
 
+// Placeholder SVG image (embedded as data URI - always works, no network needed)
+const HOV_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784624124/main-sample.png";
+const SUPABASE_BLOCKED_HOST = 'embvkfuwevutfwpxemfe.supabase.co';
+
+function isSupabaseBlocked(url) {
+    return url && url.includes(SUPABASE_BLOCKED_HOST);
+}
+
 function optimizeImg(url, w = 400, q = 60) {
+    // If it's a blocked Supabase URL, return placeholder immediately
+    if (isSupabaseBlocked(url)) {
+        return HOV_PLACEHOLDER;
+    }
     if (window.LifeStyleLoader) return LifeStyleLoader.optimizeImageUrl(url, w, q);
     if (url && url.includes('unsplash.com')) {
         return url.replace(/w=\d+/, 'w=' + w).replace(/q=\d+/, 'q=' + q);
     }
-    return url;
+    // Cloudinary optimization: if it's a Cloudinary URL add transformations
+    if (url && url.includes('res.cloudinary.com')) {
+        return url.replace('/upload/', `/upload/w_${w},q_${q},f_auto/`);
+    }
+    return url || HOV_PLACEHOLDER;
 }
 
 function refreshLazyMedia(root) {

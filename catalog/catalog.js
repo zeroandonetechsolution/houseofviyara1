@@ -601,14 +601,20 @@ function clearAllFilters() {
 // HELPER FUNCTIONS
 // ============================================
 
+const CATALOG_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784624124/main-sample.png";
+
 function getProductImageUrl(product) {
     if (product.image_url) {
+        // If URL is from blocked Supabase, return placeholder
+        if (product.image_url.includes('embvkfuwevutfwpxemfe.supabase.co')) {
+            return CATALOG_PLACEHOLDER;
+        }
         if (product.image_url.startsWith('http')) return product.image_url;
         if (window.SUPABASE_BUCKET && window.SUPABASE_URL) {
             return `${window.SUPABASE_URL}/storage/v1/object/public/${window.SUPABASE_BUCKET}/${product.image_url}`;
         }
     }
-    return null;
+    return CATALOG_PLACEHOLDER;
 }
 
 function isInWishlist(productId) {

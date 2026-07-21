@@ -120,7 +120,7 @@ async function adminSaveData(filename, data) {
 // ═══════════════════════════════════════════════════════════════
 async function cloudinaryUpload(file) {
     const cloudName = window.CLOUDINARY_CLOUD_NAME || 'b2p0mqvx';
-    const uploadPreset = localStorage.getItem('hov_cloudinary_preset') || 'houseofviyara';
+    const uploadPreset = window.CLOUDINARY_UPLOAD_PRESET || localStorage.getItem('hov_cloudinary_preset') || 'houseofviyara';
 
     const formData = new FormData();
     formData.append('file', file);

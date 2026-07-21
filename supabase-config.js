@@ -10,6 +10,7 @@ window.GITHUB_BRANCH = "main";
 // Cloudinary Configuration
 window.CLOUDINARY_CLOUD_NAME = "b2p0mqvx";
 window.CLOUDINARY_API_KEY = "348292556668473";
+window.CLOUDINARY_UPLOAD_PRESET = "houseofviyara"; // Created as unsigned preset
 
 // Legacy Supabase settings (kept for compatibility)
 window.SUPABASE_URL = "https://embvkfuwevutfwpxemfe.supabase.co";
