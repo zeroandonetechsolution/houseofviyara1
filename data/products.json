@@ -6,10 +6,10 @@
         "price": 1499.0,
         "offer_price": 1099.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628893/houseofviyara/products/hov_dress_1.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628893/houseofviyara/products/hov_dress_1.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg"
         ],
         "videos": [],
         "stock": 10,
@@ -30,10 +30,12 @@
         "price": 1099.0,
         "offer_price": 799.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628896/houseofviyara/products/hov_dress_2.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628896/houseofviyara/products/hov_dress_2.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901668501_IMG_2823.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901669194_IMG_2829.PNG"
         ],
         "videos": [],
         "stock": 10,
@@ -54,10 +56,13 @@
         "price": 1099.0,
         "offer_price": 799.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628899/houseofviyara/products/hov_dress_3.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628899/houseofviyara/products/hov_dress_3.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901796478_IMG_3855.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901798632_IMG_3859.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901801444_IMG_3857.JPG"
         ],
         "videos": [],
         "stock": 10,
@@ -78,10 +83,12 @@
         "price": 1099.0,
         "offer_price": 799.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628902/houseofviyara/products/hov_dress_4.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628902/houseofviyara/products/hov_dress_4.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902005468_IMG_3881.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902007414_IMG_3884.PNG"
         ],
         "videos": [],
         "stock": 10,
@@ -102,10 +109,12 @@
         "price": 1499.0,
         "offer_price": 899.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628905/houseofviyara/products/hov_dress_5.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628905/houseofviyara/products/hov_dress_5.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902150566_IMG_3278.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902151488_IMG_3279.jpg"
         ],
         "videos": [],
         "stock": 10,
@@ -131,10 +140,11 @@
         "price": 1099.0,
         "offer_price": 899.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628909/houseofviyara/products/hov_dress_6.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628909/houseofviyara/products/hov_dress_6.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902233591_IMG_3246.jpg"
         ],
         "videos": [],
         "stock": 4,
@@ -160,10 +170,12 @@
         "price": 1099.0,
         "offer_price": 999.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628913/houseofviyara/products/hov_dress_7.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628913/houseofviyara/products/hov_dress_7.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902323919_IMG_3271.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902325019_IMG_3272.jpg"
         ],
         "videos": [],
         "stock": 1,
@@ -186,10 +198,11 @@
         "price": 1099.0,
         "offer_price": 949.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628918/houseofviyara/products/hov_dress_8.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628918/houseofviyara/products/hov_dress_8.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902604288_IMG_3265.jpg"
         ],
         "videos": [],
         "stock": 2,
@@ -213,10 +226,12 @@
         "price": 999.0,
         "offer_price": 599.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628922/houseofviyara/products/hov_dress_9.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628922/houseofviyara/products/hov_dress_9.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902728804_IMG_3856.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902730491_IMG_3860.JPG"
         ],
         "videos": [],
         "stock": 5,
@@ -243,10 +258,12 @@
         "price": 1499.0,
         "offer_price": 1099.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628927/houseofviyara/products/hov_dress_10.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628927/houseofviyara/products/hov_dress_10.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903025660_IMG_3592.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903026408_IMG_3593.PNG"
         ],
         "videos": [],
         "stock": 2,
@@ -270,10 +287,11 @@
         "price": 899.0,
         "offer_price": 499.0,
         "category": "kurti",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628931/houseofviyara/products/hov_dress_11.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628931/houseofviyara/products/hov_dress_11.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903127139_IMG_3170.JPG"
         ],
         "videos": [],
         "stock": 2,
@@ -297,10 +315,11 @@
         "price": 899.0,
         "offer_price": 449.0,
         "category": "kurti",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628935/houseofviyara/products/hov_dress_12.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628935/houseofviyara/products/hov_dress_12.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903190787_IMG_3176.JPG"
         ],
         "videos": [],
         "stock": 4,
@@ -326,10 +345,11 @@
         "price": 899.0,
         "offer_price": 449.0,
         "category": "kurti",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628939/houseofviyara/products/hov_dress_13.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628939/houseofviyara/products/hov_dress_13.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903231623_IMG_3181.JPG"
         ],
         "videos": [],
         "stock": 2,
@@ -353,10 +373,11 @@
         "price": 899.0,
         "offer_price": 499.0,
         "category": "kurti",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628944/houseofviyara/products/hov_dress_14.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628944/houseofviyara/products/hov_dress_14.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903271289_IMG_3184.JPG"
         ],
         "videos": [],
         "stock": 10,
@@ -377,10 +398,13 @@
         "price": 2499.0,
         "offer_price": 1799.0,
         "category": "kurti-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628950/houseofviyara/products/hov_dress_15.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628950/houseofviyara/products/hov_dress_15.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903374884_IMG_2871.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903376380_IMG_2870.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903377188_IMG_2837.PNG"
         ],
         "videos": [],
         "stock": 1,
@@ -405,10 +429,12 @@
         "price": 2499.0,
         "offer_price": 1799.0,
         "category": "kurti-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628954/houseofviyara/products/hov_dress_16.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628954/houseofviyara/products/hov_dress_16.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455440_IMG_2840.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455963_IMG_2838.PNG"
         ],
         "videos": [],
         "stock": 1,
@@ -433,10 +459,12 @@
         "price": 1699.0,
         "offer_price": 1099.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628957/houseofviyara/products/hov_dress_17.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628957/houseofviyara/products/hov_dress_17.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085588100_B.MAXI3.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085589844_BLUE_MAXI_1.jpeg"
         ],
         "videos": [],
         "stock": 1,
@@ -459,10 +487,17 @@
         "price": 1699.0,
         "offer_price": 1099.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628962/houseofviyara/products/hov_dress_18.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628962/houseofviyara/products/hov_dress_18.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086031281_BROWN2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086034265_BROWN4.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086035594_BROWN5.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086037110_BROWN.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086038103_M.C_1.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086039036_M.C_2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086040167_M.C_3.jpeg"
         ],
         "videos": [],
         "stock": 8,
@@ -493,10 +528,12 @@
         "price": 1099.0,
         "offer_price": 699.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628965/houseofviyara/products/hov_dress_19.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628965/houseofviyara/products/hov_dress_19.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086338624_M.Y_FL_3.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086339635_M.YE.PNG"
         ],
         "videos": [],
         "stock": 3,
@@ -521,10 +558,10 @@
         "price": 1599.0,
         "offer_price": 849.0,
         "category": "maxis",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628969/houseofviyara/products/hov_dress_20.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628969/houseofviyara/products/hov_dress_20.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG"
         ],
         "videos": [],
         "stock": 3,
@@ -549,10 +586,12 @@
         "price": 1799.0,
         "offer_price": 1199.0,
         "category": "kurti-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628973/houseofviyara/products/hov_dress_21.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628973/houseofviyara/products/hov_dress_21.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833940667_3pcs_blue_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833941818_IMG_4256.JPG.jpeg"
         ],
         "videos": [],
         "stock": 8,
@@ -578,10 +617,17 @@
         "price": 1899.0,
         "offer_price": 1099.0,
         "category": "kurti-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628977/houseofviyara/products/hov_dress_22.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628977/houseofviyara/products/hov_dress_22.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277359_IMG_4233.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277988_IMG_4234.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834278532_IMG_4235.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279010_IMG_4236.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279444_IMG_4237.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279946_IMG_4238.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834280404_IMG_4243.PNG"
         ],
         "videos": [],
         "stock": 20,
@@ -611,10 +657,17 @@
         "price": 1999.0,
         "offer_price": 1099.0,
         "category": "kurti-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628893/houseofviyara/products/hov_dress_1.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628893/houseofviyara/products/hov_dress_1.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835084999_IMG_3932.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835086743_IMG_3951.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835088279_IMG_3955.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835091033_IMG_4250.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835094528_IMG_4251.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835098410_IMG_4252.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835102292_IMG_4253.JPG.jpeg"
         ],
         "videos": [],
         "stock": 10,
@@ -640,10 +693,19 @@
         "price": 899.0,
         "offer_price": 499.0,
         "category": "kurti",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628896/houseofviyara/products/hov_dress_2.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628896/houseofviyara/products/hov_dress_2.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836538774_IMG_4192.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836539878_IMG_4195.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836541995_IMG_4196.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836543470_IMG_4197.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836544896_IMG_4201.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836547140_IMG_4202.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836551148_IMG_4203.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836555781_IMG_4206.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836559401_IMG_4207.JPG.jpeg"
         ],
         "videos": [],
         "stock": 10,
@@ -670,10 +732,15 @@
         "price": 1799.0,
         "offer_price": 899.0,
         "category": "cord-sets",
-        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628899/houseofviyara/products/hov_dress_3.jpg",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
         "video_url": "",
         "gallery": [
-            "https://res.cloudinary.com/b2p0mqvx/image/upload/v1784628899/houseofviyara/products/hov_dress_3.jpg"
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785325_IMG_4586.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785706_IMG_4587.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786032_IMG_4588.JPG__1_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786362_IMG_4589.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786731_IMG_4590.JPG.jpeg"
         ],
         "videos": [],
         "stock": 10,

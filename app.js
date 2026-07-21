@@ -543,26 +543,762 @@ const API_URL = ''; // no backend API calls in static mode
 
 // Default product catalog for local mode.
 const DEFAULT_PRODUCTS = [
-    { id: 1, name: 'Floral Maxi Dress', description: 'Elegant floor-length maxi with delicate floral print.', price: 4500, offer_price: 4500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: true, shipping_price: 150 },
-    { id: 2, name: 'Satin Evening Maxi', description: 'Luxurious satin maxi perfect for special occasions.', price: 6200, offer_price: 6200, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false, shipping_price: 200 },
-    { id: 3, name: 'Cotton Summer Maxi', description: 'Lightweight breathable cotton maxi for sunny days.', price: 2800, offer_price: 2800, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: false, shipping_price: 100 },
-    { id: 4, name: 'Cord Set - Pastel', description: 'Comfortable two-piece cord set in soft pastel colors.', price: 3500, offer_price: 3500, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: true, shipping_price: 120 },
-    { id: 5, name: 'Cord Set - Printed', description: 'Trendy printed cord set for casual outings.', price: 1999, offer_price: 1999, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: false, shipping_price: 80 },
-    { id: 6, name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, offer_price: 1800, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: true, shipping_price: 90 },
-    { id: 7, name: 'Floral Anarkali Kurti', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, offer_price: 2499, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: false, shipping_price: 100 },
-    { id: 8, name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, offer_price: 1200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: false, shipping_price: 70 },
-    { id: 9, name: 'Embroidered Silk Kurti', description: 'Festive wear silk kurti with detailed hand-embroidery.', price: 3200, offer_price: 3200, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: false, shipping_price: 130 },
-    { id: 10, name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, offer_price: 1600, category: 'kurti', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: true, shipping_price: 85 },
-    { id: 11, name: 'Kurti Set with Dupatta', description: 'Complete kurti set with matching dupatta and bottoms.', price: 4500, offer_price: 4500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: true, shipping_price: 150 },
-    { id: 12, name: 'Party Wear Kurti Set', description: 'Glitzy kurti set perfect for parties and celebrations.', price: 5200, offer_price: 5200, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: false, shipping_price: 180 },
-    { id: 13, name: 'Cotton Kurti Set', description: 'Breathable cotton kurti set for daily wear.', price: 2800, offer_price: 2800, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: false, shipping_price: 100 },
-    { id: 14, name: 'Printed Kurti Set', description: 'Vibrant printed kurti set with contrasting dupatta.', price: 3600, offer_price: 3600, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: false, shipping_price: 110 },
-    { id: 15, name: 'Embroidered Kurti Set', description: 'Premium kurti set with intricate embroidery work.', price: 6500, offer_price: 6500, category: 'kurti-sets', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: false, shipping_price: 200 },
-    { id: 16, name: 'Bohemian Maxi', description: 'Free-spirited bohemian style maxi dress.', price: 3500, offer_price: 3500, category: 'maxis', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: true, shipping_price: 130 },
-    { id: 17, name: 'Cord Set - Neon', description: 'Bold neon cord set for a fun, trendy look.', price: 2800, offer_price: 2800, category: 'cord-sets', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: false, shipping_price: 95 }
+    {
+        "id": 21,
+        "name": "Pure Cotton Cordsets",
+        "description": "Crafted for effortless styling, a pure cotton cord (co-ord) set is a matching two-piece outfit featuring a coordinated top and bottom",
+        "price": 1499.0,
+        "offer_price": 1099.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-06-29 11:20:13.852205+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-03 04:29:53.614197+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 41,
+        "name": "Cotton Mix",
+        "description": "A cotton mix maxi dress is a versatile, full-length garment that blends the breathable, soft feel of cotton with synthetic fibers (like polyester or spandex)",
+        "price": 1099.0,
+        "offer_price": 799.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901668501_IMG_2823.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901669194_IMG_2829.PNG"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-01 10:27:51.139081+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-03 10:34:41.84088+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 42,
+        "name": "Cotton Mix",
+        "description": "A cotton mix maxi dress is a versatile, full-length garment that blends the breathable, soft feel of cotton with synthetic fibers (like polyester or spandex)",
+        "price": 1099.0,
+        "offer_price": 799.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901796478_IMG_3855.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901798632_IMG_3859.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901801444_IMG_3857.JPG"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:30:04.773827+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-03 10:34:22.787184+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 43,
+        "name": "Pure Cotton Maxi With Floral",
+        "description": "A pure cotton floral maxi dress is an effortlessly breezy and breathable wardrobe essential.",
+        "price": 1099.0,
+        "offer_price": 799.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902005468_IMG_3881.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902007414_IMG_3884.PNG"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-01 10:33:29.826561+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-03 10:41:34.989963+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 44,
+        "name": "Cordset Vatican Material",
+        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
+        "price": 1499.0,
+        "offer_price": 899.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902150566_IMG_3278.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902151488_IMG_3279.jpg"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:35:53.491868+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-12 05:27:49.663346+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 45,
+        "name": "Cordset Vatican Material",
+        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
+        "price": 1099.0,
+        "offer_price": 899.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902233591_IMG_3246.jpg"
+        ],
+        "videos": [],
+        "stock": 4,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:37:15.651826+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-12 05:27:28.439731+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 46,
+        "name": "Cordset Vatican Material",
+        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
+        "price": 1099.0,
+        "offer_price": 999.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902323919_IMG_3271.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902325019_IMG_3272.jpg"
+        ],
+        "videos": [],
+        "stock": 1,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:38:47.413948+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XL"
+        ],
+        "updated_at": "2026-07-03 13:07:01.772076+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 47,
+        "name": "Cordset Vatican Material",
+        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
+        "price": 1099.0,
+        "offer_price": 949.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902604288_IMG_3265.jpg"
+        ],
+        "videos": [],
+        "stock": 2,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:43:26.810371+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-03 13:05:46.963893+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 48,
+        "name": "Rayon Material",
+        "description": "A rayon maxi dress is a floor- or ankle-length garment crafted from breathable, semi-synthetic rayon",
+        "price": 999.0,
+        "offer_price": 599.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902728804_IMG_3856.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902730491_IMG_3860.JPG"
+        ],
+        "videos": [],
+        "stock": 5,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-01 10:45:33.86111+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XXL"
+        ],
+        "updated_at": "2026-07-03 13:05:08.598895+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 49,
+        "name": "Berlin Vatican",
+        "description": "he Berlin Vatican maxi dress is a stylish, multi-occasion garment crafted from premium, lightweight fabric (typically rayon or a silk blend)",
+        "price": 1499.0,
+        "offer_price": 1099.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903025660_IMG_3592.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903026408_IMG_3593.PNG"
+        ],
+        "videos": [],
+        "stock": 2,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:50:30.317002+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XS",
+            "S"
+        ],
+        "updated_at": "2026-07-03 13:04:10.723606+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 50,
+        "name": "Single Top",
+        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
+        "price": 899.0,
+        "offer_price": 499.0,
+        "category": "kurti",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903127139_IMG_3170.JPG"
+        ],
+        "videos": [],
+        "stock": 2,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:52:11.579505+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "S",
+            "L"
+        ],
+        "updated_at": "2026-07-03 13:03:47.130357+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 51,
+        "name": "Single Top",
+        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
+        "price": 899.0,
+        "offer_price": 449.0,
+        "category": "kurti",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903190787_IMG_3176.JPG"
+        ],
+        "videos": [],
+        "stock": 4,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:53:14.324092+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "S",
+            "M",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-03 13:03:19.771283+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 52,
+        "name": "Single Top Kurti",
+        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
+        "price": 899.0,
+        "offer_price": 449.0,
+        "category": "kurti",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903231623_IMG_3181.JPG"
+        ],
+        "videos": [],
+        "stock": 2,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-01 10:53:54.138878+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "S",
+            "M"
+        ],
+        "updated_at": "2026-07-03 13:02:37.458488+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 53,
+        "name": "Single Top Kurti",
+        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
+        "price": 899.0,
+        "offer_price": 499.0,
+        "category": "kurti",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903271289_IMG_3184.JPG"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:54:34.483947+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-17 06:51:06.282278+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 54,
+        "name": "Premium Roman Silk Material",
+        "description": "A premium Roman silk kurti features a luxurious, smooth-textured fabric with an elegant drape and a subtle, rich sheen.",
+        "price": 2499.0,
+        "offer_price": 1799.0,
+        "category": "kurti-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903374884_IMG_2871.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903376380_IMG_2870.JPG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903377188_IMG_2837.PNG"
+        ],
+        "videos": [],
+        "stock": 1,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:56:19.497517+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [
+            "Yellow"
+        ],
+        "sizes": [
+            "XS"
+        ],
+        "updated_at": "2026-07-03 13:41:52.378623+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 55,
+        "name": "Premium Roman Silk Material",
+        "description": "A premium Roman silk kurti features a luxurious, smooth-textured fabric with an elegant drape and a subtle, rich sheen",
+        "price": 2499.0,
+        "offer_price": 1799.0,
+        "category": "kurti-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455440_IMG_2840.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455963_IMG_2838.PNG"
+        ],
+        "videos": [],
+        "stock": 1,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-01 10:57:37.524522+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [
+            "Pink"
+        ],
+        "sizes": [
+            "XS"
+        ],
+        "updated_at": "2026-07-03 13:41:40.495846+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 56,
+        "name": "BERLIN MAXI",
+        "description": "Premium maxis with rope & pocket attached ",
+        "price": 1699.0,
+        "offer_price": 1099.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085588100_B.MAXI3.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085589844_BLUE_MAXI_1.jpeg"
+        ],
+        "videos": [],
+        "stock": 1,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-03 13:33:10.739694+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "M"
+        ],
+        "updated_at": "2026-07-17 06:50:49.884152+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 57,
+        "name": "BERLIN MAXI",
+        "description": "Premium maxis with pockets & rope attached",
+        "price": 1699.0,
+        "offer_price": 1099.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086031281_BROWN2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086034265_BROWN4.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086035594_BROWN5.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086037110_BROWN.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086038103_M.C_1.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086039036_M.C_2.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086040167_M.C_3.jpeg"
+        ],
+        "videos": [],
+        "stock": 8,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-03 13:40:41.552199+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [
+            "BROWN",
+            "GREY",
+            "MULTI COLOUR"
+        ],
+        "sizes": [
+            "XS",
+            "S",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-17 06:50:22.644046+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 58,
+        "name": "RAYON MAXI",
+        "description": "A FLORAL PRINTED MAXI POCKET ATTACHED ",
+        "price": 1099.0,
+        "offer_price": 699.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086338624_M.Y_FL_3.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086339635_M.YE.PNG"
+        ],
+        "videos": [],
+        "stock": 3,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-03 13:45:40.555438+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XS",
+            "S",
+            "L"
+        ],
+        "updated_at": "2026-07-17 06:49:39.003579+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 61,
+        "name": "RAYON",
+        "description": "Motifs printed navy maxi with collar neck and elbow sleeve",
+        "price": 1599.0,
+        "offer_price": 849.0,
+        "category": "maxis",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG"
+        ],
+        "videos": [],
+        "stock": 3,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-03 14:15:18.784142+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "XS",
+            "L",
+            "XL"
+        ],
+        "updated_at": "2026-07-17 06:49:15.986574+00",
+        "shipping_price": 50.0
+    },
+    {
+        "id": 62,
+        "name": "KURTI SETS",
+        "description": "CHUDI WITH SHAWL AND ATTACHED WITH POCKETS ",
+        "price": 1799.0,
+        "offer_price": 1199.0,
+        "category": "kurti-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833940667_3pcs_blue_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833941818_IMG_4256.JPG.jpeg"
+        ],
+        "videos": [],
+        "stock": 8,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-12 05:25:47.136098+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-17 06:48:55.078074+00",
+        "shipping_price": 50.0
+    },
+    {
+        "id": 64,
+        "name": "KURTI SETS",
+        "description": "3 PCS SET ATTACHED WITH TOP , PANT, SHAWL & POCKETS ATTACHED BOTH TOP AND PANT",
+        "price": 1899.0,
+        "offer_price": 1099.0,
+        "category": "kurti-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277359_IMG_4233.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277988_IMG_4234.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834278532_IMG_4235.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279010_IMG_4236.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279444_IMG_4237.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279946_IMG_4238.PNG",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834280404_IMG_4243.PNG"
+        ],
+        "videos": [],
+        "stock": 20,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-12 05:31:21.072505+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [
+            "LIGHT GREEN",
+            "FLORAL GREEN",
+            "GREY"
+        ],
+        "sizes": [
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-17 06:47:57.786733+00",
+        "shipping_price": 50.0
+    },
+    {
+        "id": 65,
+        "name": "KURTI SETS",
+        "description": "3 pcs sets with super comfotable wear attached with top , pant and shawi & pockets also attached",
+        "price": 1999.0,
+        "offer_price": 1099.0,
+        "category": "kurti-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835084999_IMG_3932.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835086743_IMG_3951.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835088279_IMG_3955.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835091033_IMG_4250.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835094528_IMG_4251.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835098410_IMG_4252.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835102292_IMG_4253.JPG.jpeg"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-12 05:45:06.113335+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-17 06:47:25.751001+00",
+        "shipping_price": 0.0
+    },
+    {
+        "id": 66,
+        "name": "KURTI",
+        "description": "KURTIS WITH SUPER COMFORABLE WEAR",
+        "price": 899.0,
+        "offer_price": 499.0,
+        "category": "kurti",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836538774_IMG_4192.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836539878_IMG_4195.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836541995_IMG_4196.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836543470_IMG_4197.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836544896_IMG_4201.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836547140_IMG_4202.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836551148_IMG_4203.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836555781_IMG_4206.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836559401_IMG_4207.JPG.jpeg"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": false,
+        "created_at": "2026-07-12 06:09:22.985368+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL"
+        ],
+        "updated_at": "2026-07-17 06:46:58.646263+00",
+        "shipping_price": 50.0
+    },
+    {
+        "id": 69,
+        "name": "CORDSET (RAYON,COTTON)",
+        "description": "PURE SOFT MATERIAL WITH POCKET ATTACHED                      HIGH COLLAR NECK FOR BOTH                                                                                                                                                                      SIZES :XS-XXL AVAILABLE                                                                                                      LIMITED STOCKS ONLY                                                                                                SO GRAB YOUR OFFERS TODAY",
+        "price": 1799.0,
+        "offer_price": 899.0,
+        "category": "cord-sets",
+        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
+        "video_url": "",
+        "gallery": [
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785325_IMG_4586.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785706_IMG_4587.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786032_IMG_4588.JPG__1_.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786362_IMG_4589.JPG.jpeg",
+            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786731_IMG_4590.JPG.jpeg"
+        ],
+        "videos": [],
+        "stock": 10,
+        "rating": 4.5,
+        "is_trending": true,
+        "created_at": "2026-07-17 06:46:33.35877+00",
+        "similar_products": [],
+        "variants": [],
+        "colors": [],
+        "sizes": [],
+        "updated_at": "2026-07-17 06:46:33.35877+00",
+        "shipping_price": 50.0
+    }
 ];
-// Sample product for new Pure Cotton category
-DEFAULT_PRODUCTS.push({ id: 18, name: 'Pure Cotton Summer Dress', description: 'Soft 100% cotton dress, breathable and lightweight.', price: 1999, offer_price: 1999, category: 'pure-cotton', image_url: 'https://images.unsplash.com/photo-1520975908598-8b3d1d3f9e2c?w=800&q=80', is_trending: false, shipping_price: 90 });
 const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
 
 const STORE_KEYS = {
@@ -730,8 +1466,8 @@ function isHeicUrl(url) {
     return lowerUrl.includes('.heic') || lowerUrl.includes('.heif');
 }
 
-// Placeholder dress image on Cloudinary (always works)
-const HOV_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/product_1.jpg";
+// House of Viyara clean branded SVG placeholder data URI (always works, 0 network requests)
+const HOV_PLACEHOLDER = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27400%27%20viewBox%3D%270%200%20400%20400%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%23f9f9f9%27/%3E%3Crect%20x%3D%2710%27%20y%3D%2710%27%20width%3D%27380%27%20height%3D%27380%27%20fill%3D%27none%27%20stroke%3D%27%23000000%27%20stroke-width%3D%274%27/%3E%3Ctext%20x%3D%27200%27%20y%3D%27180%27%20font-family%3D%27Outfit%2C%20sans-serif%27%20font-size%3D%2718%27%20font-weight%3D%27900%27%20text-anchor%3D%27middle%27%20fill%3D%27%23000000%27%20letter-spacing%3D%272%27%3EHOUSE%20OF%20VIYARA%3C/text%3E%3Cpath%20d%3D%27M170%20230%20C170%20210%2C%20230%20210%2C%20230%20230%20L250%20320%20L150%20320%20Z%27%20fill%3D%27%23FFE500%27%20stroke%3D%27%23000000%27%20stroke-width%3D%273%27/%3E%3Ccircle%20cx%3D%27200%27%20cy%3D%27210%27%20r%3D%2710%27%20fill%3D%27%23FF007A%27%20stroke%3D%27%23000000%27%20stroke-width%3D%272%27/%3E%3Ctext%20x%3D%27200%27%20y%3D%27360%27%20font-family%3D%27Outfit%2C%20sans-serif%27%20font-size%3D%2712%27%20font-weight%3D%27700%27%20text-anchor%3D%27middle%27%20fill%3D%27%23666666%27%3EIMAGE%20PENDING%20UPLOAD%3C/text%3E%3C/svg%3E";
 const SUPABASE_BLOCKED_HOST = 'embvkfuwevutfwpxemfe.supabase.co';
 
 function isSupabaseBlocked(url) {

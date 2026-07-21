@@ -601,7 +601,7 @@ function clearAllFilters() {
 // HELPER FUNCTIONS
 // ============================================
 
-const CATALOG_PLACEHOLDER = "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/product_1.jpg";
+const CATALOG_PLACEHOLDER = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27400%27%20viewBox%3D%270%200%20400%20400%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%23f9f9f9%27/%3E%3Crect%20x%3D%2710%27%20y%3D%2710%27%20width%3D%27380%27%20height%3D%27380%27%20fill%3D%27none%27%20stroke%3D%27%23000000%27%20stroke-width%3D%274%27/%3E%3Ctext%20x%3D%27200%27%20y%3D%27180%27%20font-family%3D%27Outfit%2C%20sans-serif%27%20font-size%3D%2718%27%20font-weight%3D%27900%27%20text-anchor%3D%27middle%27%20fill%3D%27%23000000%27%20letter-spacing%3D%272%27%3EHOUSE%20OF%20VIYARA%3C/text%3E%3Cpath%20d%3D%27M170%20230%20C170%20210%2C%20230%20210%2C%20230%20230%20L250%20320%20L150%20320%20Z%27%20fill%3D%27%23FFE500%27%20stroke%3D%27%23000000%27%20stroke-width%3D%273%27/%3E%3Ccircle%20cx%3D%27200%27%20cy%3D%27210%27%20r%3D%2710%27%20fill%3D%27%23FF007A%27%20stroke%3D%27%23000000%27%20stroke-width%3D%272%27/%3E%3Ctext%20x%3D%27200%27%20y%3D%27360%27%20font-family%3D%27Outfit%2C%20sans-serif%27%20font-size%3D%2712%27%20font-weight%3D%27700%27%20text-anchor%3D%27middle%27%20fill%3D%27%23666666%27%3EIMAGE%20PENDING%20UPLOAD%3C/text%3E%3C/svg%3E";
 
 function getProductImageUrl(product) {
     if (product.image_url) {
