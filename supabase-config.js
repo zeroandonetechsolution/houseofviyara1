@@ -5,9 +5,11 @@ window.USE_SUPABASE = false; // Set to false to use GitHub JSON Database
 window.USE_GITHUB_DATABASE = true;
 window.GITHUB_OWNER = "zeroandonetechsolution";
 window.GITHUB_REPO = "houseofviyara1";
+// GitHub Branch
 window.GITHUB_BRANCH = "main";
-// GitHub PAT stored securely — assembled at runtime to bypass secret scanning
-window.GITHUB_PAT = (function(){ return ['ghp_','6sYr8Etvp','tS2t7LtxtV','n2TC3qR6t1y0WdNcY'].join(''); })();
+// NOTE: GitHub PAT must be set via Admin Panel → Settings → GitHub PAT field.
+// It is stored securely in localStorage and never committed to source code.
+window.GITHUB_PAT = localStorage.getItem('hov_github_pat') || '';
 
 // Cloudinary Configuration
 window.CLOUDINARY_CLOUD_NAME = "b2p0mqvx";

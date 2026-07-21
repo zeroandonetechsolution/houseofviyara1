@@ -18,7 +18,8 @@ let adminSupabase = null;
 // GITHUB DATABASE HELPERS
 // ═══════════════════════════════════════════════════════════════
 function getGithubPAT() {
-    return localStorage.getItem('hov_github_pat') || '';
+    // Check localStorage first (user-set), then fall back to window.GITHUB_PAT from supabase-config.js
+    return localStorage.getItem('hov_github_pat') || window.GITHUB_PAT || '';
 }
 
 function getGithubConfig() {
@@ -4155,8 +4156,9 @@ async function deleteHeroImage(id, altText) {
 
 async function renderDbSettings() {
     const content = document.getElementById('admin-content');
-    const pat = localStorage.getItem('hov_github_pat') || '';
-    const preset = localStorage.getItem('hov_cloudinary_preset') || 'houseofviyara';
+    // Show PAT from localStorage or window.GITHUB_PAT (from supabase-config.js)
+    const pat = localStorage.getItem('hov_github_pat') || window.GITHUB_PAT || '';
+    const preset = localStorage.getItem('hov_cloudinary_preset') || window.CLOUDINARY_UPLOAD_PRESET || 'houseofviyara';
     
     content.innerHTML = `
     <div class="admin-section-card" style="max-width: 600px; margin: 20px auto;">
