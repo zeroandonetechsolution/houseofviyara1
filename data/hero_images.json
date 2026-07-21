@@ -1,32 +1,32 @@
 [
     {
         "id": 16,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg",
-        "alt": "yellow kurti",
+        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/hov_dress_1.jpg",
+        "alt": "Pure Cotton Cordsets",
         "display_order": 1,
         "is_active": true,
         "duration": 3000
     },
     {
         "id": 19,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
-        "alt": "pink kurti",
-        "display_order": 3,
+        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/hov_dress_2.jpg",
+        "alt": "Cotton Mix Maxi",
+        "display_order": 2,
         "is_active": true,
         "duration": 3000
     },
     {
         "id": 20,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
-        "alt": "kurti",
-        "display_order": 4,
+        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/hov_dress_3.jpg",
+        "alt": "Pure Cotton Maxi",
+        "display_order": 3,
         "is_active": true,
         "duration": 3000
     },
     {
         "id": 21,
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
-        "alt": "kurti",
+        "image_url": "https://res.cloudinary.com/b2p0mqvx/image/upload/houseofviyara/products/hov_dress_4.jpg",
+        "alt": "Rayon Material Maxi",
         "display_order": 4,
         "is_active": true,
         "duration": 3000
