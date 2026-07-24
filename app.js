@@ -182,49 +182,31 @@ async function setupRealtimeSubscriptions() {
     console.log('✅ Realtime subscriptions set up!');
 }
 
-// Fetch helper for GitHub raw or local JSON database files
+// Fetch helper for static JSON files and browser storage
 async function fetchGithubJson(filename, fallbackData) {
-    if (window.USE_GITHUB_DATABASE) {
-        const owner = window.GITHUB_OWNER || 'zeroandonetechsolution';
-        const repo = window.GITHUB_REPO || 'houseofviyara1';
-        const branch = window.GITHUB_BRANCH || 'main';
-        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/${filename}.json?t=${Date.now()}`;
-        const localUrl = `/data/${filename}.json`;
-        
-        // 1. Try raw GitHub URL
-        try {
-            const response = await fetch(rawUrl);
-            if (response.ok) {
-                const data = await response.json();
-                if (data && (Array.isArray(data) || typeof data === 'object')) {
-                    // Update client local storage cache
-                    saveStore(`hov_${filename}`, data);
-                    return data;
-                }
+    try {
+        const localUrl = `/data/${filename}.json?t=${Date.now()}`;
+        const response = await fetch(localUrl);
+        if (response.ok) {
+            const data = await response.json();
+            if (data && (Array.isArray(data) || typeof data === 'object')) {
+                saveStore(`hov_${filename}`, data);
+                return data;
             }
-        } catch (e) {
-            console.warn(`GitHub fetch for ${filename} failed, falling back to local file.`, e);
         }
-
-        // 2. Try local Vercel file
-        try {
-            const response = await fetch(localUrl);
-            if (response.ok) {
-                const data = await response.json();
-                if (data && (Array.isArray(data) || typeof data === 'object')) {
-                    saveStore(`hov_${filename}`, data);
-                    return data;
-                }
-            }
-        } catch (e) {
-            console.warn(`Local file fetch for ${filename} failed.`, e);
-        }
+    } catch (e) {
+        console.warn(`Static data fetch for ${filename} failed.`, e);
     }
     return getStore(`hov_${filename}`, fallbackData);
 }
 
-// Fetch products preferring Supabase, then GitHub/local JSON, then API_URL, then localStorage
+// Fetch products preferring static JSON when it is intentionally empty, otherwise fall back to Supabase/GitHub/API/localStorage
 async function fetchProductsPrefer() {
+    const staticProducts = await fetchGithubJson('products', DEFAULT_PRODUCTS);
+    if (Array.isArray(staticProducts) && staticProducts.length === 0) {
+        return staticProducts;
+    }
+
     if (await loadSupabaseClient() && USE_SUPABASE && appSupabase) {
         try {
             const { data, error } = await appSupabase.from('products').select('*').order('created_at', { ascending: false });
@@ -232,7 +214,7 @@ async function fetchProductsPrefer() {
         } catch (e) { console.warn('appSupabase fetch failed', e); }
     }
     if (window.USE_GITHUB_DATABASE) {
-        return await fetchGithubJson('products', DEFAULT_PRODUCTS);
+        return staticProducts;
     }
     if (API_URL) {
         try {
@@ -542,764 +524,9 @@ function renderAuthModalLogoutControls() {
 const API_URL = ''; // no backend API calls in static mode
 
 // Default product catalog for local mode.
-const DEFAULT_PRODUCTS = [
-    {
-        "id": 21,
-        "name": "Pure Cotton Cordsets",
-        "description": "Crafted for effortless styling, a pure cotton cord (co-ord) set is a matching two-piece outfit featuring a coordinated top and bottom",
-        "price": 1499.0,
-        "offer_price": 1099.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901567298_IMG-20260629-WA0001.jpg"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-06-29 11:20:13.852205+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-03 04:29:53.614197+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 41,
-        "name": "Cotton Mix",
-        "description": "A cotton mix maxi dress is a versatile, full-length garment that blends the breathable, soft feel of cotton with synthetic fibers (like polyester or spandex)",
-        "price": 1099.0,
-        "offer_price": 799.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901667612_IMG_2822.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901668501_IMG_2823.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901669194_IMG_2829.PNG"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-01 10:27:51.139081+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-03 10:34:41.84088+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 42,
-        "name": "Cotton Mix",
-        "description": "A cotton mix maxi dress is a versatile, full-length garment that blends the breathable, soft feel of cotton with synthetic fibers (like polyester or spandex)",
-        "price": 1099.0,
-        "offer_price": 799.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901793650_IMG_3854.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901796478_IMG_3855.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901798632_IMG_3859.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782901801444_IMG_3857.JPG"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:30:04.773827+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-03 10:34:22.787184+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 43,
-        "name": "Pure Cotton Maxi With Floral",
-        "description": "A pure cotton floral maxi dress is an effortlessly breezy and breathable wardrobe essential.",
-        "price": 1099.0,
-        "offer_price": 799.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902002977_IMG_3880.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902005468_IMG_3881.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902007414_IMG_3884.PNG"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-01 10:33:29.826561+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-03 10:41:34.989963+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 44,
-        "name": "Cordset Vatican Material",
-        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
-        "price": 1499.0,
-        "offer_price": 899.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902149310_IMG_3245.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902150566_IMG_3278.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902151488_IMG_3279.jpg"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:35:53.491868+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-12 05:27:49.663346+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 45,
-        "name": "Cordset Vatican Material",
-        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
-        "price": 1099.0,
-        "offer_price": 899.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902232427_IMG_3249.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902233591_IMG_3246.jpg"
-        ],
-        "videos": [],
-        "stock": 4,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:37:15.651826+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-12 05:27:28.439731+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 46,
-        "name": "Cordset Vatican Material",
-        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
-        "price": 1099.0,
-        "offer_price": 999.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902322724_IMG_3270.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902323919_IMG_3271.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902325019_IMG_3272.jpg"
-        ],
-        "videos": [],
-        "stock": 1,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:38:47.413948+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XL"
-        ],
-        "updated_at": "2026-07-03 13:07:01.772076+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 47,
-        "name": "Cordset Vatican Material",
-        "description": "A Vatican fabric cord set is a chic, two-piece ethnic ensemble crafted from \"Vatican\" fabric (a smooth, lightweight material similar to silk or premium rayon)",
-        "price": 1099.0,
-        "offer_price": 949.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902602249_IMG_3262.jpg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902604288_IMG_3265.jpg"
-        ],
-        "videos": [],
-        "stock": 2,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:43:26.810371+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-03 13:05:46.963893+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 48,
-        "name": "Rayon Material",
-        "description": "A rayon maxi dress is a floor- or ankle-length garment crafted from breathable, semi-synthetic rayon",
-        "price": 999.0,
-        "offer_price": 599.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902726782_IMG_3858.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902728804_IMG_3856.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782902730491_IMG_3860.JPG"
-        ],
-        "videos": [],
-        "stock": 5,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-01 10:45:33.86111+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XS",
-            "S",
-            "M",
-            "L",
-            "XXL"
-        ],
-        "updated_at": "2026-07-03 13:05:08.598895+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 49,
-        "name": "Berlin Vatican",
-        "description": "he Berlin Vatican maxi dress is a stylish, multi-occasion garment crafted from premium, lightweight fabric (typically rayon or a silk blend)",
-        "price": 1499.0,
-        "offer_price": 1099.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903024674_IMG_3591.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903025660_IMG_3592.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903026408_IMG_3593.PNG"
-        ],
-        "videos": [],
-        "stock": 2,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:50:30.317002+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XS",
-            "S"
-        ],
-        "updated_at": "2026-07-03 13:04:10.723606+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 50,
-        "name": "Single Top",
-        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
-        "price": 899.0,
-        "offer_price": 499.0,
-        "category": "kurti",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903125064_IMG_3169.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903127139_IMG_3170.JPG"
-        ],
-        "videos": [],
-        "stock": 2,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:52:11.579505+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "S",
-            "L"
-        ],
-        "updated_at": "2026-07-03 13:03:47.130357+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 51,
-        "name": "Single Top",
-        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
-        "price": 899.0,
-        "offer_price": 449.0,
-        "category": "kurti",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903187571_IMG_3173.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903190787_IMG_3176.JPG"
-        ],
-        "videos": [],
-        "stock": 4,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:53:14.324092+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "S",
-            "M",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-03 13:03:19.771283+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 52,
-        "name": "Single Top Kurti",
-        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
-        "price": 899.0,
-        "offer_price": 449.0,
-        "category": "kurti",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903230084_IMG_3178.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903231623_IMG_3181.JPG"
-        ],
-        "videos": [],
-        "stock": 2,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-01 10:53:54.138878+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "S",
-            "M"
-        ],
-        "updated_at": "2026-07-03 13:02:37.458488+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 53,
-        "name": "Single Top Kurti",
-        "description": "A \"single top kurti\" is a versatile, ready-to-wear upper garment (the tunic only, without matching bottoms or dupattas)",
-        "price": 899.0,
-        "offer_price": 499.0,
-        "category": "kurti",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903269831_IMG_3183.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903271289_IMG_3184.JPG"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:54:34.483947+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-17 06:51:06.282278+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 54,
-        "name": "Premium Roman Silk Material",
-        "description": "A premium Roman silk kurti features a luxurious, smooth-textured fabric with an elegant drape and a subtle, rich sheen.",
-        "price": 2499.0,
-        "offer_price": 1799.0,
-        "category": "kurti-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903373609_IMG_2836.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903374884_IMG_2871.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903376380_IMG_2870.JPG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903377188_IMG_2837.PNG"
-        ],
-        "videos": [],
-        "stock": 1,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:56:19.497517+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [
-            "Yellow"
-        ],
-        "sizes": [
-            "XS"
-        ],
-        "updated_at": "2026-07-03 13:41:52.378623+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 55,
-        "name": "Premium Roman Silk Material",
-        "description": "A premium Roman silk kurti features a luxurious, smooth-textured fabric with an elegant drape and a subtle, rich sheen",
-        "price": 2499.0,
-        "offer_price": 1799.0,
-        "category": "kurti-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903454588_IMG_2839.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455440_IMG_2840.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1782903455963_IMG_2838.PNG"
-        ],
-        "videos": [],
-        "stock": 1,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-01 10:57:37.524522+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [
-            "Pink"
-        ],
-        "sizes": [
-            "XS"
-        ],
-        "updated_at": "2026-07-03 13:41:40.495846+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 56,
-        "name": "BERLIN MAXI",
-        "description": "Premium maxis with rope & pocket attached ",
-        "price": 1699.0,
-        "offer_price": 1099.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085586974_B.MAXI2.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085588100_B.MAXI3.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783085589844_BLUE_MAXI_1.jpeg"
-        ],
-        "videos": [],
-        "stock": 1,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-03 13:33:10.739694+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "M"
-        ],
-        "updated_at": "2026-07-17 06:50:49.884152+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 57,
-        "name": "BERLIN MAXI",
-        "description": "Premium maxis with pockets & rope attached",
-        "price": 1699.0,
-        "offer_price": 1099.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086029088_BROWN_1.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086031281_BROWN2.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086034265_BROWN4.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086035594_BROWN5.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086037110_BROWN.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086038103_M.C_1.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086039036_M.C_2.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086040167_M.C_3.jpeg"
-        ],
-        "videos": [],
-        "stock": 8,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-03 13:40:41.552199+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [
-            "BROWN",
-            "GREY",
-            "MULTI COLOUR"
-        ],
-        "sizes": [
-            "XS",
-            "S",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-17 06:50:22.644046+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 58,
-        "name": "RAYON MAXI",
-        "description": "A FLORAL PRINTED MAXI POCKET ATTACHED ",
-        "price": 1099.0,
-        "offer_price": 699.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086337462_M.Y_FL_2.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086338624_M.Y_FL_3.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783086339635_M.YE.PNG"
-        ],
-        "videos": [],
-        "stock": 3,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-03 13:45:40.555438+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XS",
-            "S",
-            "L"
-        ],
-        "updated_at": "2026-07-17 06:49:39.003579+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 61,
-        "name": "RAYON",
-        "description": "Motifs printed navy maxi with collar neck and elbow sleeve",
-        "price": 1599.0,
-        "offer_price": 849.0,
-        "category": "maxis",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783136564852_IMG_3085.PNG"
-        ],
-        "videos": [],
-        "stock": 3,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-03 14:15:18.784142+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "XS",
-            "L",
-            "XL"
-        ],
-        "updated_at": "2026-07-17 06:49:15.986574+00",
-        "shipping_price": 50.0
-    },
-    {
-        "id": 62,
-        "name": "KURTI SETS",
-        "description": "CHUDI WITH SHAWL AND ATTACHED WITH POCKETS ",
-        "price": 1799.0,
-        "offer_price": 1199.0,
-        "category": "kurti-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833937176_3pcs_.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833940667_3pcs_blue_.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783833941818_IMG_4256.JPG.jpeg"
-        ],
-        "videos": [],
-        "stock": 8,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-12 05:25:47.136098+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-17 06:48:55.078074+00",
-        "shipping_price": 50.0
-    },
-    {
-        "id": 64,
-        "name": "KURTI SETS",
-        "description": "3 PCS SET ATTACHED WITH TOP , PANT, SHAWL & POCKETS ATTACHED BOTH TOP AND PANT",
-        "price": 1899.0,
-        "offer_price": 1099.0,
-        "category": "kurti-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834275897_IMG_4232.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277359_IMG_4233.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834277988_IMG_4234.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834278532_IMG_4235.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279010_IMG_4236.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279444_IMG_4237.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834279946_IMG_4238.PNG",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783834280404_IMG_4243.PNG"
-        ],
-        "videos": [],
-        "stock": 20,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-12 05:31:21.072505+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [
-            "LIGHT GREEN",
-            "FLORAL GREEN",
-            "GREY"
-        ],
-        "sizes": [
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-17 06:47:57.786733+00",
-        "shipping_price": 50.0
-    },
-    {
-        "id": 65,
-        "name": "KURTI SETS",
-        "description": "3 pcs sets with super comfotable wear attached with top , pant and shawi & pockets also attached",
-        "price": 1999.0,
-        "offer_price": 1099.0,
-        "category": "kurti-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835080949_IMG_3931.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835084999_IMG_3932.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835086743_IMG_3951.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835088279_IMG_3955.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835091033_IMG_4250.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835094528_IMG_4251.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835098410_IMG_4252.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783835102292_IMG_4253.JPG.jpeg"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-12 05:45:06.113335+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-17 06:47:25.751001+00",
-        "shipping_price": 0.0
-    },
-    {
-        "id": 66,
-        "name": "KURTI",
-        "description": "KURTIS WITH SUPER COMFORABLE WEAR",
-        "price": 899.0,
-        "offer_price": 499.0,
-        "category": "kurti",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836536913_IMG_4192.JPG__1_.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836538774_IMG_4192.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836539878_IMG_4195.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836541995_IMG_4196.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836543470_IMG_4197.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836544896_IMG_4201.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836547140_IMG_4202.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836551148_IMG_4203.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836555781_IMG_4206.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1783836559401_IMG_4207.JPG.jpeg"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": false,
-        "created_at": "2026-07-12 06:09:22.985368+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [
-            "S",
-            "M",
-            "L",
-            "XL",
-            "XXL"
-        ],
-        "updated_at": "2026-07-17 06:46:58.646263+00",
-        "shipping_price": 50.0
-    },
-    {
-        "id": 69,
-        "name": "CORDSET (RAYON,COTTON)",
-        "description": "PURE SOFT MATERIAL WITH POCKET ATTACHED                      HIGH COLLAR NECK FOR BOTH                                                                                                                                                                      SIZES :XS-XXL AVAILABLE                                                                                                      LIMITED STOCKS ONLY                                                                                                SO GRAB YOUR OFFERS TODAY",
-        "price": 1799.0,
-        "offer_price": 899.0,
-        "category": "cord-sets",
-        "image_url": "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
-        "video_url": "",
-        "gallery": [
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270784551_IMG_4585.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785325_IMG_4586.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270785706_IMG_4587.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786032_IMG_4588.JPG__1_.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786362_IMG_4589.JPG.jpeg",
-            "https://embvkfuwevutfwpxemfe.supabase.co/storage/v1/object/public/HOVB/products/1784270786731_IMG_4590.JPG.jpeg"
-        ],
-        "videos": [],
-        "stock": 10,
-        "rating": 4.5,
-        "is_trending": true,
-        "created_at": "2026-07-17 06:46:33.35877+00",
-        "similar_products": [],
-        "variants": [],
-        "colors": [],
-        "sizes": [],
-        "updated_at": "2026-07-17 06:46:33.35877+00",
-        "shipping_price": 50.0
-    }
-];
+const DEFAULT_PRODUCTS = [];
 const MOCK_PRODUCTS = DEFAULT_PRODUCTS;
+
 
 const STORE_KEYS = {
     products: 'hov_products',
@@ -1642,10 +869,11 @@ function renderCategoryList(categories, container) {
     }
     const categoryItems = categories;
     container.innerHTML = categoryItems.map(cat => `
-        <a href="${getCategoryFileName(cat.slug)}" class="category-card" style="background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('${cat.banner_image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=60'}'); background-size: cover; background-position: center;">
-            <div class="cat-info">
-                <h3>${cat.name.toUpperCase()}</h3>
-                <span>SHOP NOW <i class="fas fa-arrow-right"></i></span>
+        <a href="${getCategoryFileName(cat.slug)}" class="category-card">
+            <img src="${cat.banner_image || 'design-assets/images/saree.png'}" alt="${cat.name}" style="width:100%;height:100%;object-fit:cover;">
+            <div class="category-overlay">
+                <h3>${cat.name}</h3>
+                <span>25+ Products</span>
             </div>
         </a>
     `).join('');
@@ -1757,7 +985,6 @@ async function checkPaymentStatus() {
 
 // --- Search Implementation ---
 function setupSearch() {
-    const desktopSearch = document.getElementById('desktop-search-input');
     const mobileSearch = document.getElementById('mobile-search-input');
 
     const handleSearch = (e) => {
@@ -1768,7 +995,6 @@ function setupSearch() {
         }, 500);
     };
 
-    if (desktopSearch) desktopSearch.addEventListener('input', handleSearch);
     if (mobileSearch) mobileSearch.addEventListener('input', handleSearch);
 }
 
@@ -2075,33 +1301,40 @@ function renderToDOM(products, container, category) {
             : `src="${optimizedImg}" loading="eager" onerror="this.onerror=null; this.src='${placeholder}';"`;
         
         const isInWishlist = wishlist.some(item => item.id === p.id);
-        const variantSummary = normalizeProductVariants(p).slice(0, 3).map(v => `${v.color} / ${v.size}`).join(', ');
         const isOutOfStock = p.stock === 0;
+        const originalPrice = p.offer_price || p.price;
+        const discountedPrice = calculateDiscountedPrice(originalPrice);
         
         return `
         <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor: pointer;">
-            <div class="product-img" style="position: relative;">
+            <div class="product-image">
                 <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
-                ${isOutOfStock ? '<span style="position:absolute;top:10px;left:10px;background:#FF007A;color:#fff;padding:4px 10px;border:3px solid #000;font-size:0.8rem;font-weight:900;text-transform:uppercase;">OUT OF STOCK</span>' : ''}
-                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${calculateDiscountedPrice(p.offer_price || p.price)}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
-                    ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
-                </button>
-                ${!isOutOfStock ? `<button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${calculateDiscountedPrice(p.offer_price || p.price)}, '${optimizedImg}', ${p.shipping_price || 0}, 'Default', 'One Size', ${p.stock})">
-                    <i class="fas fa-plus"></i> ADD TO BAG
-                </button>` : ''}
+                ${isOutOfStock ? '<span class="product-badge sale" style="background:#e74c3c;">OUT OF STOCK</span>' : (p.is_trending ? '<span class="product-badge">NEW</span>' : '')}
+                <div class="product-actions">
+                    <button onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${discountedPrice}, '${optimizedImg}')">
+                        <i class="${isInWishlist ? 'fas' : 'far'} fa-heart"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); openProductQuickView(${p.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); ${!isOutOfStock ? `addToCart(${p.id}, '${escapeForAttr(p.name)}', ${discountedPrice}, '${optimizedImg}', ${p.shipping_price || 0}, 'Default', 'One Size', ${p.stock})` : ''}">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
             </div>
             <div class="product-info">
                 <h3>${p.name}</h3>
-                <p>${p.description}</p>
-                <div class="product-variant-summary">${variantSummary ? `Variants: ${variantSummary}` : 'Single variant'}</div>
-                <div class="product-price">
-                    <span class="current-price" style="color: var(--accent-green);">₹${calculateDiscountedPrice(p.offer_price || p.price)}</span>
-                    <span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.offer_price || p.price}</span>
-                    <span style="font-size: 0.8rem; font-weight: 900; color: var(--accent-pink); margin-left: 8px;">AADI SALE 5% OFF</span>
+                <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
                 </div>
-                <div class="product-shipping">
-                <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
-            </div>
+                <div class="product-price">
+                    ${originalPrice > discountedPrice ? `<span class="old-price">₹${originalPrice}</span>` : ''}
+                    ₹${discountedPrice}
+                </div>
             </div>
         </div>
     `}).join('');
@@ -2160,14 +1393,14 @@ window.openProductPage = async function(productId, evt) {
         evt.stopPropagation();
     }
 
-    const pdpModal = document.getElementById('pdp-modal');
-    const pdpContent = document.getElementById('pdp-content');
-    if (!pdpModal || !pdpContent) return;
-
     if (!window.location.pathname.includes('product.html')) {
         window.location.href = `product.html?id=${productId}`;
         return;
     }
+
+    const pdpModal = document.getElementById('pdp-modal');
+    const pdpContent = document.getElementById('pdp-content');
+    if (!pdpModal || !pdpContent) return;
 
     window.history.pushState({ productId }, '', `?id=${productId}`);
 
@@ -2236,379 +1469,358 @@ async function initProductDetails() {
     renderProductDetails(product, container, allProducts);
 }
 
+function colorNameToHex(name) {
+    const map = {
+        gold: '#d4af37', yellow: '#d4af37', black: '#0a0a0a', white: '#ffffff',
+        cream: '#e6c547', beige: '#f5f1eb', red: '#c0392b', blue: '#3498db',
+        green: '#27ae60', pink: '#ff69b4', maroon: '#800000', navy: '#001f3f',
+        orange: '#e67e22', purple: '#9b59b6', brown: '#8b4513', grey: '#95a5a6', gray: '#95a5a6'
+    };
+    const key = String(name || '').toLowerCase().trim();
+    return map[key] || '#d4af37';
+}
+
+function renderDesignProductCard(p) {
+    const optimizedImg = optimizeImg(p.image_url, 400, 60);
+    const thumbImg = optimizeImg(p.image_url, 40, 30);
+    const placeholder = 'https://via.placeholder.com/400x400?text=Product+Image';
+    const isInWishlist = wishlist.some(item => item.id === p.id);
+    const isOutOfStock = p.stock === 0;
+    const originalPrice = p.offer_price || p.price;
+    const discountedPrice = calculateDiscountedPrice(originalPrice);
+    const imgAttrs = `src="${optimizedImg}" loading="lazy" onerror="this.onerror=null; this.src='${placeholder}';"`;
+
+    return `
+        <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor: pointer;">
+            <div class="product-image">
+                <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
+                ${isOutOfStock ? '<span class="product-badge sale" style="background:#e74c3c;">OUT OF STOCK</span>' : (p.is_trending ? '<span class="product-badge">NEW</span>' : (originalPrice > discountedPrice ? '<span class="product-badge sale">SALE</span>' : ''))}
+                <div class="product-actions">
+                    <button onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${discountedPrice}, '${optimizedImg}')">
+                        <i class="${isInWishlist ? 'fas' : 'far'} fa-heart"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); window.location.href='product.html?id=${p.id}'">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); ${!isOutOfStock ? `addToCart(${p.id}, '${escapeForAttr(p.name)}', ${discountedPrice}, '${optimizedImg}', ${p.shipping_price || 0})` : ''}">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="product-info">
+                <h3>${p.name}</h3>
+                <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </div>
+                <div class="product-price">
+                    ${originalPrice > discountedPrice ? `<span class="old-price">₹${originalPrice}</span>` : ''}
+                    ₹${discountedPrice}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function renderProductDetails(product, targetContainer, allProducts = []) {
-    // Generate Stars
+    window._pdpAllProducts = allProducts;
+    document.title = `${product.name} - House Of Viyara`;
+
     const fullStars = Math.floor(product.rating || 5);
     const halfStar = (product.rating || 5) % 1 >= 0.5 ? 1 : 0;
     const emptyStars = 5 - fullStars - halfStar;
     let starsHtml = '';
-    for(let i=0; i<fullStars; i++) starsHtml += '<i class="fas fa-star"></i>';
-    if(halfStar) starsHtml += '<i class="fas fa-star-half-alt"></i>';
-    for(let i=0; i<emptyStars; i++) starsHtml += '<i class="far fa-star"></i>';
+    for (let i = 0; i < fullStars; i++) starsHtml += '<i class="fas fa-star"></i>';
+    if (halfStar) starsHtml += '<i class="fas fa-star-half-alt"></i>';
+    for (let i = 0; i < emptyStars; i++) starsHtml += '<i class="far fa-star"></i>';
 
     const selection = getProductSelection(product);
     const colors = getProductColors(product);
+    const displayColors = colors.filter(c => c && c !== 'Default');
     const sizes = getAvailableSizes(product, selection.color);
+    const displaySizes = (sizes.length ? sizes : ['Free Size']);
     const selectedVariant = getVariantForSelection(product, selection.color, selection.size) || normalizeProductVariants(product)[0];
+    const originalPrice = product.offer_price || product.price;
+    const discountedPrice = calculateDiscountedPrice(originalPrice);
+    const reviewCount = product.reviews_count || (Array.isArray(product.reviews) ? product.reviews.length : 0);
+    const categoryLabel = String(product.category || 'shop').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const categoryHref = getCategoryFileName(product.category || '');
 
     const reviews = Array.isArray(product.reviews) ? product.reviews : [];
-    const reviewCount = reviews.length;
-    const reviewHtml = reviews.length > 0 ? reviews.map(r => `
+    const reviewsHtml = reviews.length > 0 ? reviews.map(r => {
+        const initial = (r.user || 'G').charAt(0).toUpperCase();
+        const reviewStars = '<i class="fas fa-star"></i>'.repeat(r.rating || 5) + '<i class="far fa-star"></i>'.repeat(Math.max(0, 5 - (r.rating || 5)));
+        const mediaHtml = [
+            r.image ? `<div class="review-photo"><img src="${optimizeImg(r.image, 200, 60)}" alt="Review photo"></div>` : '',
+            r.video_url ? `<div class="review-video"><video src="${r.video_url}" controls muted playsinline></video></div>` : ''
+        ].filter(Boolean).join('');
+        return `
             <div class="review-card">
-                <div class="review-header">
-                    <div class="reviewer-info">
-                        <div class="reviewer-avatar"><i class="fas fa-user"></i></div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Poppins', sans-serif; font-weight: 800;">${initial}</div>
                         <div>
-                            <strong>${r.user}</strong>
-                            <div class="review-date">${r.date}</div>
+                            <h4 style="font-family: 'Poppins', sans-serif; margin-bottom: 5px;">${r.user || 'Guest'}</h4>
+                            <div class="product-rating" style="font-size: 0.9rem;">${reviewStars}</div>
                         </div>
                     </div>
-                    <div class="review-stars">${'<i class="fas fa-star"></i>'.repeat(r.rating)}${'<i class="far fa-star"></i>'.repeat(5 - r.rating)}</div>
+                    <span style="font-family: 'Montserrat', sans-serif; color: #999; font-size: 0.9rem;">${r.date || ''}</span>
                 </div>
-                <p class="review-text">${r.comment}</p>
-                ${r.image ? `<img class="review-media" src="${optimizeImg(r.image, 640, 360)}" alt="Review image" />` : ''}
-                ${r.video_url ? `<video class="review-media" src="${r.video_url}" controls muted playsinline></video>` : ''}
+                <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.6;">${r.comment || ''}</p>
+                ${mediaHtml ? `<div class="review-media">${mediaHtml}</div>` : ''}
             </div>
-        `).join('') : '<p class="no-reviews">No reviews yet. Be the first to share your thoughts.</p>';
+        `;
+    }).join('') : '<p style="color:#666;font-family:\'Montserrat\',sans-serif;">No reviews yet. Be the first to share your thoughts.</p>';
 
     const reviewFormHtml = `
-        <div class="review-form-card">
-            <h3>Share your review</h3>
-            <div class="review-form-row">
-                <label>Rating</label>
-                <div class="review-rating-inputs">
+        <div class="review-card" style="margin-top: 30px;">
+            <h3 style="font-family: 'Poppins', sans-serif; margin-bottom: 20px;">Share your review</h3>
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">Rating</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     ${[5,4,3,2,1].map(value => `
-                        <label class="review-star-option">
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="radio" name="review-rating" value="${value}" ${value === 5 ? 'checked' : ''}>
-                            ${value} <i class="fas fa-star"></i>
+                            ${value} <i class="fas fa-star" style="color:#d4af37;"></i>
                         </label>
                     `).join('')}
                 </div>
             </div>
-            <div class="review-form-row">
-                <label>Name</label>
-                <input id="review-name" type="text" placeholder="Your name" />
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">Name</label>
+                <input id="review-name" type="text" placeholder="Your name" class="brutal-input" style="box-shadow:none;border:1px solid #ddd;" />
             </div>
-            <div class="review-form-row">
-                <label>Review</label>
-                <textarea id="review-text" rows="4" placeholder="Write your experience."></textarea>
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">Review</label>
+                <textarea id="review-text" rows="4" placeholder="Write your experience." class="brutal-input" style="box-shadow:none;border:1px solid #ddd;resize:vertical;"></textarea>
             </div>
-            <div class="review-form-row review-upload-row">
-                <label>Image URL or file</label>
-                <input id="review-image-url" type="text" placeholder="Paste image URL" />
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">Image URL or file</label>
+                <input id="review-image-url" type="text" placeholder="Paste image URL" class="brutal-input" style="box-shadow:none;border:1px solid #ddd;margin-bottom:8px;" />
                 <input id="review-image-file" type="file" accept="image/*" />
             </div>
-            <div class="review-form-row review-upload-row">
-                <label>Video URL or file</label>
-                <input id="review-video-url" type="text" placeholder="Paste video URL" />
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">Video URL or file</label>
+                <input id="review-video-url" type="text" placeholder="Paste video URL" class="brutal-input" style="box-shadow:none;border:1px solid #ddd;margin-bottom:8px;" />
                 <input id="review-video-file" type="file" accept="video/*" />
             </div>
-            <button class="btn btn-primary review-submit-btn" onclick="submitProductReview(${product.id})">Post Review</button>
+            <button class="btn btn-primary" onclick="submitProductReview(${product.id})">Post Review</button>
         </div>
     `;
 
-    // Get similar products: first try using similar_products field, then fall back to category matches
     let similarProducts = [];
     if (Array.isArray(product.similar_products) && product.similar_products.length > 0) {
-        // Find products by IDs in similar_products
         similarProducts = product.similar_products
             .map(id => allProducts.find(p => p.id === id))
-            .filter(Boolean) // Remove any undefined products
+            .filter(Boolean)
             .slice(0, 4);
-    } 
-    
-    // If no similar products from field, fall back to category matches
+    }
     if (similarProducts.length === 0) {
         similarProducts = allProducts
             .filter(p => p.id !== product.id && p.category === product.category)
             .slice(0, 4);
     }
+    const similarProductsHtml = similarProducts.length > 0
+        ? similarProducts.map(p => renderDesignProductCard(p)).join('')
+        : '';
 
-    // Render similar products as full product cards
-    const similarProductsHtml = similarProducts.length > 0 ? similarProducts.map((p, idx) => {
-        const optimizedImg = optimizeImg(p.image_url, 400, 60);
-        const thumbImg = optimizeImg(p.image_url, 40, 30);
-        const eager = idx < 2 ? 'eager' : 'lazy';
-        const imgAttrs = eager === 'lazy'
-            ? `src="${thumbImg}" data-src="${optimizedImg}" class="lazy-loading" loading="lazy"`
-            : `src="${optimizedImg}" loading="eager"`;
-        
-        const isInWishlist = wishlist.some(item => item.id === p.id);
-        
-        return `
-        <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor: pointer;">
-            <div class="product-img" style="position: relative;">
-                <img ${imgAttrs} alt="${p.name}" width="400" height="400" decoding="async">
-                <button class="product-wishlist-btn" data-product-id="${p.id}" onclick="event.stopPropagation(); toggleWishlist(${p.id}, '${escapeForAttr(p.name)}', ${calculateDiscountedPrice(p.offer_price || p.price)}, '${optimizedImg}')" style="color: ${isInWishlist ? '#FF007A' : '#000'};">
-                    ${isInWishlist ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>'}
-                </button>
-                <button class="add-to-cart-overlay" onclick="event.stopPropagation(); addToCart(${p.id}, '${escapeForAttr(p.name)}', ${calculateDiscountedPrice(p.offer_price || p.price)}, '${optimizedImg}', ${p.shipping_price || 0})">
-                    <i class="fas fa-plus"></i> ADD TO BAG
-                </button>
-            </div>
-            <div class="product-info">
-                <h3>${p.name}</h3>
-                <p>${p.description}</p>
-                <div class="product-price">
-                    <span class="current-price" style="color: var(--accent-green);">₹${calculateDiscountedPrice(p.offer_price || p.price)}</span>
-                    <span class="original-price" style="text-decoration: line-through; color: #666; font-size: 0.9rem; margin-left: 10px;">₹${p.offer_price || p.price}</span>
-                    <span style="font-size: 0.8rem; font-weight: 900; color: var(--accent-pink); margin-left: 8px;">AADI SALE 5% OFF</span>
-                </div>
-                <div class="product-shipping">
-                <i class="fas fa-truck"></i> Shipping: ${p.shipping_price ? `₹${p.shipping_price}` : 'Free'}
-            </div>
-            </div>
-        </div>
-    `}).join('') : '';
-
-    // Generate Gallery — first image eager, rest lazy; video deferred until selected
-    const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length ? selectedVariant.gallery : Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url];
-    const gallery = Array.isArray(variantGallery) && variantGallery.length ? variantGallery : [selectedVariant.image_url || product.image_url];
+    const variantGallery = Array.isArray(selectedVariant.gallery) && selectedVariant.gallery.length
+        ? selectedVariant.gallery
+        : (Array.isArray(product.gallery) && product.gallery.length ? product.gallery : [selectedVariant.image_url || product.image_url]);
+    const gallery = variantGallery.filter(Boolean);
     const galleryPlaceholder = 'https://via.placeholder.com/900x900?text=Product+View';
-    let galleryDots = gallery.map((img, i) => {
-        const dotBg = optimizeImg(img, 80, 40);
-        return `<div class="gallery-dot ${i === 0 ? 'active' : ''}" style="background-image:url('${dotBg}')" onclick="changeGalleryImage(${i})"></div>`;
-    }).join('');
-    
-    let mediaHtml = '';
-    gallery.forEach((img, i) => {
-        const fullImg = optimizeImg(img, 900, 75);
-        const thumb = optimizeImg(img, 60, 30);
-        if (i === 0) {
-            mediaHtml += `<img src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item active" id="gallery-img-${i}" decoding="async" onerror="this.onerror=null; this.src='${galleryPlaceholder}';">`;
-        } else {
-            mediaHtml += `<img src="${thumb}" data-src="${fullImg}" alt="${product.name} - view ${i+1}" class="gallery-item lazy-loading" id="gallery-img-${i}" decoding="async" onerror="this.onerror=null; this.src='${galleryPlaceholder}'; if(this.dataset.src) this.dataset.src='${galleryPlaceholder}';">`;
-        }
-    });
-    
-    // Add all product videos
     const productVideos = Array.isArray(product.videos) && product.videos.length ? product.videos : (product.video_url ? [product.video_url] : []);
-    productVideos.forEach((videoUrl, videoIndex) => {
-        const idx = gallery.length + videoIndex;
-        mediaHtml += `
-            <div class="gallery-item video-placeholder" id="gallery-img-${idx}" data-video-src="${videoUrl}" onclick="loadGalleryVideo(${idx})">
-                <i class="fas fa-play"></i>
-            </div>
-            <video class="gallery-item" id="gallery-video-${idx}" controls preload="none" playsinline style="display:none">
-            </video>
-        `;
-        galleryDots += `<div class="gallery-dot video-dot" onclick="changeGalleryImage(${idx})"><i class="fas fa-play"></i></div>`;
+
+    window._pdpGalleryData = gallery.map(img => ({ type: 'image', src: optimizeImg(img, 900, 75), thumb: optimizeImg(img, 120, 50) }));
+    productVideos.forEach(videoUrl => {
+        window._pdpGalleryData.push({ type: 'video', src: videoUrl, thumb: '' });
     });
 
-    // Generate Reviews
-    let reviewsHtml = '';
-    if (product.reviews && product.reviews.length > 0) {
-        reviewsHtml = product.reviews.map(r => `
-            <div class="review-card">
-                <div class="review-header">
-                    <div class="reviewer-info">
-                        <div class="reviewer-avatar"><i class="fas fa-user"></i></div>
-                        <div>
-                            <strong>${r.user}</strong>
-                            <div class="review-date">${r.date}</div>
-                        </div>
-                    </div>
-                    <div class="review-stars">${'<i class="fas fa-star"></i>'.repeat(r.rating)}</div>
-                </div>
-                <p class="review-text">${r.comment}</p>
-            </div>
-        `).join('');
-    } else {
-        reviewsHtml = '<p>No reviews yet.</p>';
-    }
+    const thumbnailHtml = window._pdpGalleryData.map((item, i) => {
+        if (item.type === 'video') {
+            return `<div class="thumbnail ${i === 0 ? 'active' : ''}" data-gallery-index="${i}" onclick="changeGalleryImage(${i})" style="display:flex;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;"><i class="fas fa-play"></i></div>`;
+        }
+        return `<div class="thumbnail ${i === 0 ? 'active' : ''}" data-gallery-index="${i}" onclick="changeGalleryImage(${i})"><img src="${item.thumb}" alt="View ${i + 1}"></div>`;
+    }).join('');
+
+    const mainImageSrc = window._pdpGalleryData[0]?.src || galleryPlaceholder;
+    const colorSwatchesHtml = displayColors.length > 0
+        ? displayColors.map(color => `
+            <div class="pdp-color-swatch ${selection.color === color ? 'active' : ''}"
+                 style="background:${colorNameToHex(color)};"
+                 title="${color}"
+                 onclick="selectPdpVariant(${product.id}, '${escapeForAttr(color)}', '${escapeForAttr(selection.size || displaySizes[0])}')"></div>
+        `).join('')
+        : '';
+
+    const sizeButtonsHtml = displaySizes.map(size => `
+        <button type="button" class="pdp-size-btn ${selection.size === size ? 'active' : ''}"
+                onclick="selectPdpVariant(${product.id}, '${escapeForAttr(selection.color || 'Default')}', '${escapeForAttr(size)}')">${size}</button>
+    `).join('');
+
+    const isWishlisted = wishlist.some(item => item.id === product.id);
+    const stock = selectedVariant?.stock ?? product.stock ?? 0;
+    const outOfStock = stock <= 0;
 
     const html = `
-        <div class="pdp-container">
-            <!-- Left: Media Showcase -->
-            <div class="pdp-media-section">
-                <div class="pdp-main-media">
-                    ${mediaHtml}
-                </div>
-                <div class="pdp-gallery-nav">
-                    ${galleryDots}
+        <div class="page-header">
+            <div class="container">
+                <h1>Product Detail</h1>
+                <div class="breadcrumb">
+                    <a href="index.html">Home</a> / <a href="collections.html">Shop</a> / <a href="${categoryHref}">${categoryLabel}</a> / ${product.name}
                 </div>
             </div>
-
-            <!-- Right: Details -->
-            <div class="pdp-details-section">
-                <div class="pdp-breadcrumbs">
-                    <a href="index.html">Home</a> / <a href="${product.category}.html" style="text-transform: capitalize;">${product.category}</a> / <span>${product.name}</span>
-                </div>
-                
-                <h1 class="pdp-title">${product.name}</h1>
-                
-                <div class="pdp-rating">
-                    <span class="stars">${starsHtml}</span>
-                    <span class="rating-number">${product.rating || 5.0}</span>
-                    <span class="review-count">(${product.reviews_count || 0} reviews)</span>
-                </div>
-                
-                <div class="pdp-price-container">
-                    <span class="pdp-current-price" style="color: var(--accent-green);">₹${calculateDiscountedPrice(product.offer_price || product.price)}</span>
-                    <span class="pdp-original-price">₹${product.offer_price || product.price}</span>
-                    <span class="pdp-discount" style="background: var(--accent-pink); color: #fff; padding: 5px 10px; border-radius: 4px;">AADI SALE SAVE ₹${(product.offer_price || product.price) - calculateDiscountedPrice(product.offer_price || product.price)}</span>
-                </div>
-                <div class="pdp-shipping-info">
-                    <i class="fas fa-truck"></i> Shipping: ${product.shipping_price ? `₹${product.shipping_price}` : 'Free'}
-                </div>
-                
-                <div class="pdp-short-desc">
-                    <div class="pdp-description-title">Description</div>
-                    <div class="pdp-description-text">${product.description || ''}</div>
-                </div>
-                
-                <div class="pdp-variant-block">
-                    <div class="pdp-variant-group">
-                        <label>Colour</label>
-                        <div class="pdp-variant-options">
-                            ${colors.map(color => `<button class="pdp-variant-btn ${selection.color === color ? 'active' : ''}" onclick="selectPdpVariant(${product.id}, '${escapeForAttr(color)}', '${escapeForAttr(selection.size || 'One Size')}')">${color}</button>`).join('')}
+        </div>
+        <div class="page-content">
+            <div class="container">
+                <div class="pdp-grid">
+                    <div class="product-gallery">
+                        <div class="thumbnail-list">${thumbnailHtml}</div>
+                        <div class="main-image">
+                            <img id="mainProductImg" src="${mainImageSrc}" alt="${product.name}" onerror="this.onerror=null; this.src='${galleryPlaceholder}';">
+                            <video id="mainProductVideo" controls playsinline style="display:none;width:100%;height:100%;object-fit:cover;"></video>
                         </div>
                     </div>
-                    <div class="pdp-variant-group">
-                        <label>Size</label>
-                        <div class="pdp-variant-options">
-                            ${(sizes.length ? sizes : ['One Size']).map(size => `<button class="pdp-variant-btn ${selection.size === size ? 'active' : ''}" onclick="selectPdpVariant(${product.id}, '${escapeForAttr(selection.color || 'Default')}', '${escapeForAttr(size)}')">${size}</button>`).join('')}
+                    <div>
+                        <h1 style="font-family: 'Poppins', sans-serif; font-weight: 800; margin-bottom: 15px;">${product.name}</h1>
+                        <div class="product-rating" style="margin-bottom: 20px;">
+                            ${starsHtml}
+                            <span style="font-family: 'Montserrat', sans-serif; margin-left: 8px;">(${reviewCount} reviews)</span>
                         </div>
-                    </div>
-                    <div class="pdp-stock-info">${selectedVariant ? `${selectedVariant.color} / ${selectedVariant.size} • ${selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : 'Out of stock'}` : 'Select a variant'}</div>
-                </div>
-
-                <div class="pdp-actions">
-                    <div class="pdp-cta-wrap">
-                        <div class="qty-selector">
-                            <button onclick="updatePdpQty(-1)" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-minus"></i></button>
-                            <input type="number" id="pdp-qty" value="1" min="1" max="${Math.max(1, selectedVariant.stock)}" readonly>
-                            <button onclick="updatePdpQty(1)" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="fas fa-plus"></i></button>
+                        <div class="product-price" style="margin-bottom: 25px;">
+                            ${originalPrice > discountedPrice ? `<span class="old-price" style="font-size: 1.2rem;">₹${originalPrice}</span>` : ''}
+                            <span style="font-size: 1.8rem; font-weight: 600; margin-left: 10px;">₹${discountedPrice}</span>
                         </div>
-                        <div class="pdp-cta-buttons">
-                            <button class="btn btn-primary pdp-add-btn" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
-                                <i class="fas fa-shopping-cart"></i> ${selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'ADD TO BAG'}
+                        <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.8; margin-bottom: 30px;">
+                            ${product.description || ''}
+                        </p>
+                        ${displayColors.length > 0 ? `
+                        <div style="margin-bottom: 25px;">
+                            <label style="font-weight: 600; margin-bottom: 10px; display: block;">Color:</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">${colorSwatchesHtml}</div>
+                        </div>` : ''}
+                        <div style="margin-bottom: 25px;">
+                            <label style="font-weight: 600; margin-bottom: 10px; display: block;">Size:</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">${sizeButtonsHtml}</div>
+                        </div>
+                        <p style="font-family: 'Montserrat', sans-serif; color: #666; margin-bottom: 20px; font-size: 0.9rem;">
+                            ${selectedVariant ? `${selectedVariant.color || 'Default'} / ${selectedVariant.size || 'Free Size'} • ${stock > 0 ? `${stock} in stock` : 'Out of stock'}` : ''}
+                        </p>
+                        <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                            <div class="quantity-control" style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
+                                <button type="button" onclick="updatePdpQty(-1)" style="width: 40px; height: 45px; border: none; background: #f5f1eb; cursor: pointer;" ${outOfStock ? 'disabled' : ''}><i class="fas fa-minus"></i></button>
+                                <input type="number" id="pdp-qty" value="1" min="1" max="${Math.max(1, stock)}" readonly style="width: 50px; text-align: center; border: none; height: 45px; font-family: 'Montserrat', sans-serif;">
+                                <button type="button" onclick="updatePdpQty(1)" style="width: 40px; height: 45px; border: none; background: #f5f1eb; cursor: pointer;" ${outOfStock ? 'disabled' : ''}><i class="fas fa-plus"></i></button>
+                            </div>
+                            <button class="btn btn-primary pdp-add-btn" style="flex: 1; min-width: 180px;" onclick="addFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${discountedPrice}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'Free Size')}', ${stock})" ${outOfStock ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                                ${outOfStock ? 'Out of Stock' : 'Add to Cart'}
                             </button>
-                            <button class="btn btn-secondary pdp-buy-btn" onclick="buyNowFromPdp(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}', ${product.shipping_price || 0}, '${escapeForAttr(selectedVariant.color || 'Default')}', '${escapeForAttr(selectedVariant.size || 'One Size')}', ${selectedVariant.stock})" ${selectedVariant.stock === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#999;"' : ''}>
-                                ${selectedVariant.stock === 0 ? 'OUT OF STOCK' : 'BUY NOW <i class="fas fa-arrow-right"></i>'}
+                            <button type="button" class="btn btn-secondary" style="background: #fff; color: #0a0a0a; border: 1px solid #d4af37; width: 50px;" onclick="toggleWishlist(${product.id}, '${escapeForAttr(product.name)}', ${discountedPrice}, '${selectedVariant.image_url || product.image_url}')" data-product-id="${product.id}">
+                                <i class="${isWishlisted ? 'fas' : 'far'} fa-heart"></i>
                             </button>
                         </div>
-                    </div>
-                    <button class="pdp-wishlist-btn" onclick="toggleWishlist(${product.id}, '${escapeForAttr(product.name)}', ${calculateDiscountedPrice(product.offer_price || product.price)}, '${selectedVariant.image_url || product.image_url}')" data-product-id="${product.id}">
-                        <i class="${wishlist.some(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                    </button>
-                </div>
-                
-                <div class="pdp-benefits">
-                    <div class="benefit-item">
-                        <i class="fas fa-shipping-fast"></i>
-                        <span>Free Express Shipping</span>
-                    </div>
-                    <div class="benefit-item">
-                        <i class="fas fa-undo"></i>
-                        <span>30-Day Easy Returns</span>
-                    </div>
-                    <div class="benefit-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Authenticity Guaranteed</span>
+                        <div style="display: flex; gap: 20px; font-family: 'Montserrat', sans-serif; flex-wrap: wrap; font-size: 0.9rem;">
+                            <span><i class="fas fa-truck" style="color: #d4af37; margin-right: 8px;"></i> ${product.shipping_price ? `Shipping: ₹${product.shipping_price}` : 'Free shipping on orders above ₹2000'}</span>
+                            <span><i class="fas fa-undo" style="color: #d4af37; margin-right: 8px;"></i> 7-day easy returns</span>
+                        </div>
                     </div>
                 </div>
-                ${reviewFormHtml}
-            </div>
-        </div>
-        
-        <!-- Reviews Section -->
-        <div class="reviews-section">
-            <div class="reviews-header">
-                <h2>CUSTOMER REVIEWS</h2>
-                <div class="overall-rating">
-                    <h2>${product.rating || 5.0}</h2>
-                    <div class="stars">${starsHtml}</div>
-                    <p>Based on ${product.reviews_count || 0} reviews</p>
-                </div>
-            </div>
-            <div class="reviews-grid">
-                ${reviewsHtml}
-            </div>
-        </div>
 
-        <!-- Similar Products Section -->
-        ${similarProductsHtml ? `
-        <div class="similar-products-section" style="max-width: 1400px; margin: 60px auto; padding: 0 20px;">
-            <h2 style="font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 30px; text-align: center;">YOU MAY ALSO LIKE</h2>
-            <div class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
-                ${similarProductsHtml}
+                <div style="margin-bottom: 80px;">
+                    <div style="border-bottom: 2px solid #ddd; margin-bottom: 40px;">
+                        <button type="button" class="pdp-tab-btn active" id="detailsBtn" onclick="showPdpTab('details')">Product Details</button>
+                        <button type="button" class="pdp-tab-btn" id="reviewsBtn" onclick="showPdpTab('reviews')">Customer Reviews</button>
+                    </div>
+                    <div id="detailsTab">
+                        <h3 style="font-family: 'Poppins', sans-serif; margin-bottom: 20px;">Description</h3>
+                        <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.8;">${product.description || 'No description available.'}</p>
+                        <h3 style="font-family: 'Poppins', sans-serif; margin: 30px 0 15px;">Product Specifications</h3>
+                        <ul style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 2; padding-left: 20px;">
+                            <li>Category: ${categoryLabel}</li>
+                            <li>Material: Premium quality fabric</li>
+                            <li>Available sizes: ${displaySizes.join(', ')}</li>
+                            ${displayColors.length ? `<li>Available colors: ${displayColors.join(', ')}</li>` : ''}
+                            <li>Care: Dry clean recommended</li>
+                        </ul>
+                    </div>
+                    <div id="reviewsTab" style="display: none;">
+                        <h3 style="font-family: 'Poppins', sans-serif; margin-bottom: 30px;">Customer Reviews</h3>
+                        ${reviewsHtml}
+                        ${reviewFormHtml}
+                    </div>
+                </div>
+
+                ${similarProductsHtml ? `
+                <h2 style="font-family: 'Poppins', sans-serif; text-align: center; margin-bottom: 50px;">Related Products</h2>
+                <div class="product-grid">${similarProductsHtml}</div>
+                ` : ''}
             </div>
         </div>
-        ` : ''}
     `;
 
-    if (targetContainer) {
-        targetContainer.innerHTML = html;
-        // Scroll to top
-        if(targetContainer.parentElement) {
-            targetContainer.parentElement.scrollTop = 0;
-        } else {
-            window.scrollTo(0,0);
-        }
-        
-        refreshLazyMedia(targetContainer);
-
-        // Ensure close button works if in modal
-        const closeBtn = targetContainer.parentElement.querySelector('.close-modal-btn');
+    const container = targetContainer || document.getElementById('pdp-main-content');
+    if (container) {
+        container.innerHTML = html;
+        window.scrollTo(0, 0);
+        refreshLazyMedia(container);
+        const closeBtn = container.parentElement?.querySelector('.close-modal-btn');
         if (closeBtn) closeBtn.onclick = closeProductPage;
-    } else {
-        const pdpMain = document.getElementById('pdp-main-content');
-        if (pdpMain) pdpMain.innerHTML = html;
     }
 }
 
+window.showPdpTab = function(tabName) {
+    const detailsTab = document.getElementById('detailsTab');
+    const reviewsTab = document.getElementById('reviewsTab');
+    const detailsBtn = document.getElementById('detailsBtn');
+    const reviewsBtn = document.getElementById('reviewsBtn');
+    if (!detailsTab || !reviewsTab) return;
+    const showDetails = tabName === 'details';
+    detailsTab.style.display = showDetails ? 'block' : 'none';
+    reviewsTab.style.display = showDetails ? 'none' : 'block';
+    if (detailsBtn) detailsBtn.classList.toggle('active', showDetails);
+    if (reviewsBtn) reviewsBtn.classList.toggle('active', !showDetails);
+};
+
 window.loadGalleryVideo = function(index) {
-    const placeholder = document.getElementById(`gallery-img-${index}`);
-    const video = document.getElementById(`gallery-video-${index}`);
-    if (!placeholder || !video || !placeholder.dataset.videoSrc) return;
-
-    if (!video.querySelector('source')) {
-        const source = document.createElement('source');
-        source.src = placeholder.dataset.videoSrc;
-        source.type = 'video/mp4';
-        video.appendChild(source);
-        video.load();
-    }
-
-    placeholder.style.display = 'none';
-    video.style.display = 'block';
-    video.classList.add('active');
     changeGalleryImage(index);
 };
 
 window.changeGalleryImage = function(index) {
-    document.querySelectorAll('.gallery-item, .video-placeholder').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.gallery-dot').forEach(el => el.classList.remove('active'));
+    const galleryData = window._pdpGalleryData || [];
+    const item = galleryData[index];
+    const mainImg = document.getElementById('mainProductImg');
+    const mainVideo = document.getElementById('mainProductVideo');
+    if (!item || !mainImg) return;
 
-    const video = document.getElementById(`gallery-video-${index}`);
-    const placeholder = document.getElementById(`gallery-img-${index}`);
-    const target = video && video.querySelector('source') ? video : placeholder;
+    document.querySelectorAll('.thumbnail').forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+    });
 
-    if (target) {
-        if (target.classList.contains('video-placeholder')) {
-            loadGalleryVideo(index);
-            return;
+    if (item.type === 'video') {
+        mainImg.style.display = 'none';
+        if (mainVideo) {
+            mainVideo.style.display = 'block';
+            if (!mainVideo.querySelector('source')) {
+                const source = document.createElement('source');
+                source.src = item.src;
+                source.type = 'video/mp4';
+                mainVideo.appendChild(source);
+                mainVideo.load();
+            }
+            mainVideo.play().catch(() => {});
         }
-
-        target.classList.add('active');
-        if (target.tagName === 'IMG' && target.dataset.src && window.LifeStyleLoader) {
-            LifeStyleLoader.loadLazyElement(target);
+    } else {
+        if (mainVideo) {
+            mainVideo.pause();
+            mainVideo.style.display = 'none';
         }
-        if (target.tagName === 'VIDEO') {
-            target.style.display = 'block';
-            if (placeholder && placeholder.classList.contains('video-placeholder')) placeholder.style.display = 'none';
-            target.play().catch(() => {});
-        } else {
-            document.querySelectorAll('video.gallery-item').forEach(v => { v.pause(); v.style.display = v.querySelector('source') ? 'none' : v.style.display; });
-            document.querySelectorAll('.video-placeholder').forEach(v => { if (v.id !== `gallery-img-${index}`) v.style.display = ''; });
-        }
+        mainImg.style.display = 'block';
+        mainImg.src = item.src;
     }
-
-    const dots = document.querySelectorAll('.gallery-dot');
-    if (dots[index]) dots[index].classList.add('active');
-}
-
+};
 window.updatePdpQty = function(delta) {
     const input = document.getElementById('pdp-qty');
     let val = parseInt(input.value) + delta;
@@ -2635,7 +1847,7 @@ window.selectPdpVariant = function(productId, color, size) {
     }
 
     setProductSelection(productId, variant.color, variant.size);
-    renderProductDetails(product, document.getElementById('pdp-content') || document.getElementById('pdp-main-content'));
+    renderProductDetails(product, document.getElementById('pdp-content') || document.getElementById('pdp-main-content'), window._pdpAllProducts || []);
 }
 
 window.addFromPdp = function(id, name, price, image, shipping_price, color, size, stock) {
@@ -2781,11 +1993,11 @@ window.scrollRelatedProducts = function(direction) {
 
 function updateCartBadge() {
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-    const badges = document.querySelectorAll('.cart-count, #cart-badge, #mobile-cart-badge');
+    const badges = document.querySelectorAll('.cart-count, #cart-badge, #mobile-cart-badge, #cartCount');
     badges.forEach(badge => {
         if (badge) {
             badge.innerText = totalItems;
-            badge.style.display = totalItems > 0 ? 'flex' : 'none';
+            badge.style.display = totalItems > 0 ? 'inline-block' : 'none';
         }
     });
 }
@@ -3246,10 +2458,16 @@ function setupEventListeners() {
     const cartBtn = document.getElementById('open-cart-btn');
     const closeCartBtn = document.getElementById('close-cart-btn');
     const cartOverlay = document.getElementById('cart-overlay');
+    const desktopSearchIcon = document.getElementById('desktop-search-icon');
+    const desktopSearchInput = document.getElementById('desktop-search-input');
 
     if (cartBtn) cartBtn.onclick = openCart;
     if (closeCartBtn) closeCartBtn.onclick = closeCart;
     if (cartOverlay) cartOverlay.onclick = closeCart;
+    if (desktopSearchIcon && desktopSearchInput) desktopSearchIcon.onclick = (e) => {
+        e.preventDefault();
+        desktopSearchInput.focus();
+    };
 
     // Checkout
     const checkoutBtn = document.querySelector('.checkout-btn');
