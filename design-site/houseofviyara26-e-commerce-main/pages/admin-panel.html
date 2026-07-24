@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Panel - House Of Viyara26">
+    <title>Admin Panel - House Of Viyara26</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&family=Poppins:wght=800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Inner page header style */
+        header {
+            background: rgba(255,255,255,0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        header nav ul li a, header .header-icons a {
+            color: #0a0a0a !important;
+        }
+        .page-header {
+            padding: 150px 0 100px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: white;
+            text-align: center;
+        }
+        .page-content {
+            padding: 80px 0;
+            background: #f9f9f9;
+        }
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+        }
+        .admin-sidebar {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        .admin-sidebar h3 {
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 20px;
+        }
+        .admin-nav-btn {
+            width: 100%;
+            padding: 12px 15px;
+            text-align: left;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        .admin-nav-btn:hover, .admin-nav-btn.active {
+            background: #f5f1eb;
+            color: #d4af37;
+        }
+        .admin-nav-btn i {
+            width: 25px;
+        }
+        .admin-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .admin-section {
+            display: none;
+        }
+        .admin-section.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-family: 'Montserrat', sans-serif;
+        }
+        th {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f1eb;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 8px;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <div class="logo">
+                <a href="../index.html"><img src="../assets/HOV.jpg" alt="House Of Viyara26" style="max-height: 50px;"></a>
+            </div>
+            <nav>
+                <ul id="navMenu">
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="categories.html">Shop</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <a href="search.html"><i class="fas fa-search"></i></a>
+                <a href="wishlist.html"><i class="fas fa-heart"></i></a>
+                <a href="cart.html" style="position: relative;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+                <a href="account.html"><i class="fas fa-user"></i></a>
+                <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>Admin Panel</h1>
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a> / Admin Panel
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="admin-grid">
+                <div class="admin-sidebar">
+                    <h3>Admin Dashboard</h3>
+                    <button class="admin-nav-btn active" onclick="showAdminSection('products')">
+                        <i class="fas fa-box"></i> Products
+                    </button>
+                    <button class="admin-nav-btn" onclick="showAdminSection('categories')">
+                        <i class="fas fa-th-large"></i> Categories
+                    </button>
+                    <button class="admin-nav-btn" onclick="showAdminSection('settings')">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+                <div class="admin-content">
+                    <!-- Products Section -->
+                    <div id="products" class="admin-section active">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="font-family: 'Poppins', sans-serif;">Manage Products</h2>
+                            <button class="btn btn-primary btn-small" onclick="openProductModal()">
+                                <i class="fas fa-plus"></i> Add Product
+                            </button>
+                        </div>
+                        <table id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Categories Section -->
+                    <div id="categories" class="admin-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="font-family: 'Poppins', sans-serif;">Manage Categories</h2>
+                            <button class="btn btn-primary btn-small" onclick="openCategoryModal()">
+                                <i class="fas fa-plus"></i> Add Category
+                            </button>
+                        </div>
+                        <table id="categoriesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Image</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settings" class="admin-section">
+                        <h2 style="font-family: 'Poppins', sans-serif; margin-bottom: 30px;">Website Settings</h2>
+                        <div class="form-group">
+                            <label>Website Name</label>
+                            <input type="text" id="siteName" value="House Of Viyara26">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="siteAddress" value="Palladam, Tiruppur, Tamil Nadu, India">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="text" id="sitePhone" value="+91 83004 63653">
+                            </div>
+                            <div class="form-group">
+                                <label>Instagram</label>
+                                <input type="text" id="siteInstagram" value="house_of_viyara26">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>YouTube</label>
+                            <input type="text" id="siteYouTube" value="@HouseofViyara">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="productModalTitle" style="font-family: 'Poppins', sans-serif;">Add Product</h3>
+                <button onclick="closeProductModal()" style="background: none; border: none; cursor: pointer; font-size: 1.5rem;"><i class="fas fa-times"></i></button>
+            </div>
+            <input type="hidden" id="editProductId">
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" id="productName">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="productCategory">
+                        <option value="Sarees">Sarees</option>
+                        <option value="Kurtis">Kurtis</option>
+                        <option value="Ethnic Wear">Ethnic Wear</option>
+                        <option value="Party Wear">Party Wear</option>
+                        <option value="Casual Wear">Casual Wear</option>
+                        <option value="Accessories">Accessories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="productPrice">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Old Price (optional)</label>
+                    <input type="number" id="productOldPrice">
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="text" id="productImage" placeholder="assets/images/...">
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="categoryModalTitle" style="font-family: 'Poppins', sans-serif;">Add Category</h3>
+                <button onclick="closeCategoryModal()" style="background: none; border: none; cursor: pointer; font-size: 1.5rem;"><i class="fas fa-times"></i></button>
+            </div>
+            <input type="hidden" id="editCategoryId">
+            <div class="form-group">
+                <label>Category Name</label>
+                <input type="text" id="categoryName">
+            </div>
+            <div class="form-group">
+                <label>Image URL</label>
+                <input type="text" id="categoryImage" placeholder="assets/images/...">
+            </div>
+            <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="../assets/HOV.jpg" alt="House Of Viyara26" class="footer-logo" style="max-width: 120px;">
+                    <p>Premium luxury fashion brand offering exclusive ethnic wear, designer collections, and customized fashion products.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="../index.html">Home</a></li>
+                        <li><a href="categories.html">Shop</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="admin-panel.html" style="color: #d4af37; font-weight: 600;"><i class="fas fa-cog"></i> Admin Panel</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="shipping-policy.html">Shipping Policy</a></li>
+                        <li><a href="refund-policy.html">Refund Policy</a></li>
+                        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt" style="color:#d4af37;margin-right:10px;"></i> Palladam, Tiruppur, Tamil Nadu, India</li>
+                        <li><i class="fas fa-phone" style="color:#d4af37;margin-right:10px;"></i> +91 83004 63653</li>
+                        <li><i class="fab fa-instagram" style="color:#d4af37;margin-right:10px;"></i> house_of_viyara26</li>
+                        <li><i class="fab fa-youtube" style="color:#d4af37;margin-right:10px;"></i> @HouseofViyara</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 House Of Viyara26. All rights reserved. Crafted with elegance & tradition.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/918300463653?text=Hi! I'm interested in your products" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        // Sample data
+        let products = [
+            { id: 1, name: "Banarasi Silk Saree", category: "Sarees", price: 6499, oldPrice: 8999, image: "../assets/images/saree.png" },
+            { id: 2, name: "Embroidered Kurti Set", category: "Kurtis", price: 3999, oldPrice: 5499, image: "../assets/images/kurti.png" },
+            { id: 3, name: "Designer Lehenga", category: "Ethnic Wear", price: 12999, oldPrice: null, image: "../assets/images/ethnic wears.png" },
+            { id: 4, name: "Party Wear Gown", category: "Party Wear", price: 7999, oldPrice: null, image: "../assets/images/party wear.png" },
+            { id: 5, name: "Designer Earrings Set", category: "Accessories", price: 2499, oldPrice: null, image: "../assets/images/accessories.png" },
+        ];
+
+        let categories = [
+            { id: 1, name: "Sarees", image: "../assets/images/saree.png", slug: "sarees.html" },
+            { id: 2, name: "Kurtis", image: "../assets/images/kurti.png", slug: "kurtis.html" },
+            { id: 3, name: "Ethnic Wear", image: "../assets/images/ethnic wears.png", slug: "ethnic-wears.html" },
+            { id: 4, name: "Party Wear", image: "../assets/images/party wear.png", slug: "party-wears.html" },
+            { id: 5, name: "Casual Wear", image: "../assets/images/casual.png", slug: "casual-wears.html" },
+            { id: 6, name: "Accessories", image: "../assets/images/accessories.png", slug: "accessories.html" },
+        ];
+
+        // Load data from localStorage
+        function loadData() {
+            const storedProducts = localStorage.getItem('hov_products');
+            const storedCategories = localStorage.getItem('hov_categories');
+            if (storedProducts) products = JSON.parse(storedProducts);
+            if (storedCategories) categories = JSON.parse(storedCategories);
+            renderProducts();
+            renderCategories();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('hov_products', JSON.stringify(products));
+            localStorage.setItem('hov_categories', JSON.stringify(categories));
+        }
+
+        // Show admin section
+        function showAdminSection(sectionId) {
+            document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.admin-nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Render products
+        function renderProducts() {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = products.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.category}</td>
+                    <td>₹${p.price.toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-small" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-primary btn-small" style="background: #dc3545; border-color: #dc3545;" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render categories
+        function renderCategories() {
+            const tbody = document.getElementById('categoriesTableBody');
+            tbody.innerHTML = categories.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.name}</td>
+                    <td><img src="${c.image}" style="width: 50px; height:50px; object-fit:cover; border-radius: 4px;"></td>
+                    <td>
+                        <button class="btn btn-secondary btn-small" onclick="editCategory(${c.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-primary btn-small" style="background: #dc3545; border-color: #dc3545;" onclick="deleteCategory(${c.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Product CRUD
+        function openProductModal(productId = null) {
+            const modal = document.getElementById('productModal');
+            const title = document.getElementById('productModalTitle');
+            if (productId) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    title.textContent = 'Edit Product';
+                    document.getElementById('editProductId').value = productId;
+                    document.getElementById('productName').value = product.name;
+                    document.getElementById('productCategory').value = product.category;
+                    document.getElementById('productPrice').value = product.price;
+                    document.getElementById('productOldPrice').value = product.oldPrice || '';
+                    document.getElementById('productImage').value = product.image;
+                }
+            } else {
+                title.textContent = 'Add Product';
+                document.getElementById('editProductId').value = '';
+                document.getElementById('productName').value = '';
+                document.getElementById('productCategory').value = 'Sarees';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('productOldPrice').value = '';
+                document.getElementById('productImage').value = '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        function saveProduct() {
+            const productId = document.getElementById('editProductId').value;
+            const productData = {
+                name: document.getElementById('productName').value,
+                category: document.getElementById('productCategory').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                oldPrice: document.getElementById('productOldPrice').value ? parseFloat(document.getElementById('productOldPrice').value) : null,
+                image: document.getElementById('productImage').value || '../assets/images/saree.png'
+            };
+
+            if (productId) {
+                // Edit product
+                const index = products.findIndex(p => p.id === parseInt(productId));
+                if (index !== -1) {
+                    products[index] = { ...products[index], ...productData };
+                }
+            } else {
+                // Add product
+                const newId = Math.max(...products.map(p => p.id), 0) + 1;
+                products.push({ id: newId, ...productData });
+            }
+
+            saveData();
+            renderProducts();
+            closeProductModal();
+        }
+
+        function editProduct(productId) {
+            openProductModal(productId);
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                products = products.filter(p => p.id !== productId);
+                saveData();
+                renderProducts();
+            }
+        }
+
+        // Category CRUD
+        function openCategoryModal(categoryId = null) {
+            const modal = document.getElementById('categoryModal');
+            const title = document.getElementById('categoryModalTitle');
+            if (categoryId) {
+                const category = categories.find(c => c.id === categoryId);
+                if (category) {
+                    title.textContent = 'Edit Category';
+                    document.getElementById('editCategoryId').value = categoryId;
+                    document.getElementById('categoryName').value = category.name;
+                    document.getElementById('categoryImage').value = category.image;
+                }
+            } else {
+                title.textContent = 'Add Category';
+                document.getElementById('editCategoryId').value = '';
+                document.getElementById('categoryName').value = '';
+                document.getElementById('categoryImage').value = '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'none';
+        }
+
+        function saveCategory() {
+            const categoryId = document.getElementById('editCategoryId').value;
+            const categoryData = {
+                name: document.getElementById('categoryName').value,
+                image: document.getElementById('categoryImage').value || '../assets/images/saree.png',
+                slug: document.getElementById('categoryName').value.toLowerCase().replace(/\s+/g, '-') + '.html'
+            };
+
+            if (categoryId) {
+                const index = categories.findIndex(c => c.id === parseInt(categoryId));
+                if (index !== -1) {
+                    categories[index] = { ...categories[index], ...categoryData };
+                }
+            } else {
+                const newId = Math.max(...categories.map(c => c.id), 0) + 1;
+                categories.push({ id: newId, ...categoryData });
+            }
+
+            saveData();
+            renderCategories();
+            closeCategoryModal();
+        }
+
+        function editCategory(categoryId) {
+            openCategoryModal(categoryId);
+        }
+
+        function deleteCategory(categoryId) {
+            if (confirm('Are you sure you want to delete this category?')) {
+                categories = categories.filter(c => c.id !== categoryId);
+                saveData();
+                renderCategories();
+            }
+        }
+
+        // Settings
+        function saveSettings() {
+            alert('Settings saved! Note: Full integration requires backend.');
+        }
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

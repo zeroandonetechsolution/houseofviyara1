@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="House Of Viyara26 - Premium Luxury Fashion for Women. Discover exclusive sarees, kurtis, ethnic wear, party wear, and designer collections.">
+    <meta name="keywords" content="fashion, sarees, kurtis, ethnic wear, designer wear, women's clothing, luxury fashion">
+    <title>House Of Viyara26 - Premium Luxury Fashion</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&family=Poppins:wght@800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <div class="logo">
+                <a href="index.html"><img src="assets/HOV.jpg" alt="House Of Viyara26" style="max-height: 50px;"></a>
+            </div>
+            <nav>
+                <ul id="navMenu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="pages/categories.html">Shop</a></li>
+                    <li><a href="pages/about.html">About</a></li>
+                    <li><a href="pages/contact.html">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <a href="pages/search.html"><i class="fas fa-search"></i></a>
+                <a href="pages/wishlist.html"><i class="fas fa-heart"></i></a>
+                <a href="pages/cart.html" style="position: relative;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+                <a href="pages/account.html"><i class="fas fa-user"></i></a>
+                <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-slider">
+            <div class="hero-slide active" style="background: url('assets/images/home page 1.png') center/cover no-repeat;">
+                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(10,10,10,0.7);"></div>
+                <div class="hero-content">
+                    <h1>Luxury Redefined</h1>
+                    <p>Discover our exclusive collection of premium ethnic wear and designer outfits crafted with elegance and tradition.</p>
+                    <div class="hero-buttons">
+                        <a href="pages/categories.html" class="btn btn-primary">Shop Now</a>
+                        <a href="pages/new-arrivals.html" class="btn btn-secondary">New Arrivals</a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-slide" style="background: url('assets/images/home page 2.png') center/cover no-repeat;">
+                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(10,10,10,0.7);"></div>
+                <div class="hero-content">
+                    <h1>Elegance Personified</h1>
+                    <p>Experience the perfect blend of contemporary fashion and timeless traditions in every piece.</p>
+                    <div class="hero-buttons">
+                        <a href="pages/collections.html" class="btn btn-primary">Collections</a>
+                        <a href="pages/best-sellers.html" class="btn btn-secondary">Best Sellers</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slider-nav">
+            <div class="slider-dot active" data-slide="0"></div>
+            <div class="slider-dot" data-slide="1"></div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories">
+        <div class="container">
+            <h2>Shop By Category</h2>
+            <div class="category-grid">
+                <a href="pages/sarees.html" class="category-card">
+                    <img src="assets/images/saree.png" alt="Sarees" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Sarees</h3>
+                        <span>25+ Products</span>
+                    </div>
+                </a>
+                <a href="pages/kurtis.html" class="category-card">
+                    <img src="assets/images/kurti.png" alt="Kurtis" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Kurtis</h3>
+                        <span>30+ Products</span>
+                    </div>
+                </a>
+                <a href="pages/ethnic-wears.html" class="category-card">
+                    <img src="assets/images/ethnic wears.png" alt="Ethnic Wear" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Ethnic Wear</h3>
+                        <span>40+ Products</span>
+                    </div>
+                </a>
+                <a href="pages/party-wears.html" class="category-card">
+                    <img src="assets/images/party wear.png" alt="Party Wear" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Party Wear</h3>
+                        <span>20+ Products</span>
+                    </div>
+                </a>
+                <a href="pages/casual-wears.html" class="category-card">
+                    <img src="assets/images/casual.png" alt="Casual Wear" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Casual Wear</h3>
+                        <span>35+ Products</span>
+                    </div>
+                </a>
+                <a href="pages/accessories.html" class="category-card">
+                    <img src="assets/images/accessories.png" alt="Accessories" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="category-overlay">
+                        <h3>Accessories</h3>
+                        <span>15+ Products</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="products">
+        <div class="container">
+            <h2>Featured Collections</h2>
+            <div class="product-grid">
+                <div class="product-card" onclick="location.href='pages/product-detail.html'">
+                    <div class="product-image">
+                        <img src="assets/images/saree.png" alt="Banarasi Silk Saree" style="width:100%;height:100%;object-fit:cover;">
+                        <span class="product-badge">NEW</span>
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Banarasi Silk Saree</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">₹8,999</span>
+                            ₹6,499
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='pages/product-detail.html'">
+                    <div class="product-image">
+                        <img src="assets/images/kurti.png" alt="Embroidered Kurti Set" style="width:100%;height:100%;object-fit:cover;">
+                        <span class="product-badge sale">SALE</span>
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Embroidered Kurti Set</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">₹5,499</span>
+                            ₹3,999
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='pages/product-detail.html'">
+                    <div class="product-image">
+                        <img src="assets/images/ethnic wears.png" alt="Designer Lehenga Choli" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Designer Lehenga Choli</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <div class="product-price">₹12,999</div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='pages/product-detail.html'">
+                    <div class="product-image">
+                        <img src="assets/images/party wear.png" alt="Party Wear Gown" style="width:100%;height:100%;object-fit:cover;">
+                        <span class="product-badge">NEW</span>
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Party Wear Gown</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="product-price">₹7,999</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us Section -->
+    <section class="why-choose">
+        <div class="container">
+            <h2>Why Choose House Of Viyara26</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <h3>Premium Quality</h3>
+                    <p>Handpicked fabrics and materials with the finest craftsmanship</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-hand-paper"></i>
+                    </div>
+                    <h3>Handpicked Collections</h3>
+                    <p>Curated selection of the latest trends and timeless classics</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure Payments</h3>
+                    <p>Multiple secure payment options for hassle-free shopping</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3>Fast Delivery</h3>
+                    <p>Quick and reliable shipping across India</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section class="reviews">
+        <div class="container">
+            <h2>What Our Customers Say</h2>
+            <div class="reviews-slider">
+                <div class="review-card">
+                    <div class="review-content">
+                        "Absolutely stunning collection! The quality exceeded my expectations. Perfect for every occasion. Highly recommended!"
+                    </div>
+                    <div class="review-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="review-author">
+                        Priya Sharma
+                        <span>Mumbai</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instagram Section -->
+    <section class="instagram">
+        <div class="container">
+            <h2>Follow Us on Instagram</h2>
+            <div class="instagram-grid">
+                <div class="instagram-item">
+                    <img src="assets/images/home page 1.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+                <div class="instagram-item">
+                    <img src="assets/images/saree.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+                <div class="instagram-item">
+                    <img src="assets/images/home page 2.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+                <div class="instagram-item">
+                    <img src="assets/images/kurti.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+                <div class="instagram-item">
+                    <img src="assets/images/ethnic wears.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+                <div class="instagram-item">
+                    <img src="assets/images/accessories.png" alt="Instagram" style="width:100%;height:100%;object-fit:cover;">
+                    <div class="instagram-overlay">
+                        <span><i class="fab fa-instagram"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter">
+        <div class="container">
+            <h2>Subscribe to our Newsletter</h2>
+            <p>Get exclusive offers, latest collections, and fashion tips delivered straight to your inbox. Enjoy 10% off on your first order!</p>
+            <form class="newsletter-form" id="newsletterForm">
+                <input type="email" placeholder="Enter your email address" required>
+                <button type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="assets/HOV.jpg" alt="House Of Viyara26" class="footer-logo" style="max-width: 120px;">
+                    <p>Premium luxury fashion brand offering exclusive ethnic wear, designer collections, and customized fashion products.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="pages/categories.html">Shop</a></li>
+                        <li><a href="pages/about.html">About Us</a></li>
+                        <li><a href="pages/contact.html">Contact Us</a></li>
+                        <li><a href="pages/blog.html">Blog</a></li>
+                        <li><a href="pages/admin-panel.html" style="color: #d4af37; font-weight: 600;"><i class="fas fa-cog"></i> Admin Panel</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="pages/faq.html">FAQ</a></li>
+                        <li><a href="pages/shipping-policy.html">Shipping Policy</a></li>
+                        <li><a href="pages/refund-policy.html">Refund Policy</a></li>
+                        <li><a href="pages/privacy-policy.html">Privacy Policy</a></li>
+                        <li><a href="pages/terms.html">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt" style="color:#d4af37;margin-right:10px;"></i> Palladam, Tiruppur, Tamil Nadu, India</li>
+                        <li><i class="fas fa-phone" style="color:#d4af37;margin-right:10px;"></i> +91 83004 63653</li>
+                        <li><i class="fab fa-instagram" style="color:#d4af37;margin-right:10px;"></i> house_of_viyara26</li>
+                        <li><i class="fab fa-youtube" style="color:#d4af37;margin-right:10px;"></i> @HouseofViyara</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 House Of Viyara26. All rights reserved. Crafted with elegance & tradition.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/918300463653?text=Hi! I'm interested in your products" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

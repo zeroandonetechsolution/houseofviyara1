@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Shopping Cart - House Of Viyara26">
+    <title>Your Cart - House Of Viyara26</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght:300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Inner page header style */
+        header {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        header nav ul li a,
+        header .header-icons a {
+            color: #0a0a0a !important;
+        }
+        .page-header {
+            padding: 150px 0 100px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #fff;
+            text-align: center;
+        }
+        .page-content {
+            padding: 80px 0;
+            background: #fff;
+        }
+        .breadcrumb {
+            color: #d4af37;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .breadcrumb a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            color: #d4af37;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item-image {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #f5f1eb, #e0d5c5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .quantity-control button {
+            width: 35px;
+            height: 35px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+        }
+        .quantity-control input {
+            width: 50px;
+            text-align: center;
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <div class="logo">
+                <a href="../index.html"><img src="../assets/HOV.jpg" alt="House Of Viyara26" style="max-height: 50px;"></a>
+            </div>
+            <nav>
+                <ul id="navMenu">
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="categories.html">Shop</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <a href="search.html"><i class="fas fa-search"></i></a>
+                <a href="wishlist.html"><i class="fas fa-heart"></i></a>
+                <a href="cart.html" style="position: relative;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+                <a href="account.html"><i class="fas fa-user"></i></a>
+                <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>Your Cart</h1>
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a> / Cart
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+                <div>
+                    <div class="cart-item">
+                        <div class="cart-item-image" style="background: transparent;">
+                            <img src="../assets/images/saree.png" alt="Banarasi Silk Saree" style="width:100%;height:100%;object-fit:cover;">
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 5px; font-size:1.1rem;">Banarasi Silk Saree</h3>
+                            <p style="color: #666; font-size: 0.9rem; font-family: 'Montserrat', sans-serif;">Size: Free | Color: Gold</p>
+                            <h3 style="color: #0a0a0a; margin-top: 10px; font-size:1.2rem;">₹6,499</h3>
+                        </div>
+                        <div class="quantity-control">
+                            <button>-</button>
+                            <input type="number" value="1">
+                            <button>+</button>
+                        </div>
+                        <div>
+                            <button style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size:1.2rem;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="product-card" style="padding: 30px;">
+                        <h3 style="font-family: 'Playfair Display', serif; margin-bottom:25px;">Order Summary</h3>
+                        <div style="display: flex; justify-content: space-between; margin-bottom:15px; font-family: 'Montserrat', sans-serif;">
+                            <span>Subtotal</span>
+                            <span>₹6,499</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom:15px; font-family: 'Montserrat', sans-serif;">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </div>
+                        <div style="border-top: 1px solid #eee; padding-top:15px; margin-bottom:25px; display:flex; justify-content: space-between; font-size:1.2rem; font-weight:bold;">
+                            <span>Total</span>
+                            <span>₹6,499</span>
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:block; margin-bottom:8px; font-weight:500; font-family:'Montserrat', sans-serif;">Coupon Code</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" placeholder="Enter coupon" style="flex:1; padding:10px 15px; border:1px solid #ddd; border-radius:5px; font-family:'Montserrat', sans-serif;">
+                                <button class="btn btn-secondary" style="padding:10px 20px;">Apply</button>
+                            </div>
+                        </div>
+                        <a href="checkout.html" class="btn btn-primary" style="width: 100%; text-align: center; display:block;">Proceed to Checkout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="../assets/HOV.jpg" alt="House Of Viyara26" class="footer-logo" style="max-width: 120px;">
+                    <p>Premium luxury fashion brand offering exclusive ethnic wear, designer collections, and customized fashion products.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="../index.html">Home</a></li>
+                        <li><a href="categories.html">Shop</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="admin-panel.html" style="color: #d4af37; font-weight: 600;"><i class="fas fa-cog"></i> Admin Panel</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="shipping-policy.html">Shipping Policy</a></li>
+                        <li><a href="refund-policy.html">Refund Policy</a></li>
+                        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt" style="color:#d4af37;margin-right:10px;"></i> Palladam, Tiruppur, Tamil Nadu, India</li>
+                        <li><i class="fas fa-phone" style="color:#d4af37;margin-right:10px;"></i> +91 83004 63653</li>
+                        <li><i class="fab fa-instagram" style="color:#d4af37;margin-right:10px;"></i> house_of_viyara26</li>
+                        <li><i class="fab fa-youtube" style="color:#d4af37;margin-right:10px;"></i> @HouseofViyara</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 House Of Viyara26. All rights reserved. Crafted with elegance & tradition.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/918300463653?text=Hi! I'm interested in your products" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

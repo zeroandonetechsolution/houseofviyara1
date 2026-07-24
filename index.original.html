@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="master-guard.js?v=1"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="description" content="House Of Viyara - Premium Clothing & Fashion. Elevate your style with our curated collection.">
+    <title>House Of Viyara | Premium Clothing & Fashion</title>
+    
+    <!-- Instant DNS & Connection Pre-warm -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://images.unsplash.com">
+    
+    <!-- Preload Critical Hero Image for Instant Display -->
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80">
+    
+    <!-- Inline Critical CSS for Instant Paint -->
+    <style>
+        :root { --accent-yellow: #FFD100; --bg-color: #f4f4f4; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow-x: hidden; 
+            -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
+        }
+        body { 
+            background: var(--bg-color); 
+            font-family: 'Outfit', sans-serif; 
+        }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cookie-banner.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFD100">
+    
+    <!-- Defer heavy scripts to body end -->
+</head>
+<body>
+    <div id="preloader" aria-live="polite" aria-busy="true">
+        <div class="loader-scene">
+            <div class="loader-orbit"><span></span><span></span><span></span></div>
+            <div class="loader-logo">HOUSE OF VIYARA</div>
+        </div>
+        <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
+        <div class="loader-percent" id="loader-percent">0%</div>
+        <div class="loader-text" id="loader-text">Loading fashion...</div>
+    </div>
+    <div id="page-transition" aria-hidden="true">
+        <div class="page-transition-logo">HOUSE OF VIYARA</div>
+        <div class="page-transition-text">Loading page...</div>
+    </div>
+    <script src="loader.js?v=3"></script>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">House Of Viyara</a></h1>
+            </div>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="Maxis.html">Maxis</a></li>
+                    <li><a href="Cord sets.html">Cord sets</a></li>
+                    <li><a href="Kurti.html">Kurti</a></li>
+                    <li><a href="Kurti sets.html">Kurti sets</a></li>
+                    <li><a href="pure-cotton.html">Pure Cotton</a></li>
+                </ul>
+            </nav>
+            <div class="header-search-container">
+                <i class="fas fa-search header-search-icon"></i>
+                <input type="text" class="header-search-input" placeholder="SEARCH..." id="desktop-search-input">
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn theme-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn auth-btn" id="open-auth-btn" aria-label="Login">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <a href="orders.html" class="icon-btn" aria-label="Track Order" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <a href="wishlist.html" class="icon-btn wishlist-btn" aria-label="Wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span class="cart-badge" id="wishlist-badge">0</span>
+                </a>
+                <button class="icon-btn cart-btn" id="open-cart-btn" aria-label="Cart">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="icon-btn menu-btn" aria-label="Menu" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                    <span class="menu-text">MENU</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+        <!-- Auth Modal -->
+        <div class="modal-overlay" id="auth-overlay"></div>
+    <div class="auth-modal" id="auth-modal">
+        <button class="close-modal-btn" id="close-auth-btn"><i class="fas fa-times"></i></button>
+        <div class="auth-content">
+            <h2>WELCOME BACK</h2>
+            <p>Login to House Of Viyara for a personalized experience.</p>
+            <div id="google-login-btn" style="margin: 20px auto; min-height: 40px; display: flex; justify-content: center;"></div>
+            <p id="auth-user-status" style="font-size: 0.85rem; opacity: 0.7; text-align: center; margin-top: 0; margin-bottom: 20px;">Sign in with Google to continue.</p>
+            <button id="auth-logout-btn" type="button" class="logout-btn" style="display: none; margin: 0 auto 20px; width: 100%;">Log out</button>
+        </div>
+    </div>
+<div class="mobile-menu" id="mobile-menu">
+        <button class="close-menu-btn" id="close-menu-btn"><i class="fas fa-times"></i></button>
+        <div style="padding: 25px 25px 0 25px;">
+            <div class="brutal-input-container" style="position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.5;"></i>
+                <input type="text" class="brutal-input" placeholder="SEARCH ITEMS..." style="padding-left: 45px; margin-bottom: 0;" id="mobile-search-input">
+            </div>
+        </div>
+        <ul class="mobile-nav-links">
+            <div class="section-title">Quick Actions</div>
+            <li><a href="javascript:void(0)" onclick="toggleTheme(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-moon"></i> Toggle Theme <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openAuthModal(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-user-circle"></i> Login / Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="orders.html"><i class="fas fa-truck"></i> Track Order <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="wishlist.html"><i class="fas fa-heart"></i> Wishlist <span class="cart-badge" id="mobile-wishlist-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openCart(); document.getElementById('mobile-menu').classList.remove('active');"><i class="fas fa-shopping-bag"></i> Your Bag <span class="cart-badge" id="mobile-cart-badge" style="position: static; margin-left: 10px; display: none;">0</span> <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+
+            <div class="section-title">Categories</div>
+            <li><a href="Maxis.html"><i class="fas fa-female"></i> Maxis</a></li>
+            <li><a href="Cord sets.html"><i class="fas fa-female"></i> Cord sets</a></li>
+            <li><a href="Kurti.html"><i class="fas fa-female"></i> Kurti</a></li>
+            <li><a href="Kurti sets.html"><i class="fas fa-female"></i> Kurti sets</a></li>
+            <li><a href="pure-cotton.html"><i class="fas fa-female"></i> Pure Cotton</a></li>
+            
+            <div class="section-title">Account Settings</div>
+            <li><a href="javascript:void(0)" onclick="openSettings('plus')"><i class="fas fa-crown" style="color: #FFD100;"></i> House Of Viyara Plus <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('devices')"><i class="fas fa-mobile-alt" style="color: #000;"></i> Manage Devices <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('profile')"><i class="fas fa-user-edit" style="color: #000;"></i> Edit Profile <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('cards')"><i class="fas fa-credit-card" style="color: #000;"></i> Saved Cards & Gift Cards <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('addresses')"><i class="fas fa-map-marker-alt" style="color: #000;"></i> Saved Addresses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('language')"><i class="fas fa-language" style="color: #000;"></i> Language <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('notifications')"><i class="fas fa-bell" style="color: #000;"></i> Notifications <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            
+            <div class="section-title">My Activity</div>
+            <li><a href="javascript:void(0)" onclick="openSettings('reviews')"><i class="fas fa-pen-nib" style="color: #000;"></i> My Reviews <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('qa')"><i class="fas fa-question-circle" style="color: #000;"></i> Q&A <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+
+            <div class="section-title">Support</div>
+            <li><a href="javascript:void(0)" onclick="openSettings('policies')"><i class="fas fa-file-contract" style="color: #000;"></i> Policies & Licenses <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+            <li><a href="javascript:void(0)" onclick="openSettings('faqs')"><i class="fas fa-info-circle" style="color: #000;"></i> FAQs <i class="fas fa-chevron-right" style="margin-left: auto; font-size: 0.8rem; color: #ccc;"></i></a></li>
+        </ul>
+        <div class="logout-btn-container">
+            <button class="logout-btn" onclick="logoutUser()">Log Out</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Dynamic) -->
+    <div class="modal-overlay" id="settings-overlay"></div>
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-header">
+            <h2 id="settings-title">Settings</h2>
+            <button class="close-modal-btn" id="close-settings-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="settings-content" id="settings-content">
+            <!-- Content dynamically injected -->
+        </div>
+    </div>
+
+    <!-- Cartesian Drawer -->
+    <div class="cart-drawer-overlay" id="cart-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h2>YOUR BAG</h2>
+            <button class="close-cart-btn" id="close-cart-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <div class="empty-cart" id="empty-cart-msg">
+                <i class="fas fa-box-open"></i>
+                <p>Your bag is empty.</p>
+                <button class="btn btn-primary" id="shop-now-btn">Shop Now</button>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cart-total-price">₹0</span>
+            </div>
+            <button class="btn btn-primary checkout-btn">CHECKOUT</button>
+        </div>
+    </div>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-tag" style="background: var(--accent-green);">AADI SALE - 5% OFF</div>
+                <h1>ELEVATE YOUR STYLE.</h1>
+                <p>Celebrate Aadi season with 5% discount on all premium clothing and fashion pieces.</p>
+                <div class="hero-btns">
+                    <a href="Kurti.html" class="btn btn-primary">SHOP KURTIS</a>
+                    <a href="Maxis.html" class="btn btn-secondary">SHOP MAXIS</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img id="hero-image" src="assets/1.jpeg" alt="Premium Fashion" loading="eager" decoding="async" fetchpriority="high">
+            </div>
+        </section>
+
+        <!-- Scrolling Marquee Banner -->
+        <div class="marquee-banner">
+            <div class="marquee-content">
+                <span>🎉 AADI SALE - 5% OFF ON EVERYTHING! 🎉</span>
+                <span>✨ FREE SHIPPING ON ORDERS OVER ₹999! ✨</span>
+                <span>🛍️ NEW ARRIVALS EVERY WEEK! 🛍️</span>
+                <span>🎉 AADI SALE - 5% OFF ON EVERYTHING! 🎉</span>
+                <span>✨ FREE SHIPPING ON ORDERS OVER ₹999! ✨</span>
+                <span>🛍️ NEW ARRIVALS EVERY WEEK! 🛍️</span>
+            </div>
+        </div>
+        <!-- Categories Section -->
+        <section class="categories">
+            <div class="section-header">
+                <h2>CATEGORIES</h2>
+            </div>
+            <div class="category-grid" id="category-grid">
+                <!-- Categories dynamically inserted via JS -->
+            </div>
+        </section>
+
+        <!-- Trending Section -->
+        <section class="products-section" id="trending">
+            <div class="section-header">
+                <h2>TRENDING NOW</h2>
+                <a href="collections.html" class="view-all">VIEW ALL</a>
+            </div>
+            <div class="products-grid" id="product-list">
+                <!-- Products dynamically inserted via JS -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>House Of Viyara</h3>
+                <p>Redefining fashion with curated styles and premium quality.</p>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/houseofviyara26" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/@HouseofViyara" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
+                    <a href="https://wa.me/918300463653" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>SHOP</h4>
+                <ul>
+                    <li><a href="Maxis.html">Maxis</a></li>
+                    <li><a href="Cord sets.html">Cord sets</a></li>
+                    <li><a href="Kurti.html">Kurti</a></li>
+                    <li><a href="Kurti sets.html">Kurti sets</a></li>
+                    <li><a href="pure-cotton.html">Pure Cotton</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>HELP</h4>
+                <ul>
+                    <li><a href="orders.html">Track Order</a></li>
+                    <li><a href="return-policy.html">Returns & Exchanges</a></li>
+                    <li><a href="shipping-delivery.html">Shipping Info</a></li>
+                    <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="size-guide.html">Size Guide</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>LEGAL</h4>
+                <ul>
+                    <li><a href="about-us.html">About Us</a></li>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Service</a></li>
+                    <li><a href="refund-cancellation.html">Refund & Cancellation</a></li>
+                    <li><a href="cookie-policy.html">Cookie Policy</a></li>
+                    <li><a href="/admin.html" style="display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-user-shield"></i> Admin Portal</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 House Of Viyara. All Rights Reserved.</p>
+            <a href="https://zeroone-phi.vercel.app/" target="_blank" rel="noopener noreferrer" style="margin-top: 10px; font-weight: 900; letter-spacing: 1px; color: var(--accent-yellow); text-decoration: none;">POWERED BY ZERO & ONE TECH SOLUTION PVT LTD</a>
+        </div>
+    </footer>
+
+    <!-- Product Quick View Modal -->
+    <div class="modal-overlay" id="pdp-overlay"></div>
+    <div class="pdp-modal" id="pdp-modal">
+        <button class="close-modal-btn" id="close-pdp-btn"><i class="fas fa-times"></i></button>
+        <div class="pdp-content" id="pdp-content"></div>
+    </div>
+
+    <!-- Checkout Modal Overlay -->
+    <div class="modal-overlay" id="checkout-overlay"></div>
+    <!-- Checkout Modal -->
+    <div class="checkout-modal" id="checkout-modal">
+        <button class="close-modal-btn" id="close-checkout-btn"><i class="fas fa-times"></i></button>
+        <div class="checkout-content">
+            <h2 style="margin-bottom: 30px; font-size: 2.5rem; text-align: center;">CHECKOUT</h2>
+            
+            <div class="checkout-grid" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px;">
+                <!-- Left side: Form -->
+                <div class="checkout-form">
+                    <div class="card" style="padding: 30px; height: 100%;">
+                        <h3 style="margin-bottom: 25px; border-bottom: 4px solid #000; padding-bottom: 10px;">SHIPPING DETAILS</h3>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 800; margin-bottom: 8px;">FULL NAME</label>
+                            <input type="text" id="checkout-name" class="brutal-input" placeholder="John Doe" required>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 800; margin-bottom: 8px;">EMAIL ADDRESS</label>
+                            <input type="email" id="checkout-email" class="brutal-input" placeholder="john@example.com" required>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 800; margin-bottom: 8px;">PHONE NUMBER</label>
+                            <input type="text" id="checkout-phone" class="brutal-input" placeholder="+91 00000 00000">
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 800; margin-bottom: 8px;">DELIVERY ADDRESS</label>
+                            <input type="text" id="checkout-street" class="brutal-input" placeholder="Flat/House No, Street, Area">
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label style="display: block; font-weight: 800; margin-bottom: 8px;">CITY</label>
+                                <input type="text" id="checkout-city" class="brutal-input" placeholder="Mumbai">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; font-weight: 800; margin-bottom: 8px;">STATE</label>
+                                <input type="text" id="checkout-state" class="brutal-input" placeholder="Maharashtra">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; margin-bottom: 8px;">PIN CODE</label>
+                            <input type="text" id="checkout-pin" class="brutal-input" placeholder="400001">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right side: Summary -->
+                <div class="checkout-summary">
+                    <div class="card" style="padding: 30px; background: #fff; position: sticky; top: 20px;">
+                        <h3 style="margin-bottom: 25px; border-bottom: 4px solid #000; padding-bottom: 10px;">ORDER SUMMARY</h3>
+                        
+                        <div id="checkout-items" style="max-height: 300px; overflow-y: auto; margin-bottom: 25px;">
+                            <!-- Items inserted by JS -->
+                        </div>
+                        
+                        <div style="border-top: 4px solid #000; padding-top: 20px; margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 700; font-size: 1.1rem;">
+                                <span>Subtotal</span>
+                                <span id="checkout-subtotal">₹0</span>
+                            </div>
+                            <div style="display:flex; justify-content: space-between; margin-bottom: 12px; font-weight: 700; font-size: 1.1rem;">
+                    <span>Shipping Fee</span>
+                    <span id="checkout-shipping">₹100</span>
+                </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 1.8rem; font-weight: 900; background: var(--accent-yellow); padding: 15px; border: 4px solid #000; box-shadow: 5px 5px 0px #000;">
+                                <span>TOTAL</span>
+                                <span id="checkout-grandtotal">₹100</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 30px; font-size: 1.3rem; padding: 18px;" onclick="completeCheckout()">
+                            CONFIRM ORDER
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div class="success-modal" id="success-modal">
+        <div class="success-content" style="text-align: center; padding: 40px; border: 5px solid #000; background: #fff; box-shadow: 10px 10px 0px #000;">
+            <div style="font-size: 5rem; margin-bottom: 20px;">📦</div>
+            <h2 style="font-size: 2.5rem; margin-bottom: 10px;">ORDER SUCCESSFUL!</h2>
+            <p style="font-weight: 800; font-size: 1.2rem; margin-bottom: 30px;">Thank you for shopping with House Of Viyara.</p>
+            
+            <div style="background: var(--accent-blue); border: 4px solid #000; padding: 20px; margin-bottom: 30px;">
+                <p style="font-weight: 900;">YOUR ORDER ID</p>
+                <div id="order-id" style="font-size: 2rem; font-weight: 900; letter-spacing: 2px;">LS-000000</div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <a href="orders.html" class="btn btn-primary" style="flex: 1; padding: 15px;">TRACK ORDER</a>
+                <button class="btn btn-primary" style="flex: 1; padding: 15px; background: var(--accent-yellow);" onclick="closeSuccessModal()">CONTINUE SHOPPING</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="collections.html" class="bottom-nav-item">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Shop</span>
+        </a>
+        <a href="wishlist.html" class="bottom-nav-item">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+            <span class="badge cart-count" id="bottom-wishlist-badge">0</span>
+        </a>
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleCart()">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Bag</span>
+            <span class="badge cart-count" id="mobile-cart-badge">0</span>
+        </a>
+        <a href="javascript:void(0)" class="bottom-nav-item" onclick="window.toggleMenu()">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
+        </a>
+    </nav>
+
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="cookie-banner">
+        <div class="cookie-banner-content">
+            <h2>🍪 We Value Your Privacy</h2>
+            <p>House Of Viyara uses cookies to improve your shopping experience, remember your preferences, analyze website traffic, and enhance our services. Some cookies are essential for the website to function, while others help us understand how visitors use our store.</p>
+            <div class="cookie-banner-actions">
+                <button id="cookie-accept-all" class="cookie-btn cookie-btn-primary">Accept All</button>
+                <button id="cookie-essential-only" class="cookie-btn cookie-btn-secondary">Essential Only</button>
+                <button id="cookie-settings-link" class="cookie-btn cookie-btn-text">Cookie Policy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Settings Modal -->
+    <div id="cookie-modal-overlay" class="cookie-modal-overlay">
+        <div class="cookie-modal" role="dialog" aria-modal="true" aria-labelledby="cookie-modal-title">
+            <div class="cookie-modal-header">
+                <h2 id="cookie-modal-title">Cookie Settings</h2>
+                <button id="cookie-close-modal" class="cookie-close-btn" aria-label="Close cookie settings">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="cookie-modal-content">
+                <!-- Essential Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Essential Cookies</h3>
+                        <p>Always Active. Cannot be disabled.</p>
+                    </div>
+                    <div class="cookie-category-status">Always Active</div>
+                </div>
+                <!-- Analytics Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Analytics Cookies</h3>
+                        <p>Help us understand how visitors use our website.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-analytics" checked>
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Marketing Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Marketing Cookies</h3>
+                        <p>Used to show relevant ads and content to you.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-marketing">
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Preference Cookies -->
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h3>Preference Cookies</h3>
+                        <p>Remember your preferences and settings.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookie-preferences" checked>
+                        <span class="cookie-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="cookie-modal-actions">
+                <button id="cookie-reject-optional" class="cookie-btn cookie-btn-secondary">Reject Optional</button>
+                <button id="cookie-save-prefs" class="cookie-btn cookie-btn-secondary">Save Preferences</button>
+                <button id="cookie-accept-all-modal" class="cookie-btn cookie-btn-primary">Accept All</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=18" defer></script>
+    <script src="cookie-banner.js" defer></script>
+</body>
+</html>

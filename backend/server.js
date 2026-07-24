@@ -354,41 +354,11 @@ app.use(express.static(path.join(__dirname, '..'), {
         }
     }
 
-    // ── Seed products if empty ──
+    // ── Do not seed products automatically ──
+    // This application is intended to start with an empty catalog.
     const productCount = await db.get('SELECT COUNT(*) as count FROM products');
     if (productCount.count === 0) {
-        const initialProducts = [
-            // SAREE
-            { name: 'Banarasi Silk Saree', description: 'Elegant gold zari border with premium silk fabric.', price: 4500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: 1 },
-            { name: 'Kanjeevaram Saree', description: 'Pure mulberry silk with traditional temple patterns.', price: 6200, category: 'saree', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: 0 },
-            { name: 'Floral Organza Saree', description: 'Lightweight organza saree with delicate floral print.', price: 2800, category: 'saree', image_url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&q=80', is_trending: 0 },
-            { name: 'Georgette Designer Saree', description: 'Glamorous saree with sequin work, perfect for cocktails.', price: 3500, category: 'saree', image_url: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=800&q=80', is_trending: 1 },
-            { name: 'Cotton Handloom Saree', description: 'Comfortable and breathable handwoven cotton saree.', price: 1999, category: 'saree', image_url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&q=80', is_trending: 0 },
-            // KURTIS
-            { name: 'Chikankari Cotton Kurti', description: 'Handcrafted Lucknowi chikankari embroidery on soft cotton.', price: 1800, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: 1 },
-            { name: 'Floral Anarkali Kurta', description: 'Flowy flared silhouette with digital floral print details.', price: 2499, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&q=80', is_trending: 0 },
-            { name: 'A-Line Rayon Kurti', description: 'Comfortable straight-cut daily wear rayon kurti.', price: 1200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605199-0d12e9b1cb7a?w=800&q=80', is_trending: 0 },
-            { name: 'Embroidered Silk Kurta', description: 'Festive wear silk kurta with detailed hand-embroidery.', price: 3200, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1609357605177-f23a07aa1b67?w=800&q=80', is_trending: 0 },
-            { name: 'Pastel Georgette Kurti', description: 'Elegant long kurti with bell sleeves and side slit.', price: 1600, category: 'kurtis', image_url: 'https://images.unsplash.com/photo-1631857455684-a54a2f03665f?w=800&q=80', is_trending: 1 },
-            // ETHNIC WEARS
-            { name: 'Velvet Lehenga Choli', description: 'Heavy embroidered velvet lehenga set for bridal wear.', price: 8900, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030470200-a616238b6d49?w=800&q=80', is_trending: 1 },
-            { name: 'Anarkali Suit Set', description: 'Traditional 3-piece georgette anarkali with net dupatta.', price: 4200, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: 0 },
-            { name: 'Sharara Suit Set', description: 'Trendy sharara bottom with short kurti and matching dupatta.', price: 3800, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80', is_trending: 0 },
-            { name: 'Palazzo Suit Set', description: 'Comfortable straight kurta with wide-leg printed palazzos.', price: 2600, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?w=800&q=80', is_trending: 0 },
-            { name: 'Banarasi Brocade Suit', description: 'Rich Banarasi brocade fabric with elegant design and details.', price: 5500, category: 'ethnic', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80', is_trending: 0 },
-            // PARTY WEARS
-            { name: 'Satin Evening Gown', description: 'Sleek and luxurious satin gown with cowl neck.', price: 7500, category: 'party', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80', is_trending: 1 },
-            { name: 'Sequin Bodycon Dress', description: 'Sparkling sequin party dress for clubbing and night events.', price: 4800, category: 'party', image_url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80', is_trending: 0 },
-            { name: 'Off-Shoulder Velvet Dress', description: 'Classic luxury velvet dress with off-shoulder design.', price: 3900, category: 'party', image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80', is_trending: 1 },
-            { name: 'Chiffon Cocktail Dress', description: 'Flowy knee-length designer cocktail dress.', price: 3200, category: 'party', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80', is_trending: 0 },
-            { name: 'Embroidered Party Gown', description: 'Floor-length net gown with gorgeous embellishments.', price: 6800, category: 'party', image_url: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=800&q=80', is_trending: 0 },
-            // CASUAL WEARS
-            { name: 'Linen Summer Dress', description: 'Lightweight breathable linen dress for sunny days.', price: 2200, category: 'casual', image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80', is_trending: 0 },
-            { name: 'Denim Dungaree Set', description: 'Stylish classic blue denim dungarees with cotton inner.', price: 2600, category: 'casual', image_url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80', is_trending: 0 },
-            { name: 'Oversized Cotton Tee', description: 'Casual everyday oversized tee made of organic cotton.', price: 999, category: 'casual', image_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80', is_trending: 0 },
-            { name: 'Floral Printed Jumpsuit', description: 'Trendy one-piece jumpsuit with comfortable fit.', price: 1800, category: 'casual', image_url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&q=80', is_trending: 1 },
-            { name: 'Cropped Knit Cardigan', description: 'Soft cozy knitted cardigan, perfect for layering.', price: 1500, category: 'casual', image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80', is_trending: 0 }
-        ];
+        console.log('No products found. Skipping automatic seed.');
     }
     console.log('Database ready.');
 })();

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Product Details - House Of Viyara26">
+    <title>Product Detail - House Of Viyara26</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&family=Poppins:wght@800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Inner page header style */
+        header {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        header nav ul li a,
+        header .header-icons a {
+            color: #0a0a0a !important;
+        }
+        .page-header {
+            padding: 150px 0 100px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #fff;
+            text-align: center;
+        }
+        .page-content {
+            padding: 80px 0;
+            background: #fff;
+        }
+        .breadcrumb {
+            color: #d4af37;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .breadcrumb a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            color: #d4af37;
+        }
+        .product-gallery {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 20px;
+        }
+        .thumbnail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .thumbnail:hover, .thumbnail.active {
+            border-color: #d4af37;
+        }
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .main-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f5f1eb;
+        }
+        .main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .review-card {
+            background: #f5f1eb;
+            padding: 25px;
+            border-radius: 10px;
+        }
+        .review-media {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .review-photo, .review-video {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .review-photo img, .review-video img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <div class="logo">
+                <a href="../index.html"><img src="../assets/HOV.jpg" alt="House Of Viyara26" style="max-height: 50px;"></a>
+            </div>
+            <nav>
+                <ul id="navMenu">
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="categories.html">Shop</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <a href="search.html"><i class="fas fa-search"></i></a>
+                <a href="wishlist.html"><i class="fas fa-heart"></i></a>
+                <a href="cart.html" style="position: relative;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+                <a href="account.html"><i class="fas fa-user"></i></a>
+                <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>Product Detail</h1>
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a> / <a href="categories.html">Shop</a> / Product Name
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            <!-- Product Info Section -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-bottom: 80px;">
+                <div class="product-gallery">
+                    <div class="thumbnail-list">
+                        <div class="thumbnail active" onclick="changeMainImage(this)">
+                            <img src="../assets/images/saree.png" alt="Product 1">
+                        </div>
+                        <div class="thumbnail" onclick="changeMainImage(this)">
+                            <img src="../assets/images/kurti.png" alt="Product 2">
+                        </div>
+                        <div class="thumbnail" onclick="changeMainImage(this)">
+                            <img src="../assets/images/ethnic wears.png" alt="Product 3">
+                        </div>
+                        <div class="thumbnail" onclick="changeMainImage(this)">
+                            <img src="../assets/images/party wear.png" alt="Product 4">
+                        </div>
+                    </div>
+                    <div class="main-image">
+                        <img id="mainProductImg" src="../assets/images/saree.png" alt="Main Product">
+                    </div>
+                </div>
+                <div>
+                    <h1 style="font-family: 'Poppins', sans-serif; font-weight: 800; margin-bottom: 15px;">Banarasi Silk Saree</h1>
+                    <div class="product-rating" style="margin-bottom: 20px;">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                        <span style="font-family: 'Montserrat', sans-serif; margin-left: 8px;">(128 reviews)</span>
+                    </div>
+                    <div class="product-price" style="margin-bottom: 25px;">
+                        <span class="old-price" style="font-size: 1.2rem;">₹8,999</span>
+                        <span style="font-size: 1.8rem; font-weight: 600; margin-left: 10px;">₹6,499</span>
+                    </div>
+                    <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.8; margin-bottom: 30px;">
+                        Premium quality Banarasi silk saree with intricate zari work, perfect for weddings and special occasions.
+                        Made with pure silk and handwoven by skilled artisans from Varanasi.
+                    </p>
+                    <div style="margin-bottom: 25px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Color:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background: #d4af37; border: 2px solid #ddd; cursor: pointer;"></div>
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background: #0a0a0a; border: 2px solid #ddd; cursor: pointer;"></div>
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background: #e6c547; border: 2px solid #ddd; cursor: pointer;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Size:</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button style="padding: 10px 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; border-radius: 4px; font-family: 'Montserrat', sans-serif;">Free Size</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                        <div class="quantity-control" style="display: flex; align-items: center; gap: 0; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
+                            <button onclick="decrementQty()" style="width: 40px; height: 45px; border: none; background: #f5f1eb; cursor: pointer;"><i class="fas fa-minus"></i></button>
+                            <input type="number" id="qtyInput" value="1" min="1" style="width: 50px; text-align: center; border: none; height: 45px; font-family: 'Montserrat', sans-serif;">
+                            <button onclick="incrementQty()" style="width: 40px; height: 45px; border: none; background: #f5f1eb; cursor: pointer;"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <a href="cart.html" class="btn btn-primary" style="flex: 1;">Add to Cart</a>
+                        <button class="btn btn-secondary" style="background: #fff; color: #0a0a0a; border: 1px solid #d4af37;"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <div style="display: flex; gap: 20px; font-family: 'Montserrat', sans-serif;">
+                        <span><i class="fas fa-truck" style="color: #d4af37; margin-right: 8px;"></i> Free shipping on orders above ₹2000</span>
+                        <span><i class="fas fa-undo" style="color: #d4af37; margin-right: 8px;"></i> 7-day easy returns</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Details & Reviews Tabs -->
+            <div style="margin-bottom: 80px;">
+                <div style="border-bottom: 2px solid #ddd; margin-bottom: 40px;">
+                    <button onclick="showTab('details')" id="detailsBtn" style="padding: 15px 30px; border: none; background: #fff; font-family: 'Poppins', sans-serif; font-weight: 800; cursor: pointer; border-bottom: 3px solid #d4af37;">Product Details</button>
+                    <button onclick="showTab('reviews')" id="reviewsBtn" style="padding: 15px 30px; border: none; background: #fff; font-family: 'Poppins', sans-serif; font-weight: 800; cursor: pointer; border-bottom: 3px solid transparent;">Customer Reviews</button>
+                </div>
+                <div id="detailsTab">
+                    <h3 style="font-family: 'Poppins', sans-serif; margin-bottom: 20px;">Description</h3>
+                    <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.8;">
+                        This beautiful Banarasi silk saree is a perfect blend of traditional artistry and modern design. 
+                        Handwoven with pure silk and intricate zari work, it's ideal for weddings, festivals, and special occasions.
+                    </p>
+                    <h3 style="font-family: 'Poppins', sans-serif; margin: 30px 0 15px;">Product Specifications</h3>
+                    <ul style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 2; padding-left: 20px;">
+                        <li>Material: Pure Banarasi Silk</li>
+                        <li>Length: 6.3 meters (with blouse piece)</li>
+                        <li>Work: Zari Weaving</li>
+                        <li>Blouse Piece: Unstitched</li>
+                        <li>Care: Dry Clean Only</li>
+                    </ul>
+                </div>
+                <div id="reviewsTab" style="display: none;">
+                    <h3 style="font-family: 'Poppins', sans-serif; margin-bottom: 30px;">Customer Reviews</h3>
+                    <div class="review-card" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Poppins', sans-serif; font-weight: 800;">P</div>
+                                <div>
+                                    <h4 style="font-family: 'Poppins', sans-serif; margin-bottom: 5px;">Priya Sharma</h4>
+                                    <div class="product-rating" style="font-size: 0.9rem;">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <span style="font-family: 'Montserrat', sans-serif; color: #999; font-size: 0.9rem;">2 weeks ago</span>
+                        </div>
+                        <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.6;">
+                            Absolutely stunning saree! The quality is exceptional, and the zari work is so intricate. 
+                            Received so many compliments at the wedding!
+                        </p>
+                        <div class="review-media">
+                            <div class="review-photo"><img src="../assets/images/saree.png" alt="Review photo"></div>
+                            <div class="review-photo"><img src="../assets/images/party wear.png" alt="Review photo"></div>
+                        </div>
+                    </div>
+                    <div class="review-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background: #0a0a0a; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Poppins', sans-serif; font-weight: 800;">A</div>
+                                <div>
+                                    <h4 style="font-family: 'Poppins', sans-serif; margin-bottom: 5px;">Anita R</h4>
+                                    <div class="product-rating" style="font-size: 0.9rem;">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <span style="font-family: 'Montserrat', sans-serif; color: #999; font-size: 0.9rem;">1 month ago</span>
+                        </div>
+                        <p style="color: #666; font-family: 'Montserrat', sans-serif; line-height: 1.6;">
+                            Great product! Fast delivery, and the packaging was very nice. The color is exactly as shown in the pictures.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Products -->
+            <h2 style="font-family: 'Poppins', sans-serif; text-align: center; margin-bottom: 50px;">Related Products</h2>
+            <div class="product-grid">
+                <div class="product-card" onclick="location.href='product-detail.html'">
+                    <div class="product-image">
+                        <img src="../assets/images/kurti.png" alt="Kurti Set" style="width:100%;height:100%;object-fit:cover;">
+                        <span class="product-badge sale">SALE</span>
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Embroidered Kurti Set</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">₹5,499</span>
+                            ₹3,999
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='product-detail.html'">
+                    <div class="product-image">
+                        <img src="../assets/images/ethnic wears.png" alt="Designer Lehenga" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Designer Lehenga Choli</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <div class="product-price">₹12,999</div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='product-detail.html'">
+                    <div class="product-image">
+                        <img src="../assets/images/party wear.png" alt="Party Wear Gown" style="width:100%;height:100%;object-fit:cover;">
+                        <span class="product-badge">NEW</span>
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Party Wear Gown</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="product-price">₹7,999</div>
+                    </div>
+                </div>
+                <div class="product-card" onclick="location.href='product-detail.html'">
+                    <div class="product-image">
+                        <img src="../assets/images/casual.png" alt="Casual Wear" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="product-actions">
+                            <button><i class="fas fa-heart"></i></button>
+                            <button><i class="fas fa-eye"></i></button>
+                            <button><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>Casual Kurti Set</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <div class="product-price">₹3,499</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="../assets/HOV.jpg" alt="House Of Viyara26" class="footer-logo" style="max-width: 120px;">
+                    <p>Premium luxury fashion brand offering exclusive ethnic wear, designer collections, and customized fashion products.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="../index.html">Home</a></li>
+                        <li><a href="categories.html">Shop</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="admin-panel.html" style="color: #d4af37; font-weight: 600;"><i class="fas fa-cog"></i> Admin Panel</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="shipping-policy.html">Shipping Policy</a></li>
+                        <li><a href="refund-policy.html">Refund Policy</a></li>
+                        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt" style="color:#d4af37;margin-right:10px;"></i> Palladam, Tiruppur, Tamil Nadu, India</li>
+                        <li><i class="fas fa-phone" style="color:#d4af37;margin-right:10px;"></i> +91 83004 63653</li>
+                        <li><i class="fab fa-instagram" style="color:#d4af37;margin-right:10px;"></i> house_of_viyara26</li>
+                        <li><i class="fab fa-youtube" style="color:#d4af37;margin-right:10px;"></i> @HouseofViyara</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 House Of Viyara26. All rights reserved. Crafted with elegance & tradition.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/918300463653?text=Hi! I'm interested in your products" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        function changeMainImage(thumbnail) {
+            const mainImg = document.getElementById('mainProductImg');
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            
+            thumbnails.forEach(thumb => thumb.classList.remove('active'));
+            thumbnail.classList.add('active');
+            
+            const imgSrc = thumbnail.querySelector('img').src;
+            mainImg.src = imgSrc;
+        }
+        
+        function incrementQty() {
+            const input = document.getElementById('qtyInput');
+            input.value = parseInt(input.value) + 1;
+        }
+        
+        function decrementQty() {
+            const input = document.getElementById('qtyInput');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+        
+        function showTab(tabName) {
+            const detailsTab = document.getElementById('detailsTab');
+            const reviewsTab = document.getElementById('reviewsTab');
+            const detailsBtn = document.getElementById('detailsBtn');
+            const reviewsBtn = document.getElementById('reviewsBtn');
+            
+            if (tabName === 'details') {
+                detailsTab.style.display = 'block';
+                reviewsTab.style.display = 'none';
+                detailsBtn.style.borderBottomColor = '#d4af37';
+                reviewsBtn.style.borderBottomColor = 'transparent';
+            } else {
+                detailsTab.style.display = 'none';
+                reviewsTab.style.display = 'block';
+                detailsBtn.style.borderBottomColor = 'transparent';
+                reviewsBtn.style.borderBottomColor = '#d4af37';
+            }
+        }
+    </script>
+</body>
+</html>

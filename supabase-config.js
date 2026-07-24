@@ -1,14 +1,11 @@
 // Database and Cloud configuration for House Of Viyara
-window.USE_SUPABASE = false; // Set to false to use GitHub JSON Database
+window.USE_SUPABASE = true; // Enable the Supabase-backed data path
 
-// GitHub Database Config
-window.USE_GITHUB_DATABASE = true;
+// GitHub Database Config (disabled)
+window.USE_GITHUB_DATABASE = false;
 window.GITHUB_OWNER = "zeroandonetechsolution";
 window.GITHUB_REPO = "houseofviyara1";
-// GitHub Branch
 window.GITHUB_BRANCH = "main";
-// NOTE: GitHub PAT must be set via Admin Panel → Settings → GitHub PAT field.
-// It is stored securely in localStorage and never committed to source code.
 window.GITHUB_PAT = localStorage.getItem('hov_github_pat') || '';
 
 // Cloudinary Configuration

@@ -42,7 +42,8 @@ async function githubReadJson(filename) {
 async function githubWriteJson(filename, data) {
     const { owner, repo, branch, pat } = getGithubConfig();
     if (!pat) {
-        throw new Error('GitHub Personal Access Token (PAT) not set. Go to Settings to add your PAT.');
+        console.info(`GitHub sync skipped for ${filename}: no PAT configured. Data is saved locally.`);
+        return { skipped: true, reason: 'pat_missing' };
     }
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/${filename}.json`;
 
@@ -84,35 +85,25 @@ async function githubWriteJson(filename, data) {
 }
 
 async function adminFetchData(filename, fallback = []) {
-    if (window.USE_GITHUB_DATABASE) {
-        try {
-            return await githubReadJson(filename);
-        } catch (e) {
-            console.warn(`GitHub read failed for ${filename}:`, e);
+    try {
+        const res = await fetch(`/data/${filename}.json?t=${Date.now()}`);
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem(`hov_${filename}`, JSON.stringify(data));
+            return data;
         }
-        try {
-            const res = await fetch(`/data/${filename}.json`);
-            if (res.ok) return await res.json();
-        } catch (e) {}
-    }
+    } catch (e) {}
+
+    try {
+        const cached = JSON.parse(localStorage.getItem(`hov_${filename}`) || 'null');
+        if (cached !== null) return cached;
+    } catch (e) {}
+
     return JSON.parse(localStorage.getItem(`hov_${filename}`) || JSON.stringify(fallback));
 }
 
 async function adminSaveData(filename, data) {
-    // Always save to localStorage as instant feedback
     localStorage.setItem(`hov_${filename}`, JSON.stringify(data));
-
-    if (window.USE_GITHUB_DATABASE) {
-        try {
-            await githubWriteJson(filename, data);
-            console.log(`✅ Saved ${filename} to GitHub`);
-            return true;
-        } catch (e) {
-            console.error(`❌ GitHub write failed for ${filename}:`, e);
-            showToast(`Saved locally. GitHub error: ${e.message}`, 'warning');
-            return false;
-        }
-    }
     return true;
 }
 
@@ -1279,9 +1270,20 @@ let tempProductData = { // Temp storage for product form
     variants: [] // Each variant: {id?, color, size, price, image_url, stock}
 };
 
+function generateProductCode(existingProducts = []) {
+    const prefix = 'HOV';
+    const numbers = (existingProducts || [])
+        .map(p => Number(String(p.product_code || '').replace(/^[A-Z-]+/, '').trim()))
+        .filter(n => Number.isFinite(n) && n > 0)
+        .sort((a, b) => a - b);
+    const nextNumber = numbers.length ? Math.max(...numbers) + 1 : 1;
+    return `${prefix}-${String(nextNumber).padStart(4, '0')}`;
+}
+
 async function renderProducts() {
     document.getElementById('topbar-actions').innerHTML = `
-        <button class="admin-btn admin-btn-primary" onclick="openAddProduct()"><i class="fas fa-plus"></i> Add Product</button>`;
+        <button class="admin-btn admin-btn-primary" onclick="openAddProduct()"><i class="fas fa-plus"></i> Add Product</button>
+        <button class="admin-btn admin-btn-danger" onclick="deleteAllProducts()"><i class="fas fa-trash-alt"></i> Delete All Products</button>`;
 
     const content = document.getElementById('admin-content');
     try {
@@ -1349,7 +1351,7 @@ function searchProducts(q) {
     let base = productFilter === 'all' ? allProducts
         : productFilter === 'trending' ? allProducts.filter(p => p.is_trending)
         : allProducts.filter(p => p.category === productFilter);
-    renderProductGrid(base.filter(p => p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search)));
+    renderProductGrid(base.filter(p => p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search) || (p.product_code || '').toLowerCase().includes(search)));
 }
 
 function renderProductGrid(products) {
@@ -1368,6 +1370,7 @@ function renderProductGrid(products) {
         <div class="apc-body">
           <div class="apc-cat">${p.category}</div>
           <div class="apc-name">${p.name}</div>
+          <div class="apc-code" style="margin: 8px 0; font-size: 0.9rem; font-weight: 800; color: #FF007A;">Code: ${p.product_code || '—'}</div>
           <div class="apc-price">
             <span class="apc-offer">₹${p.offer_price || p.price}</span>
             ${p.offer_price && p.offer_price < p.price ? `<span class="apc-original">₹${p.price}</span>` : ''}
@@ -1741,6 +1744,35 @@ async function deleteProduct(id, name) {
     });
 }
 
+async function deleteAllProducts() {
+    confirmAction('Delete ALL products from the admin panel? This action cannot be undone.', async () => {
+        try {
+            if (window.USE_GITHUB_DATABASE) {
+                await adminSaveData('products', []);
+            } else if (adminSupabase || await loadSupabaseClient()) {
+                // Delete all media files for existing products first
+                const { data: products, error: fetchError } = await adminSupabase.from('products').select('*');
+                if (fetchError) throw fetchError;
+                for (const product of products) {
+                    const mediaUrls = getProductMediaUrls(product);
+                    for (const url of mediaUrls) {
+                        await deleteSupabaseFile(url);
+                    }
+                }
+                const { error } = await adminSupabase.from('products').delete();
+                if (error) throw error;
+            } else {
+                await apiFetch('/api/admin/products', { method: 'DELETE' });
+            }
+            localStorage.removeItem('hov_products');
+            showToast('All products deleted successfully', 'success');
+            renderProducts();
+        } catch (e) {
+            showToast('Failed to delete all products: ' + e.message, 'error');
+        }
+    });
+}
+
 function productFormHTML(p = {}, categories = [], allProducts = []) {
     const gallery = Array.isArray(p.gallery) ? p.gallery : (p.image_url ? [p.image_url] : []);
     const videos = Array.isArray(p.videos) ? p.videos : (p.video_url ? [p.video_url] : []);
@@ -1752,6 +1784,11 @@ function productFormHTML(p = {}, categories = [], allProducts = []) {
       <div class="aform-group">
         <label>Product Name *</label>
         <input class="aform-input" id="pf-name" value="${p.name || ''}" placeholder="e.g. Banarasi Silk Saree">
+      </div>
+      <div class="aform-group">
+        <label>Product Code</label>
+        <input class="aform-input" id="pf-code" value="${p.product_code || ''}" placeholder="Generated automatically" readonly>
+        <small class="admin-form-hint">New products get a code automatically when saved.</small>
       </div>
       <div class="aform-group">
         <label>Description</label>
@@ -2318,8 +2355,12 @@ async function handleAddProduct() {
         const colors = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(c => c) : [];
         const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
 
+        const existingProducts = await adminFetchData('products', []);
+        const productCode = generateProductCode(existingProducts);
+
         const newProduct = {
             id: Date.now(),
+            product_code: productCode,
             name,
             description: document.getElementById('pf-desc').value,
             price: Number(price),
@@ -2444,6 +2485,7 @@ async function handleEditProduct(id) {
 
         const updatedProduct = {
             id,
+            product_code: document.getElementById('pf-code').value.trim() || (originalProductData && originalProductData.product_code) || '',
             name,
             description: document.getElementById('pf-desc').value,
             price: Number(price),
@@ -4275,29 +4317,16 @@ async function deleteHeroImage(id, altText) {
 
 async function renderDbSettings() {
     const content = document.getElementById('admin-content');
-    // Show PAT from localStorage or window.GITHUB_PAT (from supabase-config.js)
-    const pat = localStorage.getItem('hov_github_pat') || window.GITHUB_PAT || '';
     const preset = localStorage.getItem('hov_cloudinary_preset') || window.CLOUDINARY_UPLOAD_PRESET || 'houseofviyara';
     
     content.innerHTML = `
     <div class="admin-section-card" style="max-width: 600px; margin: 20px auto;">
-        <h3><i class="fas fa-database"></i> Database & Cloud Storage Settings</h3>
+        <h3><i class="fas fa-database"></i> Cloudflare / Static Storage Settings</h3>
         <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-            Configure your free database and image hosting. These credentials are saved securely in your browser's local storage.
+            This admin panel is configured to work with your static site data and Cloudinary media uploads. No GitHub PAT or paid database is required.
         </p>
         
         <div class="admin-form">
-            <div class="aform-group">
-                <label style="font-weight: 600;">GitHub Personal Access Token (PAT) *</label>
-                <input type="password" id="setting-github-pat" class="aform-input" value="${pat}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                <p style="color: #888; font-size: 12px; margin-top: 5px;">
-                    Required to save product edits. Need one? 
-                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=House%20of%20Viyara%20Admin" target="_blank" style="color: var(--primary-color); font-weight: 500;">
-                        Click here to generate a free token
-                    </a> (Select "repo" scope).
-                </p>
-            </div>
-            
             <div class="aform-group">
                 <label style="font-weight: 600;">Cloudinary Unsigned Upload Preset *</label>
                 <input type="text" id="setting-cloudinary-preset" class="aform-input" value="${preset}" placeholder="e.g. houseofviyara">
@@ -4307,11 +4336,10 @@ async function renderDbSettings() {
             </div>
 
             <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> Current Repository Config</h4>
+                <h4 style="margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> Current Storage Setup</h4>
                 <div style="font-size: 13px; color: #555; line-height: 1.6;">
-                    <strong>Owner:</strong> ${window.GITHUB_OWNER || 'zeroandonetechsolution'}<br>
-                    <strong>Repository:</strong> ${window.GITHUB_REPO || 'houseofviyara1'}<br>
-                    <strong>Branch:</strong> ${window.GITHUB_BRANCH || 'main'}<br>
+                    <strong>Mode:</strong> Static site + Cloudinary uploads<br>
+                    <strong>Data:</strong> Browser local storage + site data files<br>
                     <strong>Cloudinary Cloud Name:</strong> ${window.CLOUDINARY_CLOUD_NAME || 'b2p0mqvx'}<br>
                 </div>
             </div>
@@ -4320,9 +4348,6 @@ async function renderDbSettings() {
                 <button class="admin-btn admin-btn-primary" onclick="saveDbSettings()">
                     <i class="fas fa-save"></i> Save Settings
                 </button>
-                <button class="admin-btn admin-btn-ghost" onclick="testGithubConnection()">
-                    <i class="fas fa-plug"></i> Test Connection
-                </button>
             </div>
         </div>
     </div>
@@ -4330,49 +4355,15 @@ async function renderDbSettings() {
 }
 
 async function saveDbSettings() {
-    const pat = document.getElementById('setting-github-pat').value.trim();
     const preset = document.getElementById('setting-cloudinary-preset').value.trim();
     
     if (!preset) {
         return showToast('Cloudinary preset is required', 'error');
     }
     
-    localStorage.setItem('hov_github_pat', pat);
     localStorage.setItem('hov_cloudinary_preset', preset);
     showToast('Settings saved successfully!', 'success');
 }
 
-async function testGithubConnection() {
-    const pat = document.getElementById('setting-github-pat').value.trim() || localStorage.getItem('hov_github_pat');
-    if (!pat) {
-        return showToast('Please enter a GitHub Personal Access Token first', 'error');
-    }
-    
-    showToast('Testing connection...', 'info');
-    try {
-        const owner = window.GITHUB_OWNER || 'zeroandonetechsolution';
-        const repo = window.GITHUB_REPO || 'houseofviyara1';
-        const branch = window.GITHUB_BRANCH || 'main';
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/products.json?ref=${branch}`;
-        
-        const res = await fetch(apiUrl, {
-            headers: {
-                'Authorization': `token ${pat}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-        
-        if (res.ok) {
-            showToast('GitHub Connection Successful! Read & Write permissions verified.', 'success');
-        } else {
-            const err = await res.json();
-            showToast(`Connection failed: ${err.message || res.statusText}`, 'error');
-        }
-    } catch (e) {
-        showToast(`Error: ${e.message}`, 'error');
-    }
-}
-
 window.saveDbSettings = saveDbSettings;
-window.testGithubConnection = testGithubConnection;
 window.renderDbSettings = renderDbSettings;
